@@ -9,7 +9,10 @@ import {
   primaryKey,
   uniqueIndex,
   pgEnum,
+  pgSchema
 } from "drizzle-orm/pg-core";
+
+const authSchema = pgSchema('auth');
 
 export const matchStatus = pgEnum("match_status", [
   "pending",
@@ -19,22 +22,16 @@ export const matchStatus = pgEnum("match_status", [
   "cancelled",
 ]);
 
-// Supabase Auth reference (virtual table)
-export const authUser = pgTable(
-  "users",
-  {
-    id: uuid("id").primaryKey(),
-  },
-  (t) => ({
-    schema: "auth",
-  })
-);
+const user = authSchema.table('users', {
+	id: uuid('id').primaryKey(),
+});
 
 // 1. Pyramid table
 export const pyramid = pgTable("pyramid", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  row_amount: integer("row_amount").default(1),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
@@ -86,7 +83,7 @@ export const profile = pgTable("profile", {
   userId: uuid("user_id")
     .notNull()
     .unique()
-    .references(() => authUser.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "cascade" }),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   nickname: text("nickname").unique(),

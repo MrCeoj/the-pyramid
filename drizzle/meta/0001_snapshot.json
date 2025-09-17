@@ -1,6 +1,6 @@
 {
-  "id": "4651edc8-7f05-4d27-b0f5-5117c4723f23",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "651c5be7-60fd-43f2-97ad-854006107d1f",
+  "prevId": "4651edc8-7f05-4d27-b0f5-5117c4723f23",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -591,6 +591,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "row_amount": {
+          "name": "row_amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 1
         },
         "active": {
           "name": "active",

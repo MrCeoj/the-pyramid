@@ -1,8 +1,4 @@
 CREATE TYPE "public"."match_status" AS ENUM('pending', 'accepted', 'played', 'rejected', 'cancelled');--> statement-breakpoint
-CREATE TABLE "users" (
-	"id" uuid PRIMARY KEY NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "category" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
@@ -99,7 +95,7 @@ ALTER TABLE "position_history" ADD CONSTRAINT "position_history_pyramid_id_pyram
 ALTER TABLE "position_history" ADD CONSTRAINT "position_history_match_id_match_id_fk" FOREIGN KEY ("match_id") REFERENCES "public"."match"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "position_history" ADD CONSTRAINT "position_history_challenger_team_id_team_id_fk" FOREIGN KEY ("challenger_team_id") REFERENCES "public"."team"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "position_history" ADD CONSTRAINT "position_history_defender_team_id_team_id_fk" FOREIGN KEY ("defender_team_id") REFERENCES "public"."team"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "profile" ADD CONSTRAINT "profile_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "profile" ADD CONSTRAINT "profile_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "profile" ADD CONSTRAINT "profile_team_id_team_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."team"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pyramid_category" ADD CONSTRAINT "pyramid_category_pyramid_id_pyramid_id_fk" FOREIGN KEY ("pyramid_id") REFERENCES "public"."pyramid"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pyramid_category" ADD CONSTRAINT "pyramid_category_category_id_category_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."category"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

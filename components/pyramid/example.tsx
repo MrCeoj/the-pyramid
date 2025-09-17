@@ -1,73 +1,61 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { createSupabaseClient } from "@/lib/supabase";
+import React, { useState } from "react";
 
-// Type definitions based on your schema
-interface Team {
+type Team = {
   id: number;
   name: string;
-  category_id: string;
   wins: number;
-  looses: number;
-}
+  losses: number;
+};
 
-interface Position {
+type Position = {
   id: number;
-  pyramid_id: number;
-  team_id: number;
-  row_number: number;
-  pos_number: number;
+  row: number;
+  col: number;
+  team: Team | null;
+};
+
+
+type PyramidData = {
+  positions: Position[];
+  row_amount: number;
 }
 
-interface PositionWithTeam extends Position {
-  equipos?: Team;
-}
-
-interface PyramidRow {
-  rowNumber: number;
-  positions: PositionWithTeam[];
-}
-
-interface TeamCardProps {
-  team: Team;
-  position: Position;
-  onClick: (team: Team) => void;
-}
-
-interface PyramidDisplayProps {
-  pyramidId?: number;
-  supabaseUrl?: string;
-  supabaseAnonKey?: string;
-}
-
-const TeamCard: React.FC<TeamCardProps> = ({ team, position, onClick }) => {
+const TeamCard: React.FC<{ data: Position; onClick: (team: Team) => void }> = ({
+  data,
+  onClick,
+}) => {
   const winRate: number =
-    team.wins + team.looses > 0
-      ? Number(((team.wins / (team.wins + team.looses)) * 100).toFixed(1))
+    data.team && data.team.wins + data.team.losses > 0
+      ? Number(
+          (
+            (data.team.wins / (data.team.wins + data.team.losses)) *
+            100
+          ).toFixed(1)
+        )
       : 0;
 
   return (
     <div
-      onClick={() => onClick(team)}
-      className="bg-white rounded-lg shadow-lg border-2 border-blue-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 p-3 min-w-[140px] max-w-[160px]"
+      onClick={() => data.team && onClick(data.team)}
+      className="bg-slate-900 rounded-xl border border-slate-700 hover:border-slate-500 hover:shadow-2xl transition-all duration-200 cursor-pointer hover:scale-[1.02] p-4 min-w-[150px] max-w-[170px] backdrop-blur-sm"
     >
       <div className="text-center">
         <div
-          className="font-bold text-sm text-gray-800 truncate mb-1"
-          title={team.name}
+          className="font-bold text-base text-white truncate mb-3"
+          title={data.team?.name}
         >
-          {team.name}
+          {data.team?.name ?? "Unknown"}
         </div>
-        <div className="text-xs text-gray-600 space-y-1">
-          <div className="flex justify-between">
-            <span>W: {team.wins}</span>
-            <span>L: {team.looses}</span>
+        {data.team && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-emerald-400 font-medium">W: {data.team.wins}</span>
+              <span className="text-red-400 font-medium">L: {data.team.losses}</span>
+            </div>
+            <div className="text-amber-400 font-bold text-lg">{winRate}%</div>
           </div>
-          <div className="text-blue-600 font-semibold">{winRate}% WR</div>
-          <div className="text-xs text-gray-400">
-            Row {position.row_number}, Pos {position.pos_number}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -78,261 +66,93 @@ const EmptySlot: React.FC<{ rowNumber: number; posNumber: number }> = ({
   posNumber,
 }) => {
   return (
-    <div className="bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 p-3 min-w-[140px] max-w-[160px] opacity-50">
+    <div className="rounded-xl border-2 border-dashed border-slate-600 bg-slate-800/30 p-4 min-w-[150px] max-w-[170px] backdrop-blur-sm">
       <div className="text-center">
-        <div className="font-bold text-sm text-gray-400 mb-1">Empty Slot</div>
-        <div className="text-xs text-gray-400">
-          Row {rowNumber}, Pos {posNumber}
+        <div className="font-semibold text-sm text-slate-400 mb-3">Lugar Vacío</div>
+        <div className="text-xs text-slate-500">
+          Fila {rowNumber} • Posición {posNumber}
         </div>
       </div>
     </div>
   );
 };
 
-const PyramidDisplay: React.FC<PyramidDisplayProps> = ({ pyramidId = 1 }) => {
+const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const [pyramidData, setPyramidData] = useState<PyramidRow[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPyramidData = async (): Promise<void> => {
-      const supabase = createSupabaseClient();
-      try {
-        setLoading(true);
-        setError(null);
+  // Group positions by row
+  const rows: { [key: number]: Position[] } = {};
+  data.positions.forEach((pos) => {
+    if (!rows[pos.row]) rows[pos.row] = [];
+    rows[pos.row].push(pos);
+  });
 
-        // Fetch positions with team data
-        const { data: positions, error: fetchError } = await supabase
-          .from("posiciones_piramide")
-          .select(`*, equipos(*)`)
-          .eq("pyramid_id", pyramidId)
-          .order("row_number", { ascending: true })
-          .order("pos_number", { ascending: true });
+  // Ensure each row has the correct number of columns
+  const filledRows: { [key: number]: Position[] } = {};
+  for (let row = 1; row < data.row_amount; row++) {
+    const expectedCols = row + 1;
+    const existing = rows[row] ?? [];
+    const filled: Position[] = [];
 
-        if (fetchError) {
-          console.error("Error fetching positions:", fetchError);
-          throw fetchError;
-        }
-
-        const positionsWithTeams: PositionWithTeam[] = (positions || []).map(
-          (pos) => ({
-            ...pos,
-            equipos: Array.isArray(pos.equipos) ? pos.equipos[0] : pos.equipos,
-          })
-        );
-
-        // Ensure we have at least 7 rows
-        const minRows = 7;
-        const maxRowNumber = Math.max(
-          minRows,
-          Math.max(0, ...positionsWithTeams.map((p) => p.row_number))
-        );
-
-        // Group positions by row
-        const rowsData: PyramidRow[] = [];
-
-        for (let rowNumber = 1; rowNumber <= maxRowNumber; rowNumber++) {
-          const rowPositions = positionsWithTeams.filter(
-            (pos) => pos.row_number === rowNumber
-          );
-
-          rowsData.push({
-            rowNumber,
-            positions: rowPositions,
-          });
-        }
-
-        setPyramidData(rowsData);
-      } catch (err) {
-        console.error("Error fetching pyramid data:", err);
-        setError(
-          err instanceof Error
-            ? err.message
-            : "An error occurred while fetching data"
-        );
-
-        // Create empty rows as fallback
-        const fallbackRows: PyramidRow[] = Array.from(
-          { length: 7 },
-          (_, index) => ({
-            rowNumber: index + 1,
-            positions: [],
-          })
-        );
-        setPyramidData(fallbackRows);
-      } finally {
-        setLoading(false);
+    for (let col = 1; col < expectedCols; col++) {
+      const match = existing.find((p) => p.col === col);
+      if (match) {
+        filled.push(match);
+      } else {
+        filled.push({
+          id: -1 * (row * 100 + col), // unique negative ID for empty slots
+          row,
+          col,
+          team: null,
+        });
       }
-    };
+    }
 
-    fetchPyramidData();
-  }, [pyramidId]);
-
-  const handleTeamClick = (team: Team): void => {
-    setSelectedTeam(team);
-  };
-
-  const closeModal = (): void => {
-    setSelectedTeam(null);
-  };
-
-  const renderRow = (row: PyramidRow) => {
-    const { rowNumber, positions } = row;
-
-    // Create a map for quick lookup by pos_number
-    const posMap: Record<number, PositionWithTeam | undefined> = {};
-    positions.forEach((pos) => {
-      posMap[pos.pos_number] = pos;
-    });
-
-    // Always render rowNumber slots
-    return (
-      <div key={rowNumber} className="flex flex-wrap justify-center gap-4">
-        {Array.from({ length: rowNumber }, (_, idx) => {
-          const posNumber = idx + 1;
-          const position = posMap[posNumber];
-
-          if (position && position.equipos) {
-            return (
-              <TeamCard
-                key={`team-${position.id}`}
-                team={position.equipos}
-                position={position}
-                onClick={handleTeamClick}
-              />
-            );
-          } else {
-            return (
-              <EmptySlot
-                key={`empty-${rowNumber}-${posNumber}`}
-                rowNumber={rowNumber}
-                posNumber={posNumber}
-              />
-            );
-          }
-        })}
-      </div>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading pyramid data...</p>
-        </div>
-      </div>
-    );
+    filledRows[row] = filled;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            The Pyramid
-          </h1>
-          <p className="text-gray-600 text-lg">
-            {error
-              ? "Ocurrió un error al cargar los datos. Inténtalo de nuevo más tarde."
-              : "Selecciona un equipo para ver detalles"}
+    <div className="flex flex-col items-center gap-6">
+      {Object.keys(filledRows)
+        .sort((a, b) => Number(a) - Number(b))
+        .map((rowKey) => {
+          const rowPositions = filledRows[Number(rowKey)];
+
+          return (
+            <div
+              key={rowKey}
+              className="flex gap-4 justify-center items-center"
+            >
+              {rowPositions.map((pos) =>
+                pos.team ? (
+                  <TeamCard
+                    key={pos.id}
+                    data={pos}
+                    onClick={(team) => setSelectedTeam(team)}
+                  />
+                ) : (
+                  <EmptySlot
+                    key={pos.id}
+                    rowNumber={pos.row}
+                    posNumber={pos.col}
+                  />
+                )
+              )}
+            </div>
+          );
+        })}
+
+      {selectedTeam && (
+        <div className="mt-6 bg-white text-gray-800 rounded-lg shadow-lg p-4">
+          <h3 className="font-bold mb-2">{selectedTeam.name}</h3>
+          <p>
+            Wins: {selectedTeam.wins} | Losses: {selectedTeam.losses}
           </p>
-          {error && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm max-w-md mx-auto">
-              {error}
-            </div>
-          )}
         </div>
-
-        {/* Pyramid Display */}
-        <div className="flex flex-col items-center space-y-6">
-          {pyramidData.map(renderRow)}
-        </div>
-
-        {/* Legend */}
-        <div className="mt-12 bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">Legend</h3>
-          <div className="space-y-2 text-sm text-gray-600">
-            <div>
-              <span className="font-medium">W:</span> Victorias
-            </div>
-            <div>
-              <span className="font-medium">L:</span> Derrotas
-            </div>
-            <div>
-              <span className="font-medium">WR:</span> Porcentaje de victorias
-            </div>
-            <div className="text-xs text-gray-500 mt-3">
-              Los equipos están posicionados en filas según su rendimiento,
-              los espacios vacíos indican posiciones no asignadas.
-            </div>
-          </div>
-        </div>
-
-        {/* Team Detail Modal */}
-        {selectedTeam && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
-              <div className="flex justify-between items-start mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  {selectedTeam.name}
-                </h2>
-                <button
-                  onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-green-50 p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {selectedTeam.wins}
-                    </div>
-                    <div className="text-sm text-green-700">Wins</div>
-                  </div>
-                  <div className="bg-red-50 p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-red-600">
-                      {selectedTeam.looses}
-                    </div>
-                    <div className="text-sm text-red-700">Losses</div>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-600">
-                      {selectedTeam.wins + selectedTeam.looses > 0
-                        ? (
-                            (selectedTeam.wins /
-                              (selectedTeam.wins + selectedTeam.looses)) *
-                            100
-                          ).toFixed(1)
-                        : 0}
-                      %
-                    </div>
-                    <div className="text-sm text-blue-700">Ratio de victorias</div>
-                  </div>
-                </div>
-
-                <div className="text-sm text-gray-600 text-center">
-                  <div>Category: {selectedTeam.category_id}</div>
-                  <div>
-                    Total Games: {selectedTeam.wins + selectedTeam.looses}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };
+
 
 export default PyramidDisplay;

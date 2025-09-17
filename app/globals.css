@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+@theme {
+  --indor-brown: #806c62;
+  --indor-brown-light: #c6baaa;
+  --indor-black: #2c2c2c;
+  --indor-orange: #ef7926;
+  --orange-clair: #ee7927;
+  --orange-vivid: #f48a34;
+  --orange-dense: #ff6600;
+  --orange-pale: #f0b256;
+  --orange-light: #f0aa50;
+  --green-vivid: #86ef48;
+  --green-dense: #6bbe38;
+  --blue-vivid: #2dadff;
+  --blue-dense: #1865ff;
+}
+
+
 body {
   font-family: Arial, Helvetica, sans-serif;
+}
+
+svg {
+  filter: drop-shadow(3px 5px 2px rgb(0 0 0 / 0.4));
 }
