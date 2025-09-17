@@ -15,11 +15,10 @@ type Position = {
   team: Team | null;
 };
 
-
 type PyramidData = {
   positions: Position[];
   row_amount: number;
-}
+};
 
 const TeamCard: React.FC<{ data: Position; onClick: (team: Team) => void }> = ({
   data,
@@ -50,8 +49,12 @@ const TeamCard: React.FC<{ data: Position; onClick: (team: Team) => void }> = ({
         {data.team && (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-emerald-400 font-medium">W: {data.team.wins}</span>
-              <span className="text-red-400 font-medium">L: {data.team.losses}</span>
+              <span className="text-emerald-400 font-medium">
+                W: {data.team.wins}
+              </span>
+              <span className="text-red-400 font-medium">
+                L: {data.team.losses}
+              </span>
             </div>
             <div className="text-amber-400 font-bold text-lg">{winRate}%</div>
           </div>
@@ -68,7 +71,9 @@ const EmptySlot: React.FC<{ rowNumber: number; posNumber: number }> = ({
   return (
     <div className="rounded-xl border-2 border-dashed border-slate-600 bg-slate-800/30 p-4 min-w-[150px] max-w-[170px] backdrop-blur-sm">
       <div className="text-center">
-        <div className="font-semibold text-sm text-slate-400 mb-3">Lugar Vacío</div>
+        <div className="font-semibold text-sm text-slate-400 mb-3">
+          Lugar Vacío
+        </div>
         <div className="text-xs text-slate-500">
           Fila {rowNumber} • Posición {posNumber}
         </div>
@@ -89,7 +94,7 @@ const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
 
   // Ensure each row has the correct number of columns
   const filledRows: { [key: number]: Position[] } = {};
-  for (let row = 1; row < data.row_amount; row++) {
+  for (let row = 0; row <= data.row_amount; row++) {
     const expectedCols = row + 1;
     const existing = rows[row] ?? [];
     const filled: Position[] = [];
@@ -112,7 +117,7 @@ const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-6 overflow-hidden w-screen">
       {Object.keys(filledRows)
         .sort((a, b) => Number(a) - Number(b))
         .map((rowKey) => {
@@ -121,23 +126,25 @@ const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
           return (
             <div
               key={rowKey}
-              className="flex gap-4 justify-center items-center"
+              className="w-full overflow-x-auto overflow-y-hidden no-scrollbar"
             >
-              {rowPositions.map((pos) =>
-                pos.team ? (
-                  <TeamCard
-                    key={pos.id}
-                    data={pos}
-                    onClick={(team) => setSelectedTeam(team)}
-                  />
-                ) : (
-                  <EmptySlot
-                    key={pos.id}
-                    rowNumber={pos.row}
-                    posNumber={pos.col}
-                  />
-                )
-              )}
+              <div className="flex gap-4 justify-center items-center w-max mx-auto">
+                {rowPositions.map((pos) =>
+                  pos.team ? (
+                    <TeamCard
+                      key={pos.id}
+                      data={pos}
+                      onClick={(team) => setSelectedTeam(team)}
+                    />
+                  ) : (
+                    <EmptySlot
+                      key={pos.id}
+                      rowNumber={pos.row}
+                      posNumber={pos.col}
+                    />
+                  )
+                )}
+              </div>
             </div>
           );
         })}
@@ -153,6 +160,5 @@ const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
     </div>
   );
 };
-
 
 export default PyramidDisplay;

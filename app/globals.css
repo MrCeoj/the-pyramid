@@ -16,11 +16,21 @@
   --blue-dense: #1865ff;
 }
 
-
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
 svg {
   filter: drop-shadow(3px 5px 2px rgb(0 0 0 / 0.4));
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
 }
