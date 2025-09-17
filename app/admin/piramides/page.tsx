@@ -5,6 +5,7 @@ import { Pyramid } from "@/types";
 
 export default async function AdminPiramides() {
   const pyramids = (await db.select().from(pyramid)) as Pyramid[];
+  
   return (
     <div>
       <NavAdmin />

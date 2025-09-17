@@ -17,13 +17,12 @@ const EmbersBackground = ({ children }) => {
     const isMobile = window.innerWidth < 768;
     const pixelRatio = isMobile ? 0.5 : (window.devicePixelRatio || 1);
 
-    // Set canvas size with proper pixel ratio handling
+    // Set canvas size to viewport dimensions
     const resizeCanvas = () => {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * pixelRatio;
-      canvas.height = rect.height * pixelRatio;
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
+      canvas.width = window.innerWidth * pixelRatio;
+      canvas.height = window.innerHeight * pixelRatio;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
       ctx.scale(pixelRatio, pixelRatio);
       ctx.imageSmoothingEnabled = false;
       
@@ -41,17 +40,17 @@ const EmbersBackground = ({ children }) => {
     class Ember {
       constructor() {
         this.reset();
-        this.y = Math.random() * canvas.height; // Start at random height initially
+        this.y = Math.random() * window.innerHeight; // Start at random height initially
         // Pre-calculate flicker values
         this.flickerOffset = Math.random() * Math.PI * 2;
         this.baseFlicker = getRandomFloat(0.6, 0.9);
       }
 
       reset() {
-        this.x = Math.random() * (canvas.width / pixelRatio);
-        this.y = (canvas.height / pixelRatio) + 20;
-        this.size = getRandomFloat(1.5, 3.5); // Smaller particles for mobile
-        this.speedX = getRandomFloat(-0.8, 0.8); // Reduced movement
+        this.x = Math.random() * window.innerWidth;
+        this.y = window.innerHeight + 20; // Start from bottom of viewport
+        this.size = getRandomFloat(1.5, 3.5);
+        this.speedX = getRandomFloat(-0.8, 0.8);
         this.speedY = getRandomFloat(-8.5, -5.2);
         this.life = 1;
         this.decay = getRandomFloat(0.003, 0.007);
@@ -74,8 +73,8 @@ const EmbersBackground = ({ children }) => {
         // Life decay
         this.life -= this.decay;
 
-        // Reset conditions (simplified)
-        if (this.life <= 0 || this.y < -20 || Math.abs(this.x) > (canvas.width / pixelRatio) + 20) {
+        // Reset conditions - use viewport dimensions
+        if (this.life <= 0 || this.y < -20 || Math.abs(this.x) > window.innerWidth + 20) {
           this.reset();
         }
       }
@@ -91,7 +90,7 @@ const EmbersBackground = ({ children }) => {
         let gradient = gradientCacheRef.current[gradientKey];
         
         if (!gradient) {
-          const glowSize = this.size * 2.5; // Reduced glow size
+          const glowSize = this.size * 2.5;
           gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
           gradient.addColorStop(0, `rgba(255, 200, 100, ${alpha})`);
           gradient.addColorStop(0.4, `rgba(255, 120, 40, ${alpha * 0.6})`);
@@ -128,7 +127,7 @@ const EmbersBackground = ({ children }) => {
 
     const animate = (currentTime) => {
       if (currentTime - lastTime >= frameInterval) {
-        ctx.clearRect(0, 0, canvas.width / pixelRatio, canvas.height / pixelRatio);
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
         particlesRef.current.forEach((particle) => {
           particle.update();
@@ -153,9 +152,10 @@ const EmbersBackground = ({ children }) => {
 
   return (
     <div className="relative w-full h-full">
+      {/* Fixed canvas that stays in viewport */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 pointer-events-none w-full h-full"
+        className="fixed inset-0 pointer-events-none w-full h-full"
         style={{ zIndex: 1 }}
       />
       <div style={{ zIndex: 2 }} className="relative w-full h-full">

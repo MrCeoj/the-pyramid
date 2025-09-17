@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Pirámide",
   description: "La Mañanera",
+  icons: {
+    icon: "/piramide_logo_naranja.svg"  
+  }
+  
 };
 
 export default function RootLayout({

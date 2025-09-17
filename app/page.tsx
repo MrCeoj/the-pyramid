@@ -55,16 +55,23 @@ export default async function Home() {
   } as PyramidData;
 
   return (
-    <main className="h-screen flex flex-col justify-center relative">
+    <main className="h-screen flex flex-col justify-center">
       <EmbersBackground>
         <Image
           src="/indor_norte_logo.svg"
           alt="Logo"
           width={400}
           height={200}
-          className="absolute top-5 left-7 drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
+          className="md:fixed top-5 right-7 drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
         />
-        <div className="flex flex-col justify-center h-full">
+        <Image 
+          src={"/piramide_logo_title_naranja.svg"}
+          alt="Logo"
+          width={400}
+          height={200}
+          className="md: fixed top-5 left-7 drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
+        />
+        <div className="flex flex-col justify-center">
           <PyramidDisplay data={data} />
         </div>
       </EmbersBackground>
