@@ -169,7 +169,7 @@ export const profile = pgTable("profile", {
     .references(() => users.id, { onDelete: "cascade" }),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  nickname: text("nickname").unique(),
+  nickname: text("nickname"),
   avatarUrl: text("avatar_url"),
   teamId: integer("team_id").references(() => team.id, {
     onDelete: "set null",

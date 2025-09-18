@@ -7,7 +7,6 @@ export default auth((req: NextRequest & { auth: any }) => {
   const isLoggedIn = !!req.auth?.user;
   const userRole = req.auth?.user?.role;
   const hasProfile = req.auth?.user?.hasProfile;
-
   // Public routes that don't require authentication
   const publicRoutes = [
     "/login",

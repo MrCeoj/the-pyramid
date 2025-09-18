@@ -13,7 +13,7 @@ import {
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
@@ -75,14 +75,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
 
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
-    newUser: "/auth/setup",
+    signIn: "/login",
+    error: "/error",
+    newUser: "/setup",
   },
 
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 7 * 24 * 60 * 60,
   },
 
   callbacks: {
@@ -90,40 +90,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
 
-    async jwt({ token, user, account }) {
-      if (account) {
-        token.accessToken = account.access_token;
-      }
-
+    async jwt({ token, user, account, trigger, session }) {
+      // This block runs only on initial sign-in
       if (user?.id) {
         token.id = user.id;
+        token.role = user.role;
 
-        // fetch role & whether profile exists
-        const dbUser = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, user.id))
+        const userProfile = await db
+          .select({ id: profile.id }) // Just check for existence
+          .from(profile)
+          .where(eq(profile.userId, user.id))
           .limit(1);
-        if (dbUser[0]) {
-          token.role = dbUser[0].role;
-
-          const userProfile = await db
-            .select()
-            .from(profile)
-            .where(eq(profile.userId, user.id))
-            .limit(1);
-
-          token.hasProfile = userProfile.length > 0;
-        }
+        token.hasProfile = userProfile.length > 0;
       }
-      return token as any;
+
+      // This block runs when you explicitly call `update()`
+      if (trigger === "update" && session) {
+        // If the `hasProfile` property is passed to update(), update the token
+        if (typeof session.hasProfile === "boolean") {
+          token.hasProfile = session.hasProfile;
+        }
+        // You can update other properties here too
+        // For example: token.name = session.name
+      }
+
+      return token;
     },
 
     async session({ session, token }) {
       if (token?.id) {
-        session.user.id = token.id as string;
-        session.user.role = (token.role as string) || "player";
-        session.user.hasProfile = (token.hasProfile as boolean) || false;
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.hasProfile = token.hasProfile; // This now reflects the latest token data
       }
       return session;
     },
@@ -137,7 +135,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   events: {
     async signIn({ user, account, isNewUser }) {
-      console.log(`User ${user.email} signed in with ${account?.provider}`);
+      console.log(
+        `Usuario ${user.email} inicio sesion con ${account?.provider}`
+      );
       if (isNewUser && user.id) {
         try {
           const existingProfile = await db
@@ -157,13 +157,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             });
           }
         } catch (err) {
-          console.error("Error creating profile:", err);
+          console.error("Error al crear perfil:", err);
         }
       }
     },
 
     async createUser({ user }) {
-      console.log(`New user created: ${user.email}`);
+      console.log(`Nuevo usuario creado: ${user.email}`);
     },
   },
 

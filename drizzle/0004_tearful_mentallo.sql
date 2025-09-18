@@ -1,0 +1,1 @@
+ALTER TABLE "profile" DROP CONSTRAINT "profile_nickname_unique";

@@ -29,6 +29,13 @@
       "when": 1758226133466,
       "tag": "0003_new_starhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1758228188205,
+      "tag": "0004_tearful_mentallo",
+      "breakpoints": true
     }
   ]
 }
