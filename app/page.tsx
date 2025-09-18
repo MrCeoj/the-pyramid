@@ -2,11 +2,6 @@ import { db } from "@/lib/drizzle";
 import { eq } from "drizzle-orm";
 import { position, team, pyramid } from "@/db/schema";
 import PyramidDisplay from "@/components/pyramid/example";
-import { redirect } from "next/navigation";
-//import { createClient } from "@/lib/supabase/server";
-import HellBackground from "@/components/lightswind/hell-background";
-import LogoutButton from "@/components/ui/LogoutButton";
-//import { logout } from "./actions";
 
 type Team = {
   id: number;
@@ -60,12 +55,7 @@ export default async function Home() {
 
   return (
     <main className="h-screen flex flex-col justify-center">
-      <HellBackground
-        color1="#f48a34"
-        color2="#2c2c2c"
-        backdropBlurAmount="lg"
-        className="fixed h-full w-full"
-      />
+      
       <div className="flex flex-col justify-center">
         <PyramidDisplay data={pyramiddata} />
       </div>

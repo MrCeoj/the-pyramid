@@ -9,7 +9,8 @@ export default defineConfig({
     port: 5432,
     user: "postgres",
     password: process.env.DATABASE_PASSWORD!,
-    database: "the_pyramid"
+    database: "the_pyramid",
+    ssl: false
   },
   schemaFilter: ['public'],
   verbose: true,

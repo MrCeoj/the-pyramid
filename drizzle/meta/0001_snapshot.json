@@ -1,6 +1,6 @@
 {
-  "id": "73f4ca93-cd58-4c23-9db1-fcee4dc78f75",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "2d1bb415-b39c-4b81-8262-3cb281ac5dcf",
+  "prevId": "73f4ca93-cd58-4c23-9db1-fcee4dc78f75",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1015,6 +1015,14 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'player'"
         }
       },
       "indexes": {},
@@ -1075,6 +1083,14 @@
         "played",
         "rejected",
         "cancelled"
+      ]
+    },
+    "public.role": {
+      "name": "role",
+      "schema": "public",
+      "values": [
+        "player",
+        "admin"
       ]
     }
   },
