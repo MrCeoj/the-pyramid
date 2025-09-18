@@ -1,9 +1,13 @@
-import Image from "next/image";
 import { db } from "@/lib/drizzle";
 import { eq } from "drizzle-orm";
 import { position, team, pyramid } from "@/db/schema";
 import PyramidDisplay from "@/components/pyramid/example";
-import EmbersBackground from "@/components/ui/Embers";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import HellBackground from "@/components/lightswind/hell-background";
+import LogoutButton from "@/components/ui/LogoutButton";
+import { logout } from "./actions";
+
 type Team = {
   id: number;
   name: string;
@@ -24,7 +28,13 @@ type PyramidData = {
 };
 
 export default async function Home() {
+  const supabase = await createClient();
   const pyramidid = 1;
+
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) {
+    redirect("/login");
+  }
 
   const positions = (await db
     .select({
@@ -49,32 +59,23 @@ export default async function Home() {
 
   const row_amount = rowamount.length > 0 ? rowamount[0].row_amount : 0;
 
-  const data = {
+  const pyramiddata = {
     positions,
     row_amount,
   } as PyramidData;
 
   return (
     <main className="h-screen flex flex-col justify-center">
-      <EmbersBackground>
-        <Image
-          src="/indor_norte_logo.svg"
-          alt="Logo"
-          width={400}
-          height={200}
-          className="md:fixed top-5 right-7 drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
-        />
-        <Image 
-          src={"/piramide_logo_title_naranja.svg"}
-          alt="Logo"
-          width={400}
-          height={200}
-          className="md: fixed top-5 left-7 drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
-        />
-        <div className="flex flex-col justify-center">
-          <PyramidDisplay data={data} />
-        </div>
-      </EmbersBackground>
+      <HellBackground
+        color1="#f48a34"
+        color2="#2c2c2c"
+        backdropBlurAmount="lg"
+        className="fixed h-full w-full"
+      />
+      <div className="flex flex-col justify-center">
+        <PyramidDisplay data={pyramiddata} />
+      </div>
+      <LogoutButton logout={logout}/>
     </main>
   );
 }
