@@ -76,7 +76,7 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
       <Card className="w-full max-w-md bg-indor-black shadow-2xl rounded-2xl p-8 backdrop-blur-md border-gray-700">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="relative w-20 h-10 mx-auto mb-4">
+          <div className="relative w-40 h-20 mx-auto mb-1">
             <Image
               src="/piramide_logo_naranja.svg"
               alt="Logo"
