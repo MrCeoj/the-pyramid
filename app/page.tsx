@@ -3,10 +3,10 @@ import { eq } from "drizzle-orm";
 import { position, team, pyramid } from "@/db/schema";
 import PyramidDisplay from "@/components/pyramid/example";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+//import { createClient } from "@/lib/supabase/server";
 import HellBackground from "@/components/lightswind/hell-background";
 import LogoutButton from "@/components/ui/LogoutButton";
-import { logout } from "./actions";
+//import { logout } from "./actions";
 
 type Team = {
   id: number;
@@ -28,13 +28,7 @@ type PyramidData = {
 };
 
 export default async function Home() {
-  const supabase = await createClient();
   const pyramidid = 1;
-
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data?.user) {
-    redirect("/login");
-  }
 
   const positions = (await db
     .select({
@@ -75,7 +69,7 @@ export default async function Home() {
       <div className="flex flex-col justify-center">
         <PyramidDisplay data={pyramiddata} />
       </div>
-      <LogoutButton logout={logout}/>
+      {/*<LogoutButton logout={logout}/>*/}
     </main>
   );
 }

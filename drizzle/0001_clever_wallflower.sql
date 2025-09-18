@@ -1,1 +1,0 @@
-ALTER TABLE "pyramid" ADD COLUMN "row_amount" integer DEFAULT 1;

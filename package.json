@@ -9,8 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.7.0",
-    "@supabase/supabase-js": "^2.57.4",
     "dotenv": "^17.2.2",
     "drizzle-orm": "^0.44.5",
     "lightswind": "^3.1.17",
@@ -19,7 +17,6 @@
     "postgres": "^3.4.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "supabase": "^2.40.7",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

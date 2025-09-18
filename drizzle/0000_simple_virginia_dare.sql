@@ -48,7 +48,7 @@ CREATE TABLE "position_history" (
 --> statement-breakpoint
 CREATE TABLE "profile" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" uuid NOT NULL,
+	"user_id" integer NOT NULL,
 	"first_name" text NOT NULL,
 	"last_name" text NOT NULL,
 	"nickname" text,
@@ -64,6 +64,7 @@ CREATE TABLE "pyramid" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
+	"row_amount" integer DEFAULT 1,
 	"active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now(),
 	"updated_at" timestamp with time zone DEFAULT now()
@@ -85,6 +86,17 @@ CREATE TABLE "team" (
 	"updated_at" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE "user" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"email" text NOT NULL,
+	"hashed_password" text,
+	"name" text,
+	"image" text,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "user_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
 ALTER TABLE "match" ADD CONSTRAINT "match_pyramid_id_pyramid_id_fk" FOREIGN KEY ("pyramid_id") REFERENCES "public"."pyramid"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "match" ADD CONSTRAINT "match_challenger_team_id_team_id_fk" FOREIGN KEY ("challenger_team_id") REFERENCES "public"."team"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "match" ADD CONSTRAINT "match_defender_team_id_team_id_fk" FOREIGN KEY ("defender_team_id") REFERENCES "public"."team"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -95,7 +107,7 @@ ALTER TABLE "position_history" ADD CONSTRAINT "position_history_pyramid_id_pyram
 ALTER TABLE "position_history" ADD CONSTRAINT "position_history_match_id_match_id_fk" FOREIGN KEY ("match_id") REFERENCES "public"."match"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "position_history" ADD CONSTRAINT "position_history_challenger_team_id_team_id_fk" FOREIGN KEY ("challenger_team_id") REFERENCES "public"."team"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "position_history" ADD CONSTRAINT "position_history_defender_team_id_team_id_fk" FOREIGN KEY ("defender_team_id") REFERENCES "public"."team"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "profile" ADD CONSTRAINT "profile_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "profile" ADD CONSTRAINT "profile_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "profile" ADD CONSTRAINT "profile_team_id_team_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."team"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pyramid_category" ADD CONSTRAINT "pyramid_category_pyramid_id_pyramid_id_fk" FOREIGN KEY ("pyramid_id") REFERENCES "public"."pyramid"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pyramid_category" ADD CONSTRAINT "pyramid_category_category_id_category_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."category"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

@@ -1,5 +1,5 @@
 {
-  "id": "4651edc8-7f05-4d27-b0f5-5117c4723f23",
+  "id": "d3cca8f3-5060-420d-87e3-18a628f12fe0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -470,7 +470,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "uuid",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -521,11 +521,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "profile_user_id_users_id_fk": {
-          "name": "profile_user_id_users_id_fk",
+        "profile_user_id_user_id_fk": {
+          "name": "profile_user_id_user_id_fk",
           "tableFrom": "profile",
-          "tableTo": "users",
-          "schemaTo": "auth",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
@@ -591,6 +590,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "row_amount": {
+          "name": "row_amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 1
         },
         "active": {
           "name": "active",
@@ -751,6 +757,71 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user": {
+      "name": "user",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hashed_password": {
+          "name": "hashed_password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_email_unique": {
+          "name": "user_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

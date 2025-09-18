@@ -9,10 +9,7 @@ import {
   primaryKey,
   uniqueIndex,
   pgEnum,
-  pgSchema
 } from "drizzle-orm/pg-core";
-
-const authSchema = pgSchema('auth');
 
 export const matchStatus = pgEnum("match_status", [
   "pending",
@@ -22,8 +19,14 @@ export const matchStatus = pgEnum("match_status", [
   "cancelled",
 ]);
 
-const user = authSchema.table('users', {
-	id: uuid('id').primaryKey(),
+export const user = pgTable("user", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  hashedPassword: text("hashed_password"), // optional if you plan to manage credentials yourself
+  name: text("name"),
+  image: text("image"), // avatar
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 // 1. Pyramid table
@@ -77,10 +80,10 @@ export const team = pgTable("team", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-// 5. Profile table (linked to Supabase Auth)
+// 5. Profile table
 export const profile = pgTable("profile", {
   id: serial("id").primaryKey(),
-  userId: uuid("user_id")
+  userId: integer("user_id")
     .notNull()
     .unique()
     .references(() => user.id, { onDelete: "cascade" }),
@@ -172,4 +175,3 @@ export const positionHistory = pgTable("position_history", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
-
