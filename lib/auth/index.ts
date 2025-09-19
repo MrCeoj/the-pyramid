@@ -28,7 +28,6 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Contraseña", type: "password" },
       },
-      // Correct the function signature here
       async authorize(credentials) {
         // 1. Validate the credentials object and its properties
         if (
@@ -54,9 +53,14 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           .limit(1);
         const u = rows[0];
 
-        if (!u || !u.passwordHash) {
-          // user not found or is OAuth-only
+        if (!u) {
+          // user not found
           throw new Error("CredentialsSignin");
+        }
+
+        if (!u.passwordHash) {
+          // User exists but has no password - this means they need to set up their account
+          throw new Error("UserNeedsSetup");
         }
 
         const ok = await bcrypt.compare(password, u.passwordHash);
@@ -97,21 +101,29 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         token.role = user.role;
 
         const userProfile = await db
-          .select({ id: profile.id }) // Just check for existence
+          .select({ id: profile.id })
           .from(profile)
           .where(eq(profile.userId, user.id))
           .limit(1);
         token.hasProfile = userProfile.length > 0;
+
+        // Check if user has password set
+        const userRecord = await db
+          .select({ passwordHash: users.passwordHash })
+          .from(users)
+          .where(eq(users.id, user.id))
+          .limit(1);
+        token.hasPassword = !!userRecord[0]?.passwordHash;
       }
 
       // This block runs when you explicitly call `update()`
       if (trigger === "update" && session) {
-        // If the `hasProfile` property is passed to update(), update the token
         if (typeof session.hasProfile === "boolean") {
           token.hasProfile = session.hasProfile;
         }
-        // You can update other properties here too
-        // For example: token.name = session.name
+        if (typeof session.hasPassword === "boolean") {
+          token.hasPassword = session.hasPassword;
+        }
       }
 
       return token;
@@ -121,7 +133,8 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
       if (token?.id) {
         session.user.id = token.id;
         session.user.role = token.role;
-        session.user.hasProfile = token.hasProfile; // This now reflects the latest token data
+        session.user.hasProfile = token.hasProfile;
+        session.user.hasPassword = token.hasPassword;
       }
       return session;
     },
@@ -171,7 +184,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   trustHost: true,
 });
 
-// --- module augmentation (keep yours) ---
+// --- module augmentation ---
 declare module "next-auth" {
   interface Session {
     user: {
@@ -181,6 +194,7 @@ declare module "next-auth" {
       image?: string | null;
       role: string;
       hasProfile: boolean;
+      hasPassword: boolean;
     };
   }
   interface User {
@@ -192,5 +206,6 @@ declare module "@auth/core/jwt" {
     id: string;
     role: string;
     hasProfile: boolean;
+    hasPassword: boolean;
   }
 }

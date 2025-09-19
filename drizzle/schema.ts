@@ -3,7 +3,6 @@ import { sql } from "drizzle-orm"
 
 export const matchStatus = pgEnum("match_status", ['pending', 'accepted', 'played', 'rejected', 'cancelled'])
 export const role = pgEnum("role", ['player', 'admin'])
-export const teamStatus = pgEnum("team_status", ['looser', 'winner', 'idle', 'risky'])
 
 
 export const authenticators = pgTable("authenticators", {
@@ -219,7 +218,6 @@ export const team = pgTable("team", {
 	losses: integer().default(0),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	status: teamStatus().default('idle'),
 }, (table) => [
 	foreignKey({
 			columns: [table.categoryId],

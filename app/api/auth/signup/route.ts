@@ -1,5 +1,5 @@
 // app/api/auth/signup/route.ts
-"use server"
+"use server";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/drizzle";
 import { users } from "@/db/schema";
@@ -12,7 +12,8 @@ const userSchema = z.object({
   email: z.string().email({ message: "Por favor, introduce un email válido." }),
   password: z
     .string()
-    .min(8, { message: "La contraseña debe tener al menos 8 caracteres." }),
+    .min(8, { message: "La contraseña debe tener al menos 8 caracteres." })
+    .optional(),
   name: z.string().optional(),
   role: z.string().optional(),
 });
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
 
     // 2. 🧐 Check if user already exists
     const existingUser = await db
-      .select({email: users.email})
+      .select({ email: users.email })
       .from(users)
       .where(eq(users.email, lowercasedEmail))
       .limit(1);
@@ -49,9 +50,12 @@ export async function POST(req: Request) {
         { status: 409 } // 409 Conflict
       );
     }
+    let passwordHash = null
 
     // 3. 🛡️ Hash the password
-    const passwordHash = await bcrypt.hash(password, 10); // 10 rounds is a strong default
+    if(password){
+      passwordHash = await bcrypt.hash(password, 10); // 10 rounds is a strong default
+    }
 
     // 4. 🚀 Create the new user in the database
     const newUserResult = await db

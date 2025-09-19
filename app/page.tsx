@@ -2,6 +2,7 @@ import { db } from "@/lib/drizzle";
 import { eq } from "drizzle-orm";
 import { position, team, pyramid } from "@/db/schema";
 import PyramidDisplay from "@/components/pyramid/example";
+import LogoutButton from "@/components/ui/LogoutButton";
 
 type Team = {
   id: number;
@@ -59,7 +60,7 @@ export default async function Home() {
       <div className="flex flex-col justify-center">
         <PyramidDisplay data={pyramiddata} />
       </div>
-      {/*<LogoutButton logout={logout}/>*/}
+      <LogoutButton />
     </main>
   );
 }

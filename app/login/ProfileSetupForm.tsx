@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -9,7 +8,8 @@ import { Input } from "@/components/lightswind/input";
 import { Label } from "@/components/lightswind/label";
 import { Alert, AlertDescription } from "@/components/lightswind/alert";
 import { Avatar } from "@/components/lightswind/avatar";
-import { createProfile } from "./actions";
+import { createProfile, login } from "./actions";
+import toast from "react-hot-toast";
 
 interface User {
   id: string;
@@ -25,41 +25,51 @@ interface ProfileSetupFormProps {
 export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const router = useRouter(); // Use the useRouter hook for client-side navigation
 
-  // Pre-fill form with user data
   const nameParts = user.name?.split(" ") || [];
   const [formData, setFormData] = useState({
     firstName: nameParts[0] || "",
     lastName: nameParts.slice(1).join(" ") || "",
     nickname: "",
+    password: "", // Add password to state
   });
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (error) setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.firstName.trim()) {
-      setError("El nombre es obligatorio");
+
+    if (!formData.firstName.trim() || !formData.password.trim()) {
+      setError("El nombre y la contraseña son obligatorios");
       return;
     }
 
     startTransition(async () => {
       try {
+        const psswd = formData.password.replaceAll(" ", "");
         const result = await createProfile({
-          userId: user.id,
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
           nickname: formData.nickname.trim() || null,
           avatarUrl: user.image,
+          password: psswd,
+          userId: user.id,
         });
 
         if (result.success) {
-          router.push("/?welcome=true");
+          // This client-side redirect allows the session to update before navigating
+          console.log("SEPUDO");
+          const result = await login({
+            email: user.email!,
+            password: psswd,
+          });
+          if (result?.error){
+            toast.success("Usuario creado")
+          }
           router.refresh();
         } else {
           setError(result.error || "Error al crear el perfil");
@@ -73,58 +83,20 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
-      <Card className="w-full max-w-md bg-indor-black shadow-2xl rounded-2xl p-8 backdrop-blur-md border-gray-700">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="relative w-40 h-20 mx-auto mb-1">
-            <Image
-              src="/piramide_logo_naranja.svg"
-              alt="Logo"
-              fill
-              className="object-contain"
-            />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-300 mb-2">
-            ¡Completa tu perfil!
-          </h1>
-          <p className="text-gray-400 text-sm">
-            Solo necesitamos algunos datos para empezar
-          </p>
+      <Card className="flex flex-col items-center w-full bg-indor-black shadow-2xl rounded-2xl p-8 backdrop-blur-md border-gray-700">
+        <div className="relative w-60 h-32">
+          <Image
+            src="/indor_norte_logo.svg"
+            alt="La pirAMide"
+            layout="fill"
+            objectFit="contain"
+            className="drop-shadow-black drop-shadow-2xl"
+          />
         </div>
 
-        {/* User Info Display */}
-        <div className="flex items-center gap-4 mb-6 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-          <Avatar className="w-12 h-12">
-            {user.image ? (
-              <Image
-                src={user.image}
-                alt={user.name || "User"}
-                width={48}
-                height={48}
-                className="rounded-full"
-              />
-            ) : (
-              <div className="w-full h-full bg-orange-vivid flex items-center justify-center text-white font-bold">
-                {user.name?.charAt(0)?.toUpperCase() || "U"}
-              </div>
-            )}
-          </Avatar>
-          <div>
-            <p className="text-white font-medium">{user.name}</p>
-            <p className="text-gray-400 text-sm">{user.email}</p>
-          </div>
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <Alert className="mb-6 border-red-500 bg-red-950/50">
-            <AlertDescription className="text-red-300">
-              {error}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Form */}
+        <h1 className="text-white font-bold text-xl my-4">
+          ¡Completa tu perfil!
+        </h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -167,6 +139,27 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
               onChange={(e) => handleInputChange("nickname", e.target.value)}
               className="mt-1 bg-white/90 border-gray-300 focus:ring-2 focus:ring-orange-vivid"
               placeholder="¿Cómo te gusta que te llamen?"
+            />
+          </div>
+
+          {/* New password input */}
+          <div>
+            <Label htmlFor="password" className="text-white font-medium">
+              Crea una contraseña *
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleInputChange("password", e.target.value)}
+              className="mt-1 bg-white/90 border-gray-300 focus:ring-2 focus:ring-orange-vivid"
+              placeholder="Contraseña segura"
+              required
+              onKeyDown={(e) => {
+                if (e.key === " ") {
+                  e.preventDefault();
+                }
+              }}
             />
           </div>
 
