@@ -38,7 +38,9 @@ export function DeletePyramidDialog({ pyramid, isOpen, onClose }: DeletePyramidD
       onClose();
       router.refresh();
     } catch (err) {
-      setError('Failed to delete pyramid');
+      if (err instanceof Error){
+        setError('Failed to delete pyramid');
+      }
     } finally {
       setIsLoading(false);
     }

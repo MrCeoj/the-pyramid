@@ -1,4 +1,4 @@
-"use client";
+/*"use client";
 import React, { useEffect, useRef } from "react";
 
 const EmbersBackground = ({ children }) => {
@@ -152,7 +152,6 @@ const EmbersBackground = ({ children }) => {
 
   return (
     <div className="relative w-full h-full">
-      {/* Fixed canvas that stays in viewport */}
       <canvas
         ref={canvasRef}
         className="fixed inset-0 pointer-events-none w-full h-full"
@@ -165,4 +164,4 @@ const EmbersBackground = ({ children }) => {
   );
 };
 
-export default EmbersBackground;
+export default EmbersBackground;*/

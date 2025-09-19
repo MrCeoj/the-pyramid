@@ -2,17 +2,14 @@
 
 import { useEffect, useRef } from "react";
 
-/**
- * Valid blur sizes supported by Tailwind CSS.
- */
 export type BlurSize = "none" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
 
 interface HellBackgroundProps {
   backdropBlurAmount?: BlurSize;
   className?: string;
-  color1?: string; // replaces red
-  color2?: string; // replaces blue
-  color3?: string; // replaces gray/green
+  color1?: string;
+  color2?: string;
+  color3?: string;
 }
 
 /**

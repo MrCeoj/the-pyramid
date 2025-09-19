@@ -16,15 +16,6 @@ const TeamCard: React.FC<{ data: Position; onClick: (team: Team) => void }> = ({
   data,
   onClick,
 }) => {
-  const winRate: number =
-    data.team && data.team.wins + data.team.losses > 0
-      ? Number(
-          (
-            (data.team.wins / (data.team.wins + data.team.losses)) *
-            100
-          ).toFixed(1)
-        )
-      : 0;
 
   return (
     <div

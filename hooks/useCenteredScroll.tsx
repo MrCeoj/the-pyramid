@@ -16,12 +16,10 @@ export const useCenteredScroll = <T extends HTMLElement>() => {
       const isOverflowing = element.scrollWidth > element.clientWidth;
 
       if (isOverflowing) {
-        // Calculate the ideal scroll position to be in the middle
         const scrollOffset = (element.scrollWidth - element.clientWidth) / 2;
         element.scrollLeft = scrollOffset;
       }
     }
-  }, []); // The empty dependency array ensures this effect runs only once after initial render
-
+  }, []);
   return ref;
 };

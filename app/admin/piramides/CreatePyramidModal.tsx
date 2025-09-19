@@ -1,24 +1,27 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { createPyramid } from './actions';
+import { useState } from "react";
+import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { createPyramid } from "./actions";
 
 interface CreatePyramidModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function CreatePyramidModal({ isOpen, onClose }: CreatePyramidModalProps) {
+export function CreatePyramidModal({
+  isOpen,
+  onClose,
+}: CreatePyramidModalProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     row_amount: 1,
     active: true,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const router = useRouter();
 
   if (!isOpen) return null;
@@ -26,15 +29,17 @@ export function CreatePyramidModal({ isOpen, onClose }: CreatePyramidModalProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       await createPyramid(formData);
       onClose();
-      setFormData({ name: '', description: '', row_amount: 1, active: true });
+      setFormData({ name: "", description: "", row_amount: 1, active: true });
       router.refresh();
     } catch (err) {
-      setError('Failed to create pyramid');
+      if (err instanceof Error) {
+        setError("Failed to create pyramid: " + err.message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +67,9 @@ export function CreatePyramidModal({ isOpen, onClose }: CreatePyramidModalProps)
               type="text"
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Nombre de la pirámide"
             />
@@ -74,7 +81,9 @@ export function CreatePyramidModal({ isOpen, onClose }: CreatePyramidModalProps)
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               rows={3}
               placeholder="Descripción corta de la pirámide"
@@ -90,7 +99,12 @@ export function CreatePyramidModal({ isOpen, onClose }: CreatePyramidModalProps)
               min="1"
               max="20"
               value={formData.row_amount}
-              onChange={(e) => setFormData({ ...formData, row_amount: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  row_amount: parseInt(e.target.value),
+                })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -100,17 +114,20 @@ export function CreatePyramidModal({ isOpen, onClose }: CreatePyramidModalProps)
               type="checkbox"
               id="active"
               checked={formData.active}
-              onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+              onChange={(e) =>
+                setFormData({ ...formData, active: e.target.checked })
+              }
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label htmlFor="active" className="ml-2 block text-sm text-gray-700">
+            <label
+              htmlFor="active"
+              className="ml-2 block text-sm text-gray-700"
+            >
               ¿Está activa?
             </label>
           </div>
 
-          {error && (
-            <div className="text-red-600 text-sm">{error}</div>
-          )}
+          {error && <div className="text-red-600 text-sm">{error}</div>}
 
           <div className="flex justify-end space-x-3 pt-4">
             <button
@@ -125,7 +142,7 @@ export function CreatePyramidModal({ isOpen, onClose }: CreatePyramidModalProps)
               disabled={isLoading}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
             >
-              {isLoading ? 'Creando...' : 'Crear'}
+              {isLoading ? "Creando..." : "Crear"}
             </button>
           </div>
         </form>

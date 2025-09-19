@@ -1,35 +1,16 @@
 "use client";
-
-import { signIn } from "next-auth/react";
-import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Button } from "@/components/lightswind/button";
 import { Card } from "@/components/lightswind/card";
 import { Alert, AlertDescription } from "@/components/lightswind/alert";
 
 
 export function SignInForm() {
-  const [loading, setLoading] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const isMobile = useIsMobile();
 
-  const handleSignIn = async (providerId: string) => {
-    setLoading(providerId);
-    try {
-      await signIn(providerId, { 
-        callbackUrl,
-        redirect: true
-      });
-    } catch (error) {
-      console.error("Sign in error:", error);
-    } finally {
-      setLoading(null);
-    }
-  };
 
   const getErrorMessage = (error: string) => {
     switch (error) {

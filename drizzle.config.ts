@@ -5,14 +5,13 @@ export default defineConfig({
   schema: './db/schema.ts',
   dialect: 'postgresql',
   dbCredentials: {
-    host: "localhost",
+    host: "193.203.165.62",
     port: 5432,
-    user: "postgres",
+    user: "marce",
     password: process.env.DATABASE_PASSWORD!,
     database: "the_pyramid",
     ssl: false
   },
-  schemaFilter: ['public'],
   verbose: true,
   strict: true,
 });

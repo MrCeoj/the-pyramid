@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { redirect } from "next/navigation";
 //import { createClient } from "@/lib/supabase/server";
 import HellBackground from "@/components/lightswind/hell-background";
-import LogoutButton from "@/components/ui/LogoutButton";
 //import { logout } from "./actions";
 
 export const metadata: Metadata = {

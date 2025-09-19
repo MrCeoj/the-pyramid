@@ -24,6 +24,13 @@ export const roles = pgEnum("role", [
   "admin"
 ])
 
+export const teamStatus = pgEnum("team_status", [
+  "looser",
+  "winner",
+  "idle",
+  "risky"
+])
+
 export const users = pgTable("users", {
   id: text("id")
     .primaryKey()
@@ -156,6 +163,7 @@ export const team = pgTable("team", {
   }),
   wins: integer("wins").default(0),
   losses: integer("losses").default(0),
+  status: teamStatus("status").default("idle"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });

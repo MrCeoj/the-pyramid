@@ -1,5 +1,5 @@
 // app/api/auth/signup/route.ts
-
+"use server"
 import { NextResponse } from "next/server";
 import { db } from "@/lib/drizzle";
 import { users } from "@/db/schema";
@@ -13,14 +13,14 @@ const userSchema = z.object({
   password: z
     .string()
     .min(8, { message: "La contraseña debe tener al menos 8 caracteres." }),
-  name: z.string().optional(), // You can make the name optional or required
+  name: z.string().optional(),
+  role: z.string().optional(),
 });
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // 1. ✅ Validate the request body
     const validation = userSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
@@ -32,12 +32,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email, password, name } = validation.data;
+    const { email, password, name, role } = validation.data;
     const lowercasedEmail = email.toLowerCase().trim();
+    const lowercasedRole = role?.toLocaleLowerCase().trim();
 
     // 2. 🧐 Check if user already exists
     const existingUser = await db
-      .select()
+      .select({email: users.email})
       .from(users)
       .where(eq(users.email, lowercasedEmail))
       .limit(1);
@@ -59,20 +60,18 @@ export async function POST(req: Request) {
         email: lowercasedEmail,
         passwordHash: passwordHash,
         name: name,
-        // You can set a default role here if you want
-        // role: "player",
+        role: lowercasedRole === "admin" ? "admin" : "player",
       })
       .returning({
         id: users.id,
         email: users.email,
         name: users.name,
+        role: users.role,
       });
 
     if (newUserResult.length === 0) {
       throw new Error("No se pudo crear el usuario.");
     }
-    
-    // Note: The `signIn` event in your auth.ts will handle profile creation on first login.
 
     return NextResponse.json(newUserResult[0], { status: 201 }); // 201 Created
   } catch (error) {

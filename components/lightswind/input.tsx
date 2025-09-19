@@ -1,10 +1,10 @@
 import * as React from "react";
-import { cn } from "../../lib/utils";
+import { cn } from "./lib/utils";
 import { motion, HTMLMotionProps } from "framer-motion"; // Import motion and HTMLMotionProps
 
 // Extend HTMLMotionProps instead of React.InputHTMLAttributes directly
 // HTMLMotionProps already includes React.InputHTMLAttributes
-export interface InputProps extends HTMLMotionProps<"input"> {}
+export type InputProps = HTMLMotionProps<"input">
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {

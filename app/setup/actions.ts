@@ -9,10 +9,11 @@ import { redirect } from "next/navigation";
 // The data from the form won't need the userId anymore, 
 // as we'll get it securely from the session.
 interface CreateProfileData {
+  userId: string;
   firstName: string;
   lastName: string;
   nickname: string | null;
-  avatarUrl: string | null;
+  avatarUrl?: string | null;
 }
 
 export async function createProfile(data: CreateProfileData) {

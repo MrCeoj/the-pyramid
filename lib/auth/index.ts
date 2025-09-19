@@ -82,15 +82,15 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
 
   session: {
     strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60,
+    maxAge: 10 * 60,
   },
 
   callbacks: {
-    async signIn({ user }) {
+    async signIn() {
       return true;
     },
 
-    async jwt({ token, user, account, trigger, session }) {
+    async jwt({ token, user, trigger, session }) {
       // This block runs only on initial sign-in
       if (user?.id) {
         token.id = user.id;

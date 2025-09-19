@@ -55,7 +55,9 @@ export function EditPyramidModal({ pyramid, isOpen, onClose }: EditPyramidModalP
       onClose();
       router.refresh();
     } catch (err) {
-      setError('Failed to update pyramid');
+      if(err instanceof Error){
+        setError('Failed to update pyramid');
+      }
     } finally {
       setIsLoading(false);
     }

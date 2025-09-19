@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/lightswind/button";
