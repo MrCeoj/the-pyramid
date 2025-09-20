@@ -7,12 +7,10 @@ export default auth((req: NextRequest & { auth: any }) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth?.user;
   const userRole = req.auth?.user?.role;
-  const hasProfile = req.auth?.user?.hasProfile;
   const hasPassword = req.auth?.user?.hasPassword;
-  const role = req.auth?.user?.role;
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/login", "/setup", "/error", "/api/auth"];
+  const publicRoutes = ["/login", "/error", "/api/auth"];
 
   // Check if current path is public
   const isPublicRoute = publicRoutes.some((route) =>
@@ -27,10 +25,6 @@ export default auth((req: NextRequest & { auth: any }) => {
       if (hasPassword) {
         return NextResponse.redirect(new URL("/", req.url));
       }
-      // If they don't have a password, redirect to setup
-      if (role === 'player' && !hasPassword) {
-        return NextResponse.redirect(new URL("/setup", req.url));
-      }
     }
     return NextResponse.next();
   }
@@ -40,23 +34,6 @@ export default auth((req: NextRequest & { auth: any }) => {
     const signInUrl = new URL("/login", req.url);
     console.log("Redirected Login")
     return NextResponse.redirect(signInUrl);
-  }
-
-  // Redirect players without password to setup page (this is the main change)
-  if (role === 'player' && !hasPassword && pathname !== "/setup") {
-    return NextResponse.redirect(new URL("/setup", req.url));
-  }
-
-  // Redirect players with password but without profile to setup page
-  if (role === 'player' && hasPassword && !hasProfile && pathname !== "/setup") {
-    console.log("Entered setup")
-    return NextResponse.redirect(new URL("/setup", req.url));
-  }
-
-  // Redirect players with both password and profile away from setup page
-  if (role === 'player' && hasPassword && hasProfile && pathname === "/setup") {
-    console.log("Redirected Home")
-    return NextResponse.redirect(new URL("/", req.url));
   }
 
   // Admin routes protection

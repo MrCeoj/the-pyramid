@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { login, validateMailExistance } from "./actions";
 import toast, { Toaster } from "react-hot-toast";
 import { CircleX } from "lucide-react";
 import { ProfileSetupForm } from "./ProfileSetupForm"; // Assuming this is the correct path
+import { PasswordSetupForm } from "./PasswordSetupForm";
 
 // Now includes the setup state
 type FormState = "email-only" | "password-only" | "setup";
@@ -17,6 +18,7 @@ interface UserData {
   name: string | null;
   email: string | null;
   image: string | null;
+  password: string | null;
   role: string;
   hasProfile: boolean;
 }
@@ -28,6 +30,10 @@ export default function LoginForm() {
   const [isPending, startTransition] = useTransition();
   const emailRef = useRef<string | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
+
+  useEffect(() => {
+    console.log(user);
+  }, [user]);
 
   const handleEmailSubmit = async (formData: FormData) => {
     setError(undefined);
@@ -44,14 +50,10 @@ export default function LoginForm() {
         emailRef.current = result.user.email;
         setUser(result.user);
 
-        // Check if the user has a profile and a password
-        if (result.user.hasProfile || result.user.role==="admin") {
-          // If they have a profile, proceed to password login
-          setFormState("password-only");
-        } else {
-          // If no profile, they need to set up their account
+        if (!result.user.password) {
           setFormState("setup");
-        }
+        } else if (result.user.hasProfile || result.user.role === "admin")
+          setFormState("password-only");
       }
     });
   };
@@ -94,9 +96,12 @@ export default function LoginForm() {
       <Toaster position={isMobile ? "top-center" : "top-right"} />
 
       {/* --- Conditional Form Rendering --- */}
-      {formState === "setup" && user && user.role ==="player" ? (
-        // If the user needs to set up their profile, render the setup form
-        <ProfileSetupForm user={user} />
+      {formState === "setup" && user ? (
+        user.role === "player" ? (
+          <ProfileSetupForm user={user} />
+        ) : user.role === "admin" ? (
+          <PasswordSetupForm user={user} /> // only password
+        ) : null
       ) : (
         <>
           <div className="flex flex-col gap-8 mt-10 md:mt-0">

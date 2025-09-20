@@ -97,7 +97,7 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
         <h1 className="text-white font-bold text-xl my-4">
           ¡Completa tu perfil!
         </h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="firstName" className="text-white font-medium">

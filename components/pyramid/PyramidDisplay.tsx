@@ -1,14 +1,17 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PyramidRow from "./PyramidRow";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Session } from "next-auth";
+import { getSession } from "next-auth/react";
 
 type Team = {
   id: number;
   name: string;
   wins: number;
   losses: number;
+  status: string;
 };
 
 type Position = {
@@ -18,15 +21,35 @@ type Position = {
   team: Team | null;
 };
 
-type PyramidData = {
+export type PyramidData = {
   positions: Position[];
   row_amount: number;
+  pyramid_id?: number;
+  pyramid_name?: string;
 };
 
 const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  const getSesh = async () => {
+    const sesh = await getSession();
+    setSession(sesh);
+  };
+
+  useEffect(() => {
+    getSesh();
+  }, []);
+
+  useEffect(() => {
+    if (session?.user) {
+      setUserRole(session.user.role || "player");
+    }
+  }, [session]);
+
   const isMobile = useIsMobile();
-  // This data processing logic remains unchanged
+
+  // Data processing logic remains unchanged
   const rows: { [key: number]: Position[] } = {};
   data.positions.forEach((pos) => {
     if (!rows[pos.row]) rows[pos.row] = [];
@@ -34,7 +57,7 @@ const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
   });
 
   const filledRows: { [key: number]: Position[] } = {};
-  for (let row = 0; row <= data.row_amount; row++) {
+  for (let row = 1; row <= data.row_amount; row++) {
     const expectedCols = row + 1;
     const existing = rows[row] ?? [];
     const filled: Position[] = [];
@@ -56,57 +79,42 @@ const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
   }
 
   return (
-    <div className="flex flex-col items-center overflow-x-clip">
+    <div className="flex flex-col items-center relative mb-5">
+      {/* Logo Display */}
       {isMobile ? (
         <Image
           src={"/piramide_logo_title_naranja.svg"}
           alt="Logo"
           width={200}
           height={100}
-          className=" drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
+          className="static drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
         />
       ) : (
-        <>
-          <Image
-            src="/indor_norte_logo.svg"
-            alt="Logo"
-            width={400}
-            height={200}
-            className="fixed top-5 right-7 drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
-          />
+        <div className="max-w-1/4 w-[16rem] h-[8rem] lg:w-[400px] lg:h-[160px] absolute left-2">
           <Image
             src={"/piramide_logo_title_naranja.svg"}
             alt="Logo"
-            width={400}
-            height={200}
-            className="fixed top-5 left-7 drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
+            fill
+            objectFit="cover"
+            className="drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
           />
-        </>
+        </div>
       )}
-      <div className="flex flex-col items-center gap-6 ">
+      {/* Pyramid Structure */}
+      <div className="flex flex-col items-center">
         {Object.keys(filledRows)
           .sort((a, b) => Number(a) - Number(b))
           .map((rowKey) => {
             const rowPositions = filledRows[Number(rowKey)];
 
-            // Render the new PyramidRow component for each set of positions
             return (
               <PyramidRow
                 key={rowKey}
                 positions={rowPositions}
-                onTeamClick={(team) => setSelectedTeam(team)}
+                onTeamClick={() => {}}
               />
             );
           })}
-
-        {selectedTeam && (
-          <div className="mt-6 bg-white text-gray-800 rounded-lg shadow-lg p-4">
-            <h3 className="font-bold mb-2">{selectedTeam.name}</h3>
-            <p>
-              Wins: {selectedTeam.wins} | Losses: {selectedTeam.losses}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
