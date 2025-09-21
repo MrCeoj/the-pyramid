@@ -15,9 +15,9 @@ type Position = {
   team: Team | null;
 };
 
-const TeamCard: React.FC<{ data: Position; challenged: boolean }> = ({
+const TeamCard: React.FC<{ data: Position; challengable: boolean }> = ({
   data,
-  challenged = false,
+  challengable = false,
 }) => {
   const statusColors: Record<Team["status"], string> = {
     looser: "bg-red-900/60 border-red-900/90 hover:bg-red-800/70",
@@ -55,7 +55,7 @@ const TeamCard: React.FC<{ data: Position; challenged: boolean }> = ({
                     L: {data.team.losses}
                   </span>
                 </div>
-                {challenged && <button>Retar</button>}
+                {challengable && <button>Retar</button>}
               </div>
             )}
           </div>

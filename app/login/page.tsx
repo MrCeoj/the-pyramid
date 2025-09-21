@@ -7,8 +7,8 @@ export default function LoginPage() {
       <HellBackground
         backdropBlurAmount="lg"
         className="fixed"
-        color1="#f48a34"
-        color2="#2c2c2c"
+        color1="#2c2c2c"
+        color2="#f48a34"
       />
       <LoginForm />
       </div>

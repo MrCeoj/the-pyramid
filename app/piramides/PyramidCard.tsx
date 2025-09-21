@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Trash2, Edit, Eye } from 'lucide-react';
+import { Edit, Eye } from 'lucide-react';
 import { EditPyramidModal } from './EditPyramidModal';
-import { DeletePyramidDialog } from './DeletePyramidDialog';
 import { useRouter } from 'next/navigation';
 
 interface Pyramid {
@@ -22,7 +21,6 @@ interface PyramidCardProps {
 
 export function PyramidCard({ pyramid }: PyramidCardProps) {
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const router = useRouter();
 
   const handleView = () => {
@@ -31,55 +29,48 @@ export function PyramidCard({ pyramid }: PyramidCardProps) {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+      <div className="bg-indor-black/80 rounded-lg shadow-md border border-black p-6 hover:shadow-lg flex flex-col justify-between 1transition-shadow">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-white mb-2">
               {pyramid.name}
             </h3>
             {pyramid.description ? (
-              <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+              <p className="text-white/80 text-sm mb-3 line-clamp-2">
                 {pyramid.description}
               </p>
-            ) : (<p className="text-gray-600 text-sm mb-3 line-clamp-2">
+            ) : (<p className="text-white/80 text-sm mb-3 line-clamp-2">
                 Sin descripción
               </p>)}
           </div>
-          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+          <div className={`px-2 py-1 rounded-full text-xs font-medium border-2 ${
             pyramid.active 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
+              ? 'bg-green-500/50 text-white border-green-900' 
+              : 'bg-red-500/50 text-white border-red-900'
           }`}>
             {pyramid.active ? 'Activa' : 'Inactiva'}
           </div>
         </div>
 
-        <div className="text-sm text-gray-500 mb-4">
+        <div className="text-sm text-white/80 mb-4">
           <div>Cantidad de Filas: {pyramid.row_amount || 1}</div>
           <div>Creado: {pyramid.createdAt?.toLocaleDateString()}</div>
         </div>
 
-        <div className="flex justify-end space-x-2">
+        <div className="flex self-end justify-end space-x-2">
           <button
             onClick={handleView}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            className="p-2 text-blue-600 hover:bg-indor-brown-light rounded-full transition-colors"
             title="View Details"
           >
             <Eye size={18} />
           </button>
           <button
             onClick={() => setShowEditModal(true)}
-            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+            className="p-2 text-white hover:bg-indor-brown-light rounded-full transition-colors"
             title="Edit"
           >
             <Edit size={18} />
-          </button>
-          <button
-            onClick={() => setShowDeleteDialog(true)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Delete"
-          >
-            <Trash2 size={18} />
           </button>
         </div>
       </div>
@@ -88,12 +79,6 @@ export function PyramidCard({ pyramid }: PyramidCardProps) {
         pyramid={pyramid}
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
-      />
-
-      <DeletePyramidDialog
-        pyramid={pyramid}
-        isOpen={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
       />
     </>
   );

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Session } from "next-auth";
 import { getSession } from "next-auth/react";
+import { Toaster } from "react-hot-toast";
 
 type Team = {
   id: number;
@@ -81,12 +82,14 @@ const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
   return (
     <div className="flex flex-col items-center relative mb-5">
       {/* Logo Display */}
+
+      <Toaster position={isMobile ? "top-center" : "top-right"}/>
       {isMobile ? (
         <Image
           src={"/piramide_logo_title_naranja.svg"}
           alt="Logo"
           width={200}
-          height={100}
+          height={120}
           className="static drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
         />
       ) : (
@@ -101,17 +104,21 @@ const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
         </div>
       )}
       {/* Pyramid Structure */}
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center mb-5">
         {Object.keys(filledRows)
           .sort((a, b) => Number(a) - Number(b))
-          .map((rowKey) => {
+          .map((rowKey, index, array) => {
             const rowPositions = filledRows[Number(rowKey)];
+            const isFirst = index === 0;
+            const isLast = index === array.length - 1;
 
             return (
               <PyramidRow
                 key={rowKey}
                 positions={rowPositions}
                 onTeamClick={() => {}}
+                isFirst={isFirst}
+                isLast={isLast}
               />
             );
           })}

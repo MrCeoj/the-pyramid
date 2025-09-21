@@ -34,13 +34,13 @@ const AdminPyramidSelector: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center mt-64">
+    <div className="flex flex-col justify-start md:mt-10 items-center h-screen">
       <div className="max-w-md md:w-full flex md:flex-row-reverse absolute top-5 left-5 md:right-5 md:left-auto">
         <div className="relative z-20">
           {/* Circular Button */}
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-14 h-14 bg-indor-black/70 ring-2 ring-indor-brown-light hover:bg-indor-black rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indor-brown-light"
+            className="w-14 h-14 bg-indor-black/70 ring-2 ring-indor-brown-light hover:bg-indor-black rounded-full shadow-lg flex items-center justify-center transition-all duration-100 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indor-brown-light"
           >
             <Pyramid color="white" />
           </button>
@@ -55,9 +55,9 @@ const AdminPyramidSelector: React.FC = () => {
               />
 
               {/* Dropdown Content */}
-              <div className="absolute top-20 right-0 bg-indor-black/80 rounded-lg shadow-xl border border-black min-w-80 max-w-sm animate-in fade-in duration-200">
+              <div className="absolute top-16 left-0 md:right-0 md:left-auto bg-indor-black/80 rounded-lg shadow-xl border border-black min-w-80 max-w-sm animate-in fade-in duration-100">
                 <div className="p-4">
-                  <h2 className="text-lg font-bold mb-3 border-b text-white">
+                  <h2 className="text-lg font-bold mb-3 border-b border-black text-white">
                     Selecciona una pirámide
                   </h2>
 
@@ -80,7 +80,7 @@ const AdminPyramidSelector: React.FC = () => {
                             {pyramid.name}
                           </div>
                           {pyramid.description && (
-                            <div className="text-sm text-gray-600 mt-1">
+                            <div className="text-sm text-white mt-1">
                               {pyramid.description}
                             </div>
                           )}
@@ -91,7 +91,7 @@ const AdminPyramidSelector: React.FC = () => {
 
                   {/* Selected pyramid info */}
                   {selectedPyramidId && (
-                    <div className="mt-4 pt-3 border-t border-gray-100">
+                    <div className="mt-4 pt-3 border-t border-black">
                       <div className="text-sm text-white">
                         <div className="flex items-center space-x-2">
                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -112,7 +112,6 @@ const AdminPyramidSelector: React.FC = () => {
           )}
         </div>
       </div>
-
       {/* Pyramid Display */}
       {pyramidData && <PyramidDisplay data={pyramidData} />}
 

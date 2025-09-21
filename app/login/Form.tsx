@@ -1,26 +1,24 @@
 "use client";
-
 import { useState, useTransition, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { login, validateMailExistance } from "./actions";
 import toast, { Toaster } from "react-hot-toast";
 import { CircleX } from "lucide-react";
-import { ProfileSetupForm } from "./ProfileSetupForm"; // Assuming this is the correct path
+import { ProfileSetupForm } from "./ProfileSetupForm";
 import { PasswordSetupForm } from "./PasswordSetupForm";
 
-// Now includes the setup state
 type FormState = "email-only" | "password-only" | "setup";
 
-// User type to hold the data returned from the server
+// --- UPDATED USERDATA INTERFACE ---
+// Replaced `hasProfile` with `needsProfileSetup` to match the server action's response.
 interface UserData {
   id: string;
   name: string | null;
   email: string | null;
   image: string | null;
-  password: string | null;
   role: string;
-  hasProfile: boolean;
+  needsProfileSetup: boolean;
 }
 
 export default function LoginForm() {
@@ -31,39 +29,11 @@ export default function LoginForm() {
   const emailRef = useRef<string | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
 
-  useEffect(() => {
-    console.log(user);
-  }, [user]);
-
-  const handleEmailSubmit = async (formData: FormData) => {
-    setError(undefined);
-    const email = formData.get("email") as string;
-
-    startTransition(async () => {
-      const result = await validateMailExistance(email);
-
-      if (result?.error) {
-        setError(result.error);
-        showToast(result.error);
-      } else if (result?.user) {
-        // Check for the returned user object
-        emailRef.current = result.user.email;
-        setUser(result.user);
-
-        if (!result.user.password) {
-          setFormState("setup");
-        } else if (result.user.hasProfile || result.user.role === "admin")
-          setFormState("password-only");
-      }
-    });
-  };
-
+  // This function remains the same
   const handleLogin = async (formData: FormData) => {
     setError(undefined);
-
     startTransition(async () => {
       const password = formData.get("password") as string;
-
       const result = await login({
         email: emailRef.current!,
         password,
@@ -76,31 +46,49 @@ export default function LoginForm() {
     });
   };
 
-  const showToast = (message: string) => {
-    toast.custom((t) => (
-      <div
-        className={`${
-          t.visible ? "animate-custom-enter" : "animate-custom-leave"
-        } gap-3 bg-red-100/80 shadow-lg items-center px-5 py-5 rounded-md pointer-events-auto ring-2 ring-red-600 flex max-w-3/4 lg:max-w-1/4 w-full h-auto`}
-      >
-        <CircleX size={32} color="#9f0712" />
-        <div className="text-black font-bold h-auto flex flex-col justify-center max-w-3/4 w-full">
-          <p>{message}</p>
-        </div>
-      </div>
-    ));
+  // --- UPDATED EMAIL SUBMIT HANDLER ---
+  const handleEmailSubmit = async (formData: FormData) => {
+    setError(undefined);
+    const email = formData.get("email") as string;
+
+    startTransition(async () => {
+      const result = await validateMailExistance(email);
+
+      if (result?.error) {
+        setError(result.error);
+        showToast(result.error);
+      } else if (result?.user) {
+        emailRef.current = result.user.email;
+        setUser(result.user as UserData); // Cast to the updated type
+
+        // ✅ NEW, SIMPLIFIED LOGIC
+        // We now rely on the single `needsProfileSetup` flag from the backend.
+        if (result.user.needsProfileSetup) {
+          // If the backend says setup is needed, switch to the setup state.
+          setFormState("setup");
+        } else {
+          // Otherwise, the user is ready to enter their password.
+          setFormState("password-only");
+        }
+      }
+    });
   };
 
+  // This function remains the same
+  const showToast = (message: string) => {
+    toast.error(message)
+  };
+
+  // The JSX and rendering logic remains the same, as it's correctly driven by `formState`.
   return (
     <div className="flex flex-col md:flex-row items-center md:justify-center md:gap-16 h-screen max-h-screen mb-5">
       <Toaster position={isMobile ? "top-center" : "top-right"} />
 
-      {/* --- Conditional Form Rendering --- */}
       {formState === "setup" && user ? (
         user.role === "player" ? (
           <ProfileSetupForm user={user} />
         ) : user.role === "admin" ? (
-          <PasswordSetupForm user={user} /> // only password
+          <PasswordSetupForm user={user} />
         ) : null
       ) : (
         <>

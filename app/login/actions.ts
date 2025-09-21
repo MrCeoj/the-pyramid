@@ -1,7 +1,7 @@
 "use server";
 import * as z from "zod";
 import { AuthError } from "@auth/core/errors";
-import { signIn, unstable_update, auth } from "@/lib/auth";
+import { signIn, unstable_update } from "@/lib/auth";
 import { db } from "@/lib/drizzle";
 import { users, profile } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -24,53 +24,60 @@ export async function validateMailExistance(email: string) {
   }
 
   try {
-    const user = await db
+    const userResult = await db
       .select({
-        id: users.id, // Return the user ID
+        id: users.id,
         email: users.email,
-        name: users.name, // Return the user name
-        image: users.image, // Return the user image
-        password: users.passwordHash,
-        role: users.role
+        name: users.name,
+        image: users.image,
+        password: users.passwordHash, // This will be null if not set
+        role: users.role,
       })
       .from(users)
       .where(eq(users.email, loweredCasedEmail))
       .limit(1);
 
-    if (user.length === 0) {
+    if (userResult.length === 0) {
       return {
         error: "Tu correo no está inscrito, comunícate con los organizadores.",
       };
     }
 
-    const profiles = await db
-      .select({ userId: profile.userId })
-      .from(profile)
-      .where(eq(profile.userId, user[0].id));
+    const foundUser = userResult[0];
 
-    const hasProfile = profiles.length > 0
-    const the_user = {
-      ...user[0],
-      hasProfile: hasProfile
-    }
+    // ✅ **NEW LOGIC HERE**
+    // Determine if the profile setup form is needed.
+    // This is true if the user is a 'player' and has not set a password yet.
+    const needsProfileSetup =
+      foundUser.role === "player" && !foundUser.password;
 
-    // Return the full user object
-    return { user: the_user };
+    const userWithSetupStatus = {
+      ...foundUser,
+      needsProfileSetup: needsProfileSetup,
+    };
+
+    // The check for an existing profile row is no longer needed,
+    // as the password status is our new source of truth.
+    // This makes the function more efficient by removing a database call.
+
+    return { user: userWithSetupStatus };
   } catch (err) {
     console.error(err);
     return { error: "No se pudo procesar el correo.\nInténtalo de nuevo." };
   }
 }
 
+// No changes are needed for the functions below, they remain the same.
+
 export async function login(values: z.infer<typeof LoginSchema>) {
   const validatedFields = LoginSchema.safeParse(values);
-  
+
   if (!validatedFields.success) {
     return { error: "Campos inválidos." };
   }
-  
+
   const { email, password } = validatedFields.data;
-  
+
   try {
     await signIn("credentials", {
       email,
@@ -79,21 +86,20 @@ export async function login(values: z.infer<typeof LoginSchema>) {
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      
       if (error.type === "CallbackRouteError") {
         const cause = error.cause?.err?.message;
         if (cause && cause === "CredentialsSignin") {
           return { error: "Correo o contraseña inválidos." };
         }
       }
-      
+
       if (error.type === "CredentialsSignin") {
         return { error: "Correo o contraseña inválidos." };
       }
-      
+
       return { error: "¡Algo salió mal!.\nInténtalo de nuevo mas tarde." };
     }
-    
+
     throw error;
   }
 }
@@ -104,60 +110,53 @@ interface CreateProfileData {
   lastName: string;
   nickname: string | null;
   avatarUrl?: string | null;
-  password?: string; // Add a password field
+  password?: string;
 }
 
-export async function createProfile(data: CreateProfileData) {
-
+export async function updateProfile(data: CreateProfileData) {
   try {
     const existingProfile = await db
-      .select({ id: profile.id })
+      .select({ id: profile.userId })
       .from(profile)
       .where(eq(profile.userId, data.userId))
       .limit(1);
 
-    if (existingProfile.length > 0) {
-      return { success: false, error: "El perfil ya existe" };
-    }
+    if (existingProfile.length === 0)
+      return {
+        success: false,
+        error: "No existe ningun perfil registrado.",
+      };
 
-    // Hash the password if provided
     let passwordHash = undefined;
     if (data.password && data.password.length > 0) {
       passwordHash = await bcrypt.hash(data.password, 10);
     }
 
-    // Use a transaction to ensure both operations succeed or fail together
     await db.transaction(async (tx) => {
-      // 1. Create the profile
-      await tx.insert(profile).values({
-        userId: data.userId,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        nickname: data.nickname,
-        avatarUrl: data.avatarUrl,
-      });
+      await tx
+        .update(profile)
+        .set({
+          userId: data.userId,
+          nickname: data.nickname,
+          avatarUrl: data.avatarUrl,
+        })
+        .where(eq(profile.userId, existingProfile[0].id));
 
-      // 2. Update the user record with the new password hash
       await tx
         .update(users)
         .set({ passwordHash: passwordHash })
         .where(eq(users.id, data.userId));
     });
 
-    // 3. Update the session token with the new profile status
     await unstable_update({
       user: {
-        hasProfile: true,
+        hasProfile: true, // You can keep this or use a new flag if needed
       },
     });
 
-    // Remove the server-side redirect
-    // The client component will handle the redirection after receiving a successful response
-    
     return { success: true };
   } catch (error) {
     console.error("Error creating profile or updating user:", error);
-    // Add more specific error handling if needed, like unique constraint errors
     return {
       success: false,
       error: "Error al crear el perfil o actualizar el usuario.",
@@ -181,7 +180,7 @@ export async function createAdminPassword(data: CreateAdminPasswordData) {
 
     await unstable_update({
       user: {
-        hasPassword: true, // optional flag
+        hasPassword: true,
       },
     });
 

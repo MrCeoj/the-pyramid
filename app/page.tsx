@@ -13,19 +13,19 @@ import { pyramid } from "@/db/schema"; // Add this import
 export default async function Home() {
   const session = await auth();
 
+  // This should never happen
   if (!session?.user?.id) {
     return (
       <main className="h-screen flex flex-col justify-center items-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Acceso no permitido</h1>
-          <p className="mb-4">Inicia sesion para ver una piramide.</p>
+          <p className="mb-4">Inicia sesión para ver una pirámide.</p>
           <UserDropdownMenu />
         </div>
       </main>
     );
   }
 
-  // Get user role
   const userData = await db
     .select({
       role: users.role,
@@ -59,13 +59,13 @@ export default async function Home() {
           <div className="fixed top-4 right-4 z-50">
             <UserDropdownMenu />
           </div>
-          
+
           <div className="flex-1 flex flex-col justify-center items-center">
             <div className="text-center">
               <h1 className="text-2xl font-bold mb-4">
-                No hay piramides disponibles
+                No hay pirámides disponibles.
               </h1>
-              <p className="mb-4">No existen piramides en este momento.</p>
+              <p className="mb-4">No existen pirámides en este momento.</p>
             </div>
           </div>
         </main>
@@ -79,15 +79,19 @@ export default async function Home() {
       .orderBy(desc(pyramid.updatedAt))
       .limit(1);
 
-    const defaultPyramidId = latestPyramid.length > 0 ? latestPyramid[0].id : null;
+    const defaultPyramidId =
+      latestPyramid.length > 0 ? latestPyramid[0].id : null;
 
     return (
-      <main className="h-screen flex flex-col">
+      <main className="h-screen flex flex-col justify-start">
         <ZustandSessionInitializer />
-        
+
         {/* Fixed header with pyramid selector and logout */}
         <div className="fixed top-4 right-4 z-50 flex items-center gap-4">
-          <PyramidHydrator pyramids={allPyramids} defaultPyramidId={defaultPyramidId} />
+          <PyramidHydrator
+            pyramids={allPyramids}
+            defaultPyramidId={defaultPyramidId}
+          />
           <UserDropdownMenu />
         </div>
 
@@ -102,12 +106,12 @@ export default async function Home() {
 
     if (!playerPyramid) {
       return (
-        <main className="h-screen flex flex-col justify-center items-center z-10">
+        <main className="h-screen flex flex-col justify-center items-center z-10 text-white ">
           <ZustandSessionInitializer />
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Sin participacion</h1>
-            <p className="mb-4">Aun no te asignan a una piramide.</p>
-            <p className="text-sm text-gray-600 mb-4">
+          <div className="text-center  bg-indor-black/40 p-2">
+            <h1 className="text-2xl font-bold mb-4">Sin participación</h1>
+            <p className="mb-4">Aún no te asignan a una pirámide.</p>
+            <p className="text-sm mb-4 ">
               Por favor, contacta con un organizador si crees que se trata de un
               error.
             </p>
@@ -120,7 +124,7 @@ export default async function Home() {
     return (
       <main className="h-screen flex flex-col justify-center">
         <ZustandSessionInitializer />
-        <div className="flex flex-col justify-center overflow-y-scroll">
+        <div className="flex flex-col justify-start py-16 overflow-y-scroll">
           <PyramidDisplay data={playerPyramid} />
         </div>
         <UserDropdownMenu />

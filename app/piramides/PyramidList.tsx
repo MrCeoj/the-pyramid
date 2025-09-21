@@ -12,8 +12,8 @@ export async function PyramidList() {
   if (pyramids.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-500 text-lg mb-4">No pyramids found</div>
-        <p className="text-gray-400">Create your first pyramid to get started</p>
+        <div className="text-white font-bold text-xl mb-4">No se encontraron pirámides</div>
+        <p className="text-white font-semi text-lg">Crea una para empezar</p>
       </div>
     );
   }

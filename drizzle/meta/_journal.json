@@ -43,6 +43,13 @@
       "when": 1758299337891,
       "tag": "0005_crazy_gamma_corps",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1758423362092,
+      "tag": "0006_minor_nehzno",
+      "breakpoints": true
     }
   ]
 }

@@ -21,11 +21,12 @@ export default function RootLayout({
       <SessionProvider>
         <body className="h-screen w-screen bg-[#2c2c2c] overflow-hidden">
           <HellBackground
-            color1="#f48a34"
-            color2="#2c2c2c"
+            color1="#2c2c2c"
+            color2="#f48a34"
             backdropBlurAmount="lg"
             className="fixed h-full w-full z-0"
           />
+          
           {/* Children content is wrapped in a container at a higher z-index */}
           <div className="relative z-10 w-full h-full">{children}</div>
         </body>
