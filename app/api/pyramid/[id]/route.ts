@@ -1,6 +1,6 @@
 // app/api/pyramids/[id]/route.ts
 import { NextRequest } from "next/server";
-import { getPyramidData } from "@/app/actions"; // Adjust path as needed
+import { getPyramidData } from "@/actions/IndexActions"; // Adjust path as needed
 
 export async function GET(
   request: NextRequest,

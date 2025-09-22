@@ -5,13 +5,15 @@ import { auth } from "@/lib/auth";
 import PyramidDisplay from "@/components/pyramid/PyramidDisplay";
 import AdminPyramidSelector from "./AdminPyramidSelector";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
-import { getAllPyramidsTotal, getPlayerPyramid } from "./actions";
+import { getAllPyramidsTotal, getPlayerPyramid } from "@/actions/IndexActions";
 import { PyramidHydrator } from "@/components/wrappers/PyramidHydrator";
 import ZustandSessionInitializer from "@/components/wrappers/ZustandSessionInitializer";
 import { pyramid } from "@/db/schema"; // Add this import
+import { getUserTeamId } from "@/actions/IndexActions";
 
 export default async function Home() {
-  const session = await auth();
+  const session = await auth();  
+  const userTeamId = await getUserTeamId(session!.user.id);
 
   // This should never happen
   if (!session?.user?.id) {
@@ -124,8 +126,8 @@ export default async function Home() {
     return (
       <main className="h-screen flex flex-col justify-center">
         <ZustandSessionInitializer />
-        <div className="flex flex-col justify-start py-16 overflow-y-scroll">
-          <PyramidDisplay data={playerPyramid} />
+        <div className="flex flex-col justify-start py-16 overflow-y-scroll no-scrollbar">
+          <PyramidDisplay data={playerPyramid} userTeamId={userTeamId.teamId} />
         </div>
         <UserDropdownMenu />
       </main>

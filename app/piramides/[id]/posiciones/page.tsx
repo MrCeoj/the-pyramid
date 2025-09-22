@@ -1,0 +1,34 @@
+import { getPyramidData } from "@/actions/IndexActions";
+import PyramidDisplay from "./PyramidPositionsEdit";
+import { notFound, redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+export default async function PositionsPage({
+  params,
+}: {
+  params: Promise<{ id: number }>;
+}) {
+
+  const sesh = await auth()
+  if (!sesh || sesh.user.role !== "admin"){
+    redirect("/")
+  }
+
+  const param = await params;
+  const pyramidId = param.id;
+
+  if (pyramidId === undefined || pyramidId === null) {
+    return notFound();
+  }
+
+  const pyramidData = await getPyramidData(pyramidId);
+
+  if (!pyramidData) {
+    return notFound();
+  }
+
+  return (
+    <div className="h-screen overflow-auto no-scrollbar pt-16">
+      <PyramidDisplay data={pyramidData} />
+    </div>
+  );
+}

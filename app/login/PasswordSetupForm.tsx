@@ -6,7 +6,7 @@ import { Button } from "@/components/lightswind/button";
 import { Card } from "@/components/lightswind/card";
 import { Input } from "@/components/lightswind/input";
 import { Label } from "@/components/lightswind/label";
-import { createAdminPassword, login } from "./actions"; // <- new action you’ll create
+import { createAdminPassword, login } from "../../actions/LoginActions"; // <- new action you’ll create
 import toast from "react-hot-toast";
 
 interface User {

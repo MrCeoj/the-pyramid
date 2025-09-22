@@ -8,7 +8,8 @@ export type Team = {
   name: string;
   wins: number;
   losses: number;
-  status: string;
+  status: "winner" | "looser" | "idle" | "risky";
+  categoryId: number;
 };
 
 export type Position = {
@@ -89,7 +90,8 @@ export async function getPlayerPyramid(userId: string): Promise<PyramidData | nu
           name: team.name,
           wins: team.wins,
           losses: team.losses,
-          status: team.status
+          status: team.status,
+          categoryId: team.categoryId
         },
       })
       .from(position)
@@ -105,6 +107,31 @@ export async function getPlayerPyramid(userId: string): Promise<PyramidData | nu
   } catch (error) {
     console.error("Error fetching player pyramid:", error);
     return null;
+  }
+}
+
+export async function getUserTeamId(userId: string){
+  try {
+    if (!userId) {
+      return { error: 'User ID is required' };
+    }
+
+    const userProfile = await db
+      .select({
+        teamId: profile.teamId,
+      })
+      .from(profile)
+      .where(eq(profile.userId, userId))
+      .limit(1);
+
+    if (!userProfile.length) {
+      return { teamId: null };
+    }
+
+    return { teamId: userProfile[0].teamId };
+  } catch (error) {
+    console.error('Error fetching user team:', error);
+    return { error: 'Internal server error' };
   }
 }
 
@@ -136,6 +163,8 @@ export async function getPyramidData(pyramidId: number): Promise<PyramidData | n
           name: team.name,
           wins: team.wins,
           losses: team.losses,
+          status: team.status,
+          categoryId: team.categoryId,
         },
       })
       .from(position)

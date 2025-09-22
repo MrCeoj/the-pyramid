@@ -1,20 +1,22 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-  getUsers,
+  getUsersPaginated,
   createUserWithProfile,
   updateUserWithProfile,
-} from "./userinteractions";
-import { Plus, Pencil } from "lucide-react";
+} from "../../actions/ProfileManagementActions";
+import { Plus, Pencil, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import UserFormModal from "./UserFormModal";
 import { toast } from "react-hot-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
+
 interface UserData {
   id: string;
   name: string | null;
   email: string | null;
   role: "admin" | "player";
-  profile?: Profile;
+  profile?: Profile | null;
 }
 
 interface Profile {
@@ -23,22 +25,69 @@ interface Profile {
 }
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<UserData[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState(""); // New state for the actual applied search
   const isMobile = useIsMobile();
-  const loadUsers = async () => {
+
+  const PAGE_SIZE = isMobile ? 8 : 20;
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  const loadUsers = async (searchTerm = appliedSearch) => {
     try {
-      const data = await getUsers();
-      setUsers(data);
-    } catch (error) {
+      const { users, total } = await getUsersPaginated(
+        page,
+        PAGE_SIZE,
+        searchTerm
+      );
+      setFilteredUsers(users);
+      setTotal(total);
+    } catch {
       toast.error("No se pudieron cargar los usuarios.");
     }
   };
 
+  // Handle search execution
+  const handleSearch = () => {
+    setAppliedSearch(search);
+    setPage(1); // Reset to first page when searching
+  };
+
+  // Handle Enter key press in search input
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  // Clear search
+  const handleClearSearch = () => {
+    setSearch("");
+    setAppliedSearch("");
+    setPage(1);
+  };
+
   useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const { users, total } = await getUsersPaginated(
+          page,
+          PAGE_SIZE,
+          appliedSearch // Use appliedSearch instead of search
+        );
+        setFilteredUsers(users);
+        setTotal(total);
+      } catch {
+        toast.error("No se pudieron cargar los usuarios.");
+      }
+    };
     loadUsers();
-  }, []);
+  }, [page, appliedSearch, PAGE_SIZE]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSave = async (formData: any) => {
@@ -59,32 +108,63 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-indor-black/60 text-white">
+    <div className="flex flex-col h-screen bg-indor-black/60 text-white relative">
+      {/* Desktop Dropdown */}
+      <UserDropdownMenu />
+
       {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-indor-brown-light/30">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center p-4 pt-10 border-b border-indor-brown-light/30 gap-3">
         <h1 className="text-2xl font-bold">Usuarios</h1>
-        {isMobile ? (
+
+        {/* Search bar */}
+        <div className="flex items-center gap-2 w-full md:w-1/3">
+          <input
+            type="text"
+            placeholder="Buscar por nombre, email o apodo..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyPress={handleSearchKeyPress}
+            className="w-full pl-3 pr-3 py-2 rounded bg-indor-brown/20 border border-indor-brown-light/30 focus:outline-none focus:border-indor-orange transition-colors"
+          />
           <button
-            onClick={() => {
-              setEditingUser(null);
-              setIsModalOpen(true);
-            }}
-            className="p-2 bg-indor-orange hover:bg-orange-pale rounded-full transition-colors"
+            onClick={handleSearch}
+            className="px-3 py-2 bg-indor-orange hover:bg-orange-pale rounded transition-colors h-full"
+            title="Buscar"
           >
-            <Plus size={24} strokeWidth={3}/>
+            <Search size={16} strokeWidth={3}/>
           </button>
-        ) : (
+          {appliedSearch && (
+            <button
+              onClick={handleClearSearch}
+              className="px-3 py-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors shrink-0"
+              title="Limpiar búsqueda"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* New user button */}
+        {!isMobile && (
           <button
             onClick={() => {
               setEditingUser(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-indor-orange hover:bg-orange-pale rounded transition-colors"
+            className="flex font-bold items-center gap-2 px-4 py-2 bg-indor-orange hover:bg-orange-pale rounded transition-colors"
           >
-            <Plus size={16} /> Nuevo usuario
+            <Plus size={24} /> Nuevo usuario
           </button>
         )}
       </div>
+
+      {/* Search info */}
+      {appliedSearch && (
+        <div className="px-4 py-2 text-sm text-gray-300 bg-indor-brown/20">
+          Mostrando resultados para: &quot;{appliedSearch}&quot; ({total}{" "}
+          encontrados)
+        </div>
+      )}
 
       {/* Table */}
       <div className="flex-1 overflow-y-auto no-scrollbar p-4">
@@ -107,14 +187,16 @@ export default function UsersPage() {
             )}
           </thead>
           <tbody>
-            {users.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
-                  No hay usuarios registrados.
+                  {appliedSearch
+                    ? "No se encontraron usuarios con esos criterios."
+                    : "No se encontraron usuarios."}
                 </td>
               </tr>
             ) : (
-              users.map((u) => (
+              filteredUsers.map((u) => (
                 <tr
                   key={u.id}
                   className="border-t bg-indor-black/80 border-indor-brown-light/20"
@@ -122,7 +204,9 @@ export default function UsersPage() {
                   {isMobile ? (
                     <>
                       <td className="px-3 py-2 text-ellipsis">{u.name}</td>
-                      <td className="px-3 py-2 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis">{u.email}</td>
+                      <td className="px-3 py-2 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis">
+                        {u.email}
+                      </td>
                       <td className="px-3 py-2 text-right flex justify-end gap-2">
                         <button
                           onClick={() => {
@@ -139,7 +223,9 @@ export default function UsersPage() {
                     <>
                       <td className="px-4 py-2">{u.name}</td>
                       <td className="px-4 py-2">{u.email}</td>
-                      <td className="px-4 py-2 capitalize">{u.role}</td>
+                      <td className="px-4 py-2 capitalize">
+                        {u.role === "admin" ? "Organizador" : "Jugador"}
+                      </td>
                       <td className="px-4 py-2">
                         {u.profile?.nickname || "-"}
                       </td>
@@ -162,6 +248,45 @@ export default function UsersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      <div className="flex justify-center gap-2 items-center p-4 border-t border-indor-brown-light/30">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage((p) => p - 1)}
+          className="px-3 py-1 bg-orange-vivid/80 rounded disabled:opacity-20"
+        >
+          <ChevronLeft />
+        </button>
+        <span className="text-sm text-gray-300">
+          Página {page} de {totalPages || 1}
+        </span>
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage((p) => p + 1)}
+          className="px-3 py-1 bg-orange-vivid/80 rounded disabled:opacity-20"
+        >
+          <ChevronRight />
+        </button>
+      </div>
+
+      {/* Floating buttons for mobile */}
+      {isMobile && (
+        <>
+          <div className="fixed top-3 right-3 z-50">
+            <UserDropdownMenu />
+          </div>
+          <button
+            onClick={() => {
+              setEditingUser(null);
+              setIsModalOpen(true);
+            }}
+            className="fixed bottom-4 right-4 p-3 bg-indor-orange hover:bg-orange-pale rounded-full transition-colors shadow-lg z-40"
+          >
+            <Plus size={24} strokeWidth={3} />
+          </button>
+        </>
+      )}
 
       {/* Modal */}
       {isModalOpen && (

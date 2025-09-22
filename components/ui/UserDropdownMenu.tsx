@@ -8,16 +8,17 @@ import {
   Swords,
   ChevronDown,
   ChevronUp,
+  House,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
 import { useSessionStore } from "@/stores/sessionStore";
-import EditProfileModal from "@/components/ui/EditProfileModal"; // Adjust path as needed
+import EditProfileModal from "@/components/ui/EditProfileModal";
 import {
   getProfileData,
   updateProfile,
   UpdateProfileData,
-} from "@/components/ui/profileactions"; // Adjust path as needed
+} from "@/actions/ProfileDataActions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -29,8 +30,15 @@ export default function UserDropdownMenu() {
   const [profileData, setProfileData] = useState<any>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { session } = useSessionStore();
+
+  // Use both NextAuth session and your session store
+  const { data: nextAuthSession, status } = useSession();
+  const { session: storeSession } = useSessionStore();
   const router = useRouter();
+
+  // Use NextAuth session as fallback if store session isn't available
+  const session = storeSession || nextAuthSession;
+  const isLoading = status === "loading";
 
   const isAdmin = session?.user?.role === "admin";
   const isMobile = useIsMobile();
@@ -87,7 +95,10 @@ export default function UserDropdownMenu() {
         router.push("/perfiles");
         break;
       case "games":
-        router.push("/retas");
+        if (isAdmin)
+          router.push("/retas");
+        else
+          router.push("/mis-retas")
         break;
       case "teams":
         router.push("/equipos");
@@ -98,12 +109,26 @@ export default function UserDropdownMenu() {
       case "logout":
         signOut({ redirectTo: "/" });
         break;
+      case "home":
+        router.push("/");
       default:
         break;
     }
   };
 
-  if (!session) {
+  // Show loading state instead of hiding completely
+  if (isLoading) {
+    return (
+      <div className="z-40 fixed right-5 top-6 md:top-auto md:bottom-5">
+        <div className="p-3 rounded-full ring-2 ring-indor-brown-light bg-indor-black/80 animate-pulse">
+          <User color="gray" strokeWidth={2} size={20} />
+        </div>
+      </div>
+    );
+  }
+
+  // Only return null if we're sure there's no authenticated session
+  if (status === "unauthenticated" || (!session && !isLoading)) {
     return null;
   }
 
@@ -148,7 +173,7 @@ export default function UserDropdownMenu() {
           >
             <div className="px-4 py-3 border-b border-black">
               <p className="text-white text-sm font-medium">
-                {session.user.name || session.user.email}
+                {session?.user?.name || session?.user?.email}
               </p>
               <p className="text-gray-400 text-xs capitalize">
                 {isAdmin ? "Organizador" : "Jugador"}
@@ -156,6 +181,14 @@ export default function UserDropdownMenu() {
             </div>
 
             <div className="py-1">
+              <button
+                onClick={() => handleMenuClick("home")}
+                className="w-full px-4 py-2 text-left text-white hover:bg-indor-brown-light/20 flex items-center gap-3 transition-colors"
+              >
+                <House size={16} />
+                <span>Página Principal</span>
+              </button>
+
               <button
                 onClick={() => handleMenuClick("profile")}
                 disabled={isLoadingProfile}
@@ -167,6 +200,14 @@ export default function UserDropdownMenu() {
                 </span>
               </button>
 
+              <button
+                onClick={() => handleMenuClick("games")}
+                className="w-full px-4 py-2 text-left text-white hover:bg-indor-brown-light/20 flex items-center gap-3 transition-colors"
+              >
+                <Swords size={16} />
+                <span>{isAdmin ? "Organizar Retas" : "Mis Retas"}</span>
+              </button>
+
               {isAdmin && (
                 <>
                   <button
@@ -175,13 +216,6 @@ export default function UserDropdownMenu() {
                   >
                     <Users size={16} />
                     <span>Organizar Perfiles</span>
-                  </button>
-                  <button
-                    onClick={() => handleMenuClick("games")}
-                    className="w-full px-4 py-2 text-left text-white hover:bg-indor-brown-light/20 flex items-center gap-3 transition-colors"
-                  >
-                    <Swords size={16} />
-                    <span>Organizar Retas</span>
                   </button>
                   <button
                     onClick={() => handleMenuClick("teams")}

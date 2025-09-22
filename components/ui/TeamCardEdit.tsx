@@ -1,13 +1,12 @@
 "use client";
 import { Fa1, Fa2, Fa3, Fa4, Fa5 } from "react-icons/fa6";
 import { PiMedalBold } from "react-icons/pi";
-import { Sword } from "lucide-react";
 
 interface Team {
   id: number;
   categoryId: number | null;
   name: string | null;
-  status: "idle" | "winner" | "looser" | "risky";
+  status: "idle" | "winner" | "looser" | "risky" | null;
   wins: number | null;
   losses: number | null;
 }
@@ -19,13 +18,7 @@ interface Position {
   team: Team | null;
 }
 
-interface TeamCardProps {
-  data: Position;
-  challengable?: boolean;
-  onChallenge?: (team: Team) => void;
-}
-
-const TeamCard = ({ data, challengable = false, onChallenge }: TeamCardProps) => {
+const TeamCard = ({ data }: { data: Position }) => {
   const getIcon = (category: number) => {
     switch (category) {
       case 1:
@@ -40,41 +33,13 @@ const TeamCard = ({ data, challengable = false, onChallenge }: TeamCardProps) =>
         return <Fa5 strokeWidth={24} size={15} />;
     }
   };
-
-  const handleChallenge = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (data.team && onChallenge) {
-      onChallenge(data.team);
-    }
-  };
-
-  const statusColors: Record<Team["status"], string> = {
-    looser: "bg-red-900/60 border-red-900/90 hover:bg-red-800/70",
-    winner: "bg-green-900/60 border-green-900/90 hover:bg-green-800/70",
-    idle: "bg-slate-900/50 border-slate-900/90 hover:bg-slate-800/60",
-    risky: "bg-yellow-700/60 border-yellow-900 hover:bg-yellow-600/70"
-  };
-
   return (
     <>
       {data.team && (
-        <div className={`relative ${statusColors[data.team.status!]} border-dashed border-4 rounded-xl transition-all duration-200 p-4 min-w-[150px] max-w-[170px] backdrop-blur-sm snap-center ${
-          challengable 
-            ? 'hover:shadow-2xl hover:scale-[1.02] cursor-pointer ring-2 ring-yellow-500/50' 
-            : 'hover:bg-slate-800/30'
-        }`}>
-          
-          {/* Challenge Button */}
-          {challengable && (
-            <button
-              onClick={handleChallenge}
-              className="absolute -top-2 -right-2 bg-amber-600 hover:bg-gradient-to-br from-yellow-600 to-yellow-500 via-amber-300 text-white rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110 z-10"
-              title="Desafiar equipo"
-            >
-              <Sword size={16} />
-            </button>
-          )}
-
+        <div
+          onClick={() => data.team}
+          className="bg-slate-900/50 border-slate-900/90 hover:bg-slate-800/60 border-dashed border-4 rounded-xl hover:shadow-2xl transition-all duration-200 cursor-pointer hover:scale-[1.02] p-4 min-w-[150px] max-w-[170px] backdrop-blur-sm snap-center"
+        >
           <div className="text-center">
             <div
               className="font-bold text-base text-white truncate mb-3"

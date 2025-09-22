@@ -86,7 +86,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
 
   session: {
     strategy: "jwt",
-    maxAge: 10 * 60,
+    maxAge: 16 * 60 * 60,
   },
 
   callbacks: {
@@ -160,12 +160,8 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
             .limit(1);
 
           if (existingProfile.length === 0 && user.name) {
-            const [firstName, ...rest] = user.name.split(" ");
-            const lastName = rest.join(" ");
             await db.insert(profile).values({
               userId: user.id,
-              firstName: firstName || "",
-              lastName: lastName || "",
               avatarUrl: user.image as string | null,
             });
           }

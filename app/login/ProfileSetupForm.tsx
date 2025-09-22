@@ -6,7 +6,7 @@ import { Button } from "@/components/lightswind/button";
 import { Card } from "@/components/lightswind/card";
 import { Input } from "@/components/lightswind/input";
 import { Label } from "@/components/lightswind/label";
-import { updateProfile, login } from "./actions"; // Assuming actions are in the same folder
+import { updateProfile, login } from "../../actions/LoginActions"; // Assuming actions are in the same folder
 import toast from "react-hot-toast";
 
 interface User {

@@ -2,7 +2,7 @@
 import PyramidDisplay from "@/components/pyramid/PyramidDisplay";
 import { usePyramidStore } from "@/stores/usePyramidsStore";
 import { useEffect, useState } from "react";
-import { getPyramidData } from "./actions";
+import { getPyramidData } from "@/actions/IndexActions";
 import { Pyramid } from "lucide-react";
 
 const AdminPyramidSelector: React.FC = () => {
@@ -61,7 +61,7 @@ const AdminPyramidSelector: React.FC = () => {
                     Selecciona una pirámide
                   </h2>
 
-                  <div className="max-h-64 overflow-y-auto">
+                  <div className="max-h-64 overflow-y-auto no-scrollbar">
                     <div className="space-y-1">
                       {pyramids.map((pyramid) => (
                         <button
@@ -112,6 +112,7 @@ const AdminPyramidSelector: React.FC = () => {
           )}
         </div>
       </div>
+
       {/* Pyramid Display */}
       {pyramidData && <PyramidDisplay data={pyramidData} />}
 

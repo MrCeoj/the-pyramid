@@ -1,5 +1,5 @@
 // app/api/pyramids/route.ts (Optional: for getting all pyramids)
-import { getAllPyramids } from "@/app/actions";
+import { getAllPyramids } from "@/actions/IndexActions";
 
 export async function GET() {
   try {

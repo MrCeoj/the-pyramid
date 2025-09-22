@@ -2,7 +2,7 @@
 import { useState, useTransition, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { login, validateMailExistance } from "./actions";
+import { login, validateMailExistance } from "../../actions/LoginActions";
 import toast, { Toaster } from "react-hot-toast";
 import { CircleX } from "lucide-react";
 import { ProfileSetupForm } from "./ProfileSetupForm";

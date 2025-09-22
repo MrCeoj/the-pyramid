@@ -13,7 +13,7 @@ interface UserData {
   name: string | null;
   email: string | null;
   role: "admin" | "player";
-  profile?: Profile;
+  profile?: Profile | null;
 }
 
 interface UserFormModalProps {

@@ -5,9 +5,10 @@ import { create } from "zustand";
 type Team = {
   id: number;
   name: string;
-  status: string;
+  status: "winner" | "looser" | "idle" | "risky";
   wins: number;
   losses: number;
+  categoryId: number;
 };
 
 type Position = {

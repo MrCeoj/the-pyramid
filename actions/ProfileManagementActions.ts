@@ -1,23 +1,23 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { users, profile } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql, desc, or, ilike } from "drizzle-orm";
 
 // Get all users with their profile
 export async function getUsers() {
   return await db
     .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        role: users.role,
-        profile: {
-            nickname: profile.nickname,
-            avatarUrl: profile.avatarUrl
-        }
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      profile: {
+        nickname: profile.nickname,
+        avatarUrl: profile.avatarUrl,
+      },
     })
     .from(users)
-    .innerJoin(profile, eq(users.id, profile.userId));
+    .leftJoin(profile, eq(users.id, profile.userId));
 }
 
 // Create user + profile automatically
@@ -46,6 +46,54 @@ export async function createUserWithProfile(data: {
   });
 
   return newUser;
+}
+
+// Paginated + search
+export async function getUsersPaginated(
+  page: number,
+  pageSize: number,
+  search?: string
+) {
+  const offset = (page - 1) * pageSize;
+
+  const whereClause = search
+    ? or(
+        ilike(users.name, `%${search}%`),
+        ilike(users.email, `%${search}%`),
+        ilike(profile.nickname, `%${search}%`)
+      )
+    : undefined;
+
+  const [rows, total] = await Promise.all([
+    db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        role: users.role,
+        profile: {
+          nickname: profile.nickname,
+          avatarUrl: profile.avatarUrl,
+        },
+      })
+      .from(users)
+      .leftJoin(profile, eq(users.id, profile.userId))
+      .where(whereClause)
+      .limit(pageSize)
+      .offset(offset)
+      .orderBy(desc(users.role)),
+
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .leftJoin(profile, eq(users.id, profile.userId))
+      .where(whereClause),
+  ]);
+
+  return {
+    users: rows,
+    total: Number(total[0].count),
+  };
 }
 
 // Update user + profile (except password)

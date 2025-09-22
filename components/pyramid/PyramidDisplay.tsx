@@ -1,10 +1,8 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import PyramidRow from "./PyramidRow";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Session } from "next-auth";
-import { getSession } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
 
 type Team = {
@@ -12,7 +10,8 @@ type Team = {
   name: string;
   wins: number;
   losses: number;
-  status: string;
+  status: "winner" | "idle" | "looser" | "risky";
+  categoryId: number
 };
 
 type Position = {
@@ -29,27 +28,16 @@ export type PyramidData = {
   pyramid_name?: string;
 };
 
-const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  const getSesh = async () => {
-    const sesh = await getSession();
-    setSession(sesh);
-  };
-
-  useEffect(() => {
-    getSesh();
-  }, []);
-
-  useEffect(() => {
-    if (session?.user) {
-      setUserRole(session.user.role || "player");
-    }
-  }, [session]);
-
+export default function PyramidDisplay({ 
+  data, 
+  userTeamId 
+}: { 
+  data: PyramidData;
+  userTeamId?: number | null; // Pass this from parent component
+}) {
   const isMobile = useIsMobile();
-
+  useEffect(() => {
+  }, [])
   // Data processing logic remains unchanged
   const rows: { [key: number]: Position[] } = {};
   data.positions.forEach((pos) => {
@@ -80,10 +68,9 @@ const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
   }
 
   return (
-    <div className="flex flex-col items-center relative mb-5">
+    <div className="flex flex-col items-center relative mb-5 no-scrollbar">
       {/* Logo Display */}
-
-      <Toaster position={isMobile ? "top-center" : "top-right"}/>
+      <Toaster position={isMobile ? "top-center" : "top-right"} />
       {isMobile ? (
         <Image
           src={"/piramide_logo_title_naranja.svg"}
@@ -119,12 +106,13 @@ const PyramidDisplay: React.FC<{ data: PyramidData }> = ({ data }) => {
                 onTeamClick={() => {}}
                 isFirst={isFirst}
                 isLast={isLast}
+                allPositions={data.positions}
+                userTeamId={userTeamId}
+                pyramidId={data.pyramid_id!}
               />
             );
           })}
       </div>
     </div>
   );
-};
-
-export default PyramidDisplay;
+}

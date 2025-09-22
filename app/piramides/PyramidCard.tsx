@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Edit, Eye } from 'lucide-react';
-import { EditPyramidModal } from './EditPyramidModal';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { Edit, Eye, ChartNoAxesColumn } from "lucide-react";
+import { EditPyramidModal } from "./EditPyramidModal";
+import { useRouter } from "next/navigation";
 
 interface Pyramid {
   id: number;
@@ -24,8 +24,12 @@ export function PyramidCard({ pyramid }: PyramidCardProps) {
   const router = useRouter();
 
   const handleView = () => {
-    router.push(`/pyramids/${pyramid.id}`);
+    router.push(`/piramides/${pyramid.id}`);
   };
+
+  const handlePositions = () => {
+    router.push(`/piramides/${pyramid.id}/posiciones`)
+  }
 
   return (
     <>
@@ -39,16 +43,20 @@ export function PyramidCard({ pyramid }: PyramidCardProps) {
               <p className="text-white/80 text-sm mb-3 line-clamp-2">
                 {pyramid.description}
               </p>
-            ) : (<p className="text-white/80 text-sm mb-3 line-clamp-2">
+            ) : (
+              <p className="text-white/80 text-sm mb-3 line-clamp-2">
                 Sin descripción
-              </p>)}
+              </p>
+            )}
           </div>
-          <div className={`px-2 py-1 rounded-full text-xs font-medium border-2 ${
-            pyramid.active 
-              ? 'bg-green-500/50 text-white border-green-900' 
-              : 'bg-red-500/50 text-white border-red-900'
-          }`}>
-            {pyramid.active ? 'Activa' : 'Inactiva'}
+          <div
+            className={`px-2 py-1 rounded-full text-xs font-medium border-2 ${
+              pyramid.active
+                ? "bg-green-500/50 text-white border-green-900"
+                : "bg-red-500/50 text-white border-red-900"
+            }`}
+          >
+            {pyramid.active ? "Activa" : "Inactiva"}
           </div>
         </div>
 
@@ -61,14 +69,21 @@ export function PyramidCard({ pyramid }: PyramidCardProps) {
           <button
             onClick={handleView}
             className="p-2 text-blue-600 hover:bg-indor-brown-light rounded-full transition-colors"
-            title="View Details"
+            title="Ver pirámide"
           >
             <Eye size={18} />
           </button>
           <button
+            onClick={handlePositions}
+            className="p-2 text-indor-orange hover:bg-indor-brown-light rounded-full transition-colors"
+            title="Posiciones"
+          >
+            <ChartNoAxesColumn size={18} strokeWidth={5} />
+          </button>
+          <button
             onClick={() => setShowEditModal(true)}
             className="p-2 text-white hover:bg-indor-brown-light rounded-full transition-colors"
-            title="Edit"
+            title="Editar"
           >
             <Edit size={18} />
           </button>
