@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { login, validateMailExistance } from "../../actions/LoginActions";
 import toast, { Toaster } from "react-hot-toast";
-import { CircleX } from "lucide-react";
 import { ProfileSetupForm } from "./ProfileSetupForm";
 import { PasswordSetupForm } from "./PasswordSetupForm";
 
@@ -29,6 +28,10 @@ export default function LoginForm() {
   const emailRef = useRef<string | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
 
+  useEffect(() => {
+    if(error) toast.error(error)
+  }, [error])
+
   // This function remains the same
   const handleLogin = async (formData: FormData) => {
     setError(undefined);
@@ -41,7 +44,6 @@ export default function LoginForm() {
 
       if (result?.error) {
         setError(result.error);
-        showToast(result.error);
       }
     });
   };
@@ -56,7 +58,6 @@ export default function LoginForm() {
 
       if (result?.error) {
         setError(result.error);
-        showToast(result.error);
       } else if (result?.user) {
         emailRef.current = result.user.email;
         setUser(result.user as UserData); // Cast to the updated type
@@ -74,10 +75,6 @@ export default function LoginForm() {
     });
   };
 
-  // This function remains the same
-  const showToast = (message: string) => {
-    toast.error(message)
-  };
 
   // The JSX and rendering logic remains the same, as it's correctly driven by `formState`.
   return (

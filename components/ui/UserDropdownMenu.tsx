@@ -38,7 +38,6 @@ export default function UserDropdownMenu() {
 
   // Use NextAuth session as fallback if store session isn't available
   const session = storeSession || nextAuthSession;
-  const isLoading = status === "loading";
 
   const isAdmin = session?.user?.role === "admin";
   const isMobile = useIsMobile();
@@ -95,10 +94,8 @@ export default function UserDropdownMenu() {
         router.push("/perfiles");
         break;
       case "games":
-        if (isAdmin)
-          router.push("/retas");
-        else
-          router.push("/mis-retas")
+        if (isAdmin) router.push("/retas");
+        else router.push("/mis-retas");
         break;
       case "teams":
         router.push("/equipos");
@@ -116,8 +113,7 @@ export default function UserDropdownMenu() {
     }
   };
 
-  // Show loading state instead of hiding completely
-  if (isLoading) {
+  if (status === "loading") {
     return (
       <div className="z-40 fixed right-5 top-6 md:top-auto md:bottom-5">
         <div className="p-3 rounded-full ring-2 ring-indor-brown-light bg-indor-black/80 animate-pulse">
@@ -127,8 +123,7 @@ export default function UserDropdownMenu() {
     );
   }
 
-  // Only return null if we're sure there's no authenticated session
-  if (status === "unauthenticated" || (!session && !isLoading)) {
+  if (status === "unauthenticated") {
     return null;
   }
 
@@ -205,7 +200,7 @@ export default function UserDropdownMenu() {
                 className="w-full px-4 py-2 text-left text-white hover:bg-indor-brown-light/20 flex items-center gap-3 transition-colors"
               >
                 <Swords size={16} />
-                <span>{isAdmin ? "Organizar Retas" : "Mis Retas"}</span>
+                <span>{isAdmin ? "Gestionar Retas" : "Mis Retas"}</span>
               </button>
 
               {isAdmin && (
@@ -215,21 +210,21 @@ export default function UserDropdownMenu() {
                     className="w-full px-4 py-2 text-left text-white hover:bg-indor-brown-light/20 flex items-center gap-3 transition-colors"
                   >
                     <Users size={16} />
-                    <span>Organizar Perfiles</span>
+                    <span>Gestionar Perfiles</span>
                   </button>
                   <button
                     onClick={() => handleMenuClick("teams")}
                     className="w-full px-4 py-2 text-left text-white hover:bg-indor-brown-light/20 flex items-center gap-3 transition-colors"
                   >
                     <BicepsFlexed size={16} />
-                    <span>Organizar Equipos</span>
+                    <span>Gestionar Equipos</span>
                   </button>
                   <button
                     onClick={() => handleMenuClick("tournaments")}
                     className="w-full px-4 py-2 text-left text-white hover:bg-indor-brown-light/20 flex items-center gap-3 transition-colors"
                   >
                     <TriangleDashed size={16} />
-                    <span>Organizar Pirámides</span>
+                    <span>Gestionar Pirámides</span>
                   </button>
                 </>
               )}

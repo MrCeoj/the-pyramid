@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import PyramidRow from "./PyramidRowEdit";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";

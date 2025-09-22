@@ -265,7 +265,7 @@ const MatchesPage = () => {
             <div className="flex items-center justify-center gap-2">
               <Trophy className="text-yellow-400" size={16} />
               <span className="text-yellow-300 font-medium">
-                Ganador: {match.winnerTeam.name}
+                Ganadores: {match.winnerTeam.name}
               </span>
             </div>
           </div>

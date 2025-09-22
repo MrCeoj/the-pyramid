@@ -1,4 +1,4 @@
-import PyramidDisplay from "@/components/pyramid/PyramidDisplay";
+import PyramidDisplay from "@/components/pyramidPlayer/PyramidDisplay";
 import { getPyramidData } from "@/actions/IndexActions";
 import { notFound } from "next/navigation";
 

@@ -1,30 +1,45 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import { 
-  Trophy, 
-  Crown, 
-  ArrowUpDown, 
-  CheckCircle, 
+"use client";
+import React, { useState, useEffect } from "react";
+import {
+  Swords,
+  Trophy,
+  Crown,
+  ArrowUpDown,
+  CheckCircle,
   AlertCircle,
   RefreshCw,
   MapPin,
   Calendar,
-  Users
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getAcceptedMatches, completeMatch, AcceptedMatchWithDetails } from '@/actions/MatchesActions';
-import toast from 'react-hot-toast';
-import UserDropdownMenu from '@/components/ui/UserDropdownMenu';
+  Users,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  getAcceptedMatches,
+  completeMatch,
+  AcceptedMatchWithDetails,
+} from "@/actions/MatchesActions";
+import toast from "react-hot-toast";
+import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { createPortal } from "react-dom";
 
 const AdminMatchesPage = () => {
   const [matches, setMatches] = useState<AcceptedMatchWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [completingMatch, setCompletingMatch] = useState<number | null>(null);
-  const [selectedWinner, setSelectedWinner] = useState<{ [matchId: number]: number }>({});
+  const [selectedWinner, setSelectedWinner] = useState<{
+    [matchId: number]: number;
+  }>({});
+
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchMatches();
   }, []);
+
+  useEffect(() => {
+    console.log(matches)
+  }, [matches])
 
   const fetchMatches = async () => {
     setLoading(true);
@@ -32,8 +47,8 @@ const AdminMatchesPage = () => {
       const acceptedMatches = await getAcceptedMatches();
       setMatches(acceptedMatches);
     } catch (error) {
-      console.error('Error fetching matches:', error);
-      toast.error('Error al cargar los matches');
+      console.error("Error fetching matches:", error);
+      toast.error("Error al cargar las retas");
     } finally {
       setLoading(false);
     }
@@ -41,20 +56,21 @@ const AdminMatchesPage = () => {
 
   const handleCompleteMatch = async (matchId: number) => {
     const winnerTeamId = selectedWinner[matchId];
-    
+
     if (!winnerTeamId) {
-      toast.error('Por favor selecciona un ganador');
+      toast.error("Por favor selecciona un ganador");
       return;
     }
-
+    console.log(winnerTeamId);
     setCompletingMatch(matchId);
     try {
       const result = await completeMatch(matchId, winnerTeamId);
+      console.log(result);
       if (result.success) {
         toast.success(result.message);
         await fetchMatches(); // Refresh the list
         // Clear the selected winner
-        setSelectedWinner(prev => {
+        setSelectedWinner((prev) => {
           const newState = { ...prev };
           delete newState[matchId];
           return newState;
@@ -63,25 +79,26 @@ const AdminMatchesPage = () => {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error('Error al completar el match');
+      if (error instanceof Error) {}
+      toast.error("Error al completar el match");
     } finally {
       setCompletingMatch(null);
     }
   };
 
   const handleWinnerSelection = (matchId: number, teamId: number) => {
-    setSelectedWinner(prev => ({
+    setSelectedWinner((prev) => ({
       ...prev,
-      [matchId]: teamId
+      [matchId]: teamId,
     }));
   };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-ES', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("es-ES", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(new Date(date));
   };
 
@@ -94,7 +111,7 @@ const AdminMatchesPage = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+        className="bg-slate-800/50 max-w-6xl w-84 md:w-auto self-center backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -103,7 +120,7 @@ const AdminMatchesPage = () => {
               <CheckCircle className="text-green-400" size={20} />
             </div>
             <div>
-              <h3 className="font-bold text-white">Match Aceptado</h3>
+              <h3 className="font-bold text-white">Reta Aceptada</h3>
               <p className="text-sm text-slate-400">{match.pyramidName}</p>
             </div>
           </div>
@@ -118,15 +135,20 @@ const AdminMatchesPage = () => {
         {/* Teams Battle Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Challenger Team */}
-          <div className={`
+          <div
+            className={`
             relative p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer
-            ${attackerSelected 
-              ? 'bg-gradient-to-r from-orange-900/30 to-red-900/30 border-orange-500 shadow-orange-500/20 shadow-lg' 
-              : 'bg-slate-700/30 border-slate-600/50 hover:border-orange-400/50'
+            ${
+              attackerSelected
+                ? "bg-gradient-to-r from-orange-900/30 to-red-900/30 border-orange-500 shadow-orange-500/20 shadow-lg"
+                : "bg-slate-700/30 border-slate-600/50 hover:border-orange-400/50"
             }
-          `}>
+          `}
+          >
             <button
-              onClick={() => handleWinnerSelection(match.id, match.challengerTeam.id)}
+              onClick={() =>
+                handleWinnerSelection(match.id, match.challengerTeam.id)
+              }
               className="w-full text-left"
             >
               {/* Team Role Badge */}
@@ -143,12 +165,13 @@ const AdminMatchesPage = () => {
               <h4 className="font-bold text-lg text-white mb-2">
                 {match.challengerTeam.name}
               </h4>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <MapPin className="text-slate-400" size={14} />
                   <span className="text-slate-300">
-                    Fila {match.challengerTeam.currentRow}, Col {match.challengerTeam.currentCol}
+                    Fila {match.challengerTeam.currentRow}, Col{" "}
+                    {match.challengerTeam.currentCol}
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
@@ -177,23 +200,26 @@ const AdminMatchesPage = () => {
                 </span>
               )}
               {winner === match.defenderTeam.id && (
-                <span className="text-slate-400">
-                  Sin cambios de posición
-                </span>
+                <span className="text-slate-400">Sin cambios de posición</span>
               )}
             </div>
           </div>
 
           {/* Defender Team */}
-          <div className={`
+          <div
+            className={`
             relative p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer
-            ${defenderSelected 
-              ? 'bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-500 shadow-blue-500/20 shadow-lg' 
-              : 'bg-slate-700/30 border-slate-600/50 hover:border-blue-400/50'
+            ${
+              defenderSelected
+                ? "bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-500 shadow-blue-500/20 shadow-lg"
+                : "bg-slate-700/30 border-slate-600/50 hover:border-blue-400/50"
             }
-          `}>
+          `}
+          >
             <button
-              onClick={() => handleWinnerSelection(match.id, match.defenderTeam.id)}
+              onClick={() =>
+                handleWinnerSelection(match.id, match.defenderTeam.id)
+              }
               className="w-full text-left"
             >
               {/* Team Role Badge */}
@@ -210,12 +236,13 @@ const AdminMatchesPage = () => {
               <h4 className="font-bold text-lg text-white mb-2">
                 {match.defenderTeam.name}
               </h4>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <MapPin className="text-slate-400" size={14} />
                   <span className="text-slate-300">
-                    Fila {match.defenderTeam.currentRow}, Col {match.defenderTeam.currentCol}
+                    Fila {match.defenderTeam.currentRow}, Col{" "}
+                    {match.defenderTeam.currentCol}
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
@@ -240,9 +267,11 @@ const AdminMatchesPage = () => {
             <div className="flex items-center gap-2 text-sm">
               <Trophy className="text-yellow-400" size={16} />
               <span className="text-white">
-                Ganador seleccionado: {' '}
+                Ganador seleccionado:{" "}
                 <strong className="text-yellow-300">
-                  {winner === match.challengerTeam.id ? match.challengerTeam.name : match.defenderTeam.name}
+                  {winner === match.challengerTeam.id
+                    ? match.challengerTeam.name
+                    : match.defenderTeam.name}
                 </strong>
               </span>
             </div>
@@ -255,9 +284,10 @@ const AdminMatchesPage = () => {
           disabled={!winner || completingMatch === match.id}
           className={`
             w-full px-6 py-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2
-            ${winner
-              ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-lg hover:shadow-green-500/25'
-              : 'bg-slate-600/50 text-slate-400 cursor-not-allowed'
+            ${
+              winner
+                ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-lg hover:shadow-green-500/25"
+                : "bg-slate-600/50 text-slate-400 cursor-not-allowed"
             }
             disabled:opacity-50
           `}
@@ -277,42 +307,56 @@ const AdminMatchesPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen max-w-screen backdrop-blur-lg bg-indor-black/80 flex items-center justify-center">
+        <UserDropdownMenu />
         <div className="text-white text-center">
           <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Cargando matches...</p>
+          <p>Cargando retas...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen max-h-screen overflow-y-scroll bg-indor-black/80 p-4">
+    <div className="min-h-screen max-h-screen max-w-screen overflow-y-scroll bg-indor-black/80 p-4 relative ">
       <UserDropdownMenu />
-      <div className="max-w-6xl mx-auto">
+      {createPortal(
+        <button
+          onClick={fetchMatches}
+          disabled={loading}
+          className={`${
+            isMobile ? "bottom-5 right-5" : "top-5 right-10"
+          } z-50 fixed text-white rounded-full bg-indor-orange cursor-pointer p-2 transition-all duration-100 hover:scale-105 hover:bg-orange-400 disabled:animate-spin `}
+        >
+          <RefreshCw
+            className={loading ? "animate-spin" : ""}
+            size={20}
+            strokeWidth={3}
+          />
+        </button>,
+        document.body
+      )}
+      <div className="flex flex-col justify-center mt-2">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full">
-              <Trophy className="text-white" size={32} />
-            </div>
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-b-indor-brown-light/80">
+          <div className="p-2 bg-gradient-to-br from-indor-orange to-amber-600 via-amber-400 rounded-full">
+            <Swords className="text-white" size={20} />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Gestión de Matches
+          <h1 className="text-xl md:text-3xl font-bold text-white ">
+            Gestión de retas
           </h1>
-          <p className="text-slate-400">
-            Administra los matches aceptados y determina los ganadores
-          </p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="max-w-6xl self-center grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-xl p-6">
             <div className="flex items-center gap-3">
               <CheckCircle className="text-green-400" size={24} />
               <div>
-                <p className="text-2xl font-bold text-white">{matches.length}</p>
-                <p className="text-sm text-slate-400">Matches Pendientes</p>
+                <p className="text-2xl font-bold text-white">
+                  {matches.length}
+                </p>
+                <p className="text-sm text-white">Retas Pendientes</p>
               </div>
             </div>
           </div>
@@ -324,27 +368,16 @@ const AdminMatchesPage = () => {
                 <p className="text-2xl font-bold text-white">
                   {matches.length * 2}
                 </p>
-                <p className="text-sm text-slate-400">Equipos Involucrados</p>
+                <p className="text-sm text-white">Equipos Involucrados</p>
               </div>
             </div>
-          </div>
-
-          <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-xl p-6">
-            <button
-              onClick={fetchMatches}
-              disabled={loading}
-              className="flex items-center gap-2 text-orange-400 hover:text-orange-300 transition-colors"
-            >
-              <RefreshCw className={loading ? 'animate-spin' : ''} size={20} />
-              <span>Actualizar</span>
-            </button>
           </div>
         </div>
 
         {/* Matches List */}
         <AnimatePresence>
           {matches.length > 0 ? (
-            <div className="space-y-6">
+            <div className="space-y-6 w-full flex flex-col items-center">
               {matches.map((match) => (
                 <MatchCard key={match.id} match={match} />
               ))}
@@ -355,12 +388,12 @@ const AdminMatchesPage = () => {
               animate={{ opacity: 1 }}
               className="text-center py-12"
             >
-              <AlertCircle className="text-slate-600 mx-auto mb-4" size={48} />
-              <h3 className="text-xl font-semibold text-slate-400 mb-2">
-                No hay matches aceptados
+              <AlertCircle className="text-white mx-auto mb-4" size={48} />
+              <h3 className="text-xl font-semibold text-white mb-2">
+                No hay retas aceptadas entre jugadores.
               </h3>
-              <p className="text-slate-500">
-                Los matches aparecerán aquí cuando los equipos acepten desafíos
+              <p className="text-white">
+                Las retas aparecerán aquí cuando los equipos acepten desafíos
               </p>
             </motion.div>
           )}

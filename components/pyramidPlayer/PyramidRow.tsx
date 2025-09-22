@@ -1,3 +1,4 @@
+// PyramidRow.tsx (client)
 "use client";
 import TeamCard from "@/components/ui/TeamCard";
 import EmptySlot from "@/components/ui/EmptySlot";
@@ -22,21 +23,31 @@ type Position = {
   team: Team | null;
 };
 
+type UnresolvedMatch = {
+  id: number;
+  pyramidId: number;
+  challengerTeamId: number;
+  defenderTeamId: number;
+  status: "pending" | "accepted";
+  createdAt: Date;
+};
+
 const PyramidRow = ({
   positions,
-  isFirst = false,
-  isLast = false,
   allPositions,
   userTeamId,
   pyramidId,
+  unresolvedMatches = [],
+  className,
 }: {
   positions: Position[];
   onTeamClick: (team: Team) => void;
   isFirst?: boolean;
-  isLast?: boolean;
   allPositions: Position[];
   userTeamId?: number | null;
   pyramidId: number;
+  unresolvedMatches?: UnresolvedMatch[];
+  className?: string;
 }) => {
   const scrollContainerRef = useCenteredScroll<HTMLDivElement>();
   const { session } = useSessionStore();
@@ -45,12 +56,43 @@ const PyramidRow = ({
     defenderTeam: Team | null;
   }>({ isOpen: false, defenderTeam: null });
 
+  const hasUnresolvedWith = (targetTeamId: number | null) => {
+    if (!userTeamId || !targetTeamId) return false;
+    return unresolvedMatches.some(
+      (m) =>
+        m.challengerTeamId === userTeamId &&
+        m.defenderTeamId === targetTeamId &&
+        (m.status === "pending" || m.status === "accepted")
+    );
+  };
+
+  const handleChallenge = (defenderTeam: Team) => {
+    if (hasUnresolvedWith(defenderTeam.id)) {
+      return;
+    }
+
+    setChallengeModal({
+      isOpen: true,
+      defenderTeam,
+    });
+  };
+
+  const handleCloseModal = () => {
+    setChallengeModal({
+      isOpen: false,
+      defenderTeam: null,
+    });
+  };
+
   const isChallengable = (targetPos: Position): boolean => {
     // Admins cannot challenge
     if (session?.user.role === "admin") return false;
 
     // Target must have a team
     if (!targetPos.team) return false;
+
+    // Block if user already has an unresolved match vs this target
+    if (hasUnresolvedWith(targetPos.team.id)) return false;
 
     // User must have a team
     if (!userTeamId) return false;
@@ -89,38 +131,13 @@ const PyramidRow = ({
     return false;
   };
 
-  const handleChallenge = (defenderTeam: Team) => {
-    setChallengeModal({
-      isOpen: true,
-      defenderTeam,
-    });
-  };
-
-  const handleCloseModal = () => {
-    setChallengeModal({
-      isOpen: false,
-      defenderTeam: null,
-    });
-  };
-
-  // Dynamic class names based on position
-  const borderClasses = `
-    border-l-2 border-r-2 border-slate-500 border-dashed
-    ${isFirst ? "border-t-2 rounded-t-2xl" : ""}
-    ${isLast ? "border-b-2 rounded-b-2xl" : ""}
-    ${!isFirst && !isLast ? "border-t-2" : ""}
-  `
-    .trim()
-    .replace(/\s+/g, " ");
-
+  // ... rest of JSX (unchanged), but pass isChallengable into TeamCard
   return (
     <div
       ref={scrollContainerRef}
       className="h-auto overflow-x-auto overflow-y-hidden no-scrollbar scroll-smooth max-w-screen z-10"
     >
-      <div
-        className={`flex gap-4 p-4 justify-start min-w-max overflow-x-scroll scroll-smooth no-scrollbar rounded-t-2xl border-t-2 bg-indor-black/90 items-center snap-x ${borderClasses}`}
-      >
+      <div className={className}>
         {positions.map((pos) =>
           pos.team ? (
             <TeamCard

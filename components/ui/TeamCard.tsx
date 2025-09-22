@@ -60,15 +60,15 @@ const TeamCard = ({ data, challengable = false, onChallenge }: TeamCardProps) =>
       {data.team && (
         <div className={`relative ${statusColors[data.team.status!]} border-dashed border-4 rounded-xl transition-all duration-200 p-4 min-w-[150px] max-w-[170px] backdrop-blur-sm snap-center ${
           challengable 
-            ? 'hover:shadow-2xl hover:scale-[1.02] cursor-pointer ring-2 ring-yellow-500/50' 
-            : 'hover:bg-slate-800/30'
+            ? 'hover:shadow-2xl hover:scale-[1.02] cursor-pointer border-yellow-400/50' 
+            : 'hover:opacity-90'
         }`}>
           
           {/* Challenge Button */}
           {challengable && (
             <button
               onClick={handleChallenge}
-              className="absolute -top-2 -right-2 bg-amber-600 hover:bg-gradient-to-br from-yellow-600 to-yellow-500 via-amber-300 text-white rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110 z-10"
+              className="absolute -top-2 -right-2 cursor-pointer bg-amber-600 hover:bg-gradient-to-br from-yellow-600 to-yellow-500 via-amber-300 text-white rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110 z-10"
               title="Desafiar equipo"
             >
               <Sword size={16} />

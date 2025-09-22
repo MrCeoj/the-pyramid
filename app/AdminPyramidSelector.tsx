@@ -1,5 +1,5 @@
 "use client";
-import PyramidDisplay from "@/components/pyramid/PyramidDisplay";
+import PyramidDisplay from "@/components/pyramidPlayer/PyramidDisplay";
 import { usePyramidStore } from "@/stores/usePyramidsStore";
 import { useEffect, useState } from "react";
 import { getPyramidData } from "@/actions/IndexActions";

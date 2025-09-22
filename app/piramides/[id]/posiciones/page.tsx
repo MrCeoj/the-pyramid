@@ -2,6 +2,7 @@ import { getPyramidData } from "@/actions/IndexActions";
 import PyramidDisplay from "./PyramidPositionsEdit";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 export default async function PositionsPage({
   params,
 }: {
@@ -28,6 +29,7 @@ export default async function PositionsPage({
 
   return (
     <div className="h-screen overflow-auto no-scrollbar pt-16">
+      <UserDropdownMenu />
       <PyramidDisplay data={pyramidData} />
     </div>
   );

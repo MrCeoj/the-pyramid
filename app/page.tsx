@@ -2,13 +2,13 @@ import { db } from "@/lib/drizzle";
 import { eq, desc } from "drizzle-orm";
 import { users } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import PyramidDisplay from "@/components/pyramid/PyramidDisplay";
+import PyramidDisplay from "@/components/pyramidPlayer/PyramidDisplay";
 import AdminPyramidSelector from "./AdminPyramidSelector";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import { getAllPyramidsTotal, getPlayerPyramid } from "@/actions/IndexActions";
 import { PyramidHydrator } from "@/components/wrappers/PyramidHydrator";
 import ZustandSessionInitializer from "@/components/wrappers/ZustandSessionInitializer";
-import { pyramid } from "@/db/schema"; // Add this import
+import { pyramid } from "@/db/schema";
 import { getUserTeamId } from "@/actions/IndexActions";
 
 export default async function Home() {
@@ -67,7 +67,7 @@ export default async function Home() {
               <h1 className="text-2xl font-bold mb-4">
                 No hay pirámides disponibles.
               </h1>
-              <p className="mb-4">No existen pirámides en este momento.</p>
+              <p className="mb-4">No existen pirámides activas en este momento.</p>
             </div>
           </div>
         </main>

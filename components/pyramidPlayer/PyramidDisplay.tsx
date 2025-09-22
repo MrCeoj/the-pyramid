@@ -1,9 +1,13 @@
 "use client";
-import React, { useEffect } from "react";
+import { useEffect, useState } from "react";
 import PyramidRow from "./PyramidRow";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Toaster } from "react-hot-toast";
+import {
+  UnresolvedMatch,
+  getUnresolvedMatchesForTeam,
+} from "@/actions/MatchesActions";
 
 type Team = {
   id: number;
@@ -11,7 +15,7 @@ type Team = {
   wins: number;
   losses: number;
   status: "winner" | "idle" | "looser" | "risky";
-  categoryId: number
+  categoryId: number;
 };
 
 type Position = {
@@ -28,17 +32,31 @@ export type PyramidData = {
   pyramid_name?: string;
 };
 
-export default function PyramidDisplay({ 
-  data, 
-  userTeamId 
-}: { 
+export default function PyramidDisplay({
+  data,
+  userTeamId,
+}: {
   data: PyramidData;
-  userTeamId?: number | null; // Pass this from parent component
+  userTeamId?: number | null;
 }) {
-  const isMobile = useIsMobile();
+  const [unresolvedMatches, setUnresolvedMatches] = useState<UnresolvedMatch[]>(
+    []
+  );
+
   useEffect(() => {
-  }, [])
-  // Data processing logic remains unchanged
+    if (!userTeamId) return;
+    (async () => {
+      try {
+        const data = await getUnresolvedMatchesForTeam(userTeamId);
+        setUnresolvedMatches(data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, [userTeamId]);
+
+  const isMobile = useIsMobile();
+
   const rows: { [key: number]: Position[] } = {};
   data.positions.forEach((pos) => {
     if (!rows[pos.row]) rows[pos.row] = [];
@@ -105,10 +123,13 @@ export default function PyramidDisplay({
                 positions={rowPositions}
                 onTeamClick={() => {}}
                 isFirst={isFirst}
-                isLast={isLast}
                 allPositions={data.positions}
+                unresolvedMatches={unresolvedMatches}
                 userTeamId={userTeamId}
                 pyramidId={data.pyramid_id!}
+                className={`flex gap-4 p-4 justify-start min-w-max overflow-x-scroll scroll-smooth no-scrollbar items-center snap-x rounded-t-2xl border-2 border-slate-400/40 border-dashed bg-indor-black/90 ${
+                  isLast ? "border-b-2 rounded-b-2xl" : "border-b-0"
+                }`}
               />
             );
           })}

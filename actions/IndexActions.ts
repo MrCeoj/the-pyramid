@@ -1,6 +1,6 @@
 "use server"
 import { db } from "@/lib/drizzle";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { position, team, pyramid, profile } from "@/db/schema";
 
 export type Team = {
@@ -72,7 +72,7 @@ export async function getPlayerPyramid(userId: string): Promise<PyramidData | nu
         row_amount: pyramid.row_amount,
       })
       .from(pyramid)
-      .where(eq(pyramid.id, pyramidId))
+      .where(and(eq(pyramid.id, pyramidId), eq(pyramid.active, true)))
       .limit(1);
 
     if (!pyramidInfo.length) {
@@ -223,3 +223,4 @@ export async function getAllPyramidsTotal(): Promise<PyramidOption[]> {
     return [];
   }
 }
+

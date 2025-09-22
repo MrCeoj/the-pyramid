@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { team, profile, category, users } from "@/db/schema";
-import { eq, isNotNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 // Fetch all teams + players + category
 export async function getTeams() {
