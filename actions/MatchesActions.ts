@@ -201,7 +201,7 @@ export async function getUserMatches(userId: string): Promise<{
       (m) => m.status === "pending" && m.defenderTeam.id === teamId
     );
 
-    const matchHistory = matchesWithDetails;
+    const matchHistory = matchesWithDetails
 
     return { pendingMatches, matchHistory };
   } catch (error) {
@@ -563,6 +563,7 @@ export async function completeMatch(
           defenderOldCol: defenderOldPos.col,
           defenderNewRow: challengerOldPos.row,
           defenderNewCol: challengerOldPos.col,
+          effectiveDate: new Date(),
         });
       } else {
         // Defender wins: increment defender wins, increment challenger losses

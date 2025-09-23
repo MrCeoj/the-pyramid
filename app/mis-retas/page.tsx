@@ -24,18 +24,12 @@ import { useSession } from "next-auth/react";
 
 const MatchesPage = () => {
   const { data } = useSession();
-  const user = data?.user
+  const user = data?.user;
   const [pendingMatches, setPendingMatches] = useState<MatchWithDetails[]>([]);
   const [matchHistory, setMatchHistory] = useState<MatchWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchMatches();
-    }
-  }, [user?.id]);
 
   const fetchMatches = async () => {
     if (!user?.id) return;
@@ -53,6 +47,27 @@ const MatchesPage = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchMatchesData = async () => {
+      if (!user?.id) return;
+
+      setLoading(true);
+      try {
+        const { pendingMatches, matchHistory } = await getUserMatches(user.id);
+        setPendingMatches(pendingMatches);
+        setMatchHistory(matchHistory);
+      } catch (error) {
+        console.error("Error fetching matches:", error);
+        toast.error("Error al cargar los combates");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user?.id) {
+      fetchMatchesData();
+    }
+  }, [user?.id]);
+
   const handleAcceptMatch = async (matchId: number) => {
     setActionLoading(matchId);
     try {
@@ -64,7 +79,7 @@ const MatchesPage = () => {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error("Error al aceptar el desafío");
+      if (error instanceof Error) toast.error("Error al aceptar el desafío");
     } finally {
       setActionLoading(null);
     }
@@ -81,7 +96,7 @@ const MatchesPage = () => {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error("Error al rechazar el desafío");
+      if (error instanceof Error) toast.error("Error al rechazar el desafío");
     } finally {
       setActionLoading(null);
     }
@@ -125,7 +140,7 @@ const MatchesPage = () => {
       default:
         return {
           icon: <Clock className="text-orange-400" size={16} />,
-          label: "Pendiente",
+          label: "Pendiente de respuesta",
           color: "text-orange-400",
         };
     }
@@ -150,9 +165,7 @@ const MatchesPage = () => {
 
       <div className="flex items-center gap-4 mb-6">
         <div className="flex-1 text-center bg-slate-800/50 p-3 rounded-lg">
-          <h4 className="font-semibold text-white">
-            {match.challengerTeam.name}
-          </h4>
+          <h4 className="font-semibold text-white">Jugador 1 & Jugador 2</h4>
           <p className="text-sm text-slate-400">
             Categoría {match.challengerTeam.categoryId}
           </p>
@@ -162,9 +175,7 @@ const MatchesPage = () => {
         <div className="text-2xl text-orange-400">VS</div>
 
         <div className="flex-1 text-center bg-blue-900/20 p-3 rounded-lg border border-blue-500/30">
-          <h4 className="font-semibold text-white">
-            {match.defenderTeam.name}
-          </h4>
+          <h4 className="font-semibold text-white">Jugador 1 & Jugador 2</h4>
           <p className="text-sm text-slate-400">
             Categoría {match.defenderTeam.categoryId}
           </p>
@@ -174,8 +185,8 @@ const MatchesPage = () => {
 
       <div className="bg-slate-800/30 p-3 rounded-lg mb-4">
         <p className="text-sm text-slate-300 text-center">
-          <strong className="text-white">{match.challengerTeam.name}</strong> te
-          ha desafiado en{" "}
+          <strong className="text-white">Jugador 1 & Jugador 2</strong> te han
+          desafiado en{" "}
           <strong className="text-orange-400">{match.pyramidName}</strong>
         </p>
       </div>
@@ -224,7 +235,7 @@ const MatchesPage = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r max-w-[95%] from-indor-black to-indor-brown/40 backdrop-blur-md border border-slate-700/50 rounded-xl p-6 hover:bg-indor-brown-light/20 transition-all duration-300"
+        className="bg-gradient-to-r max-w-[95%] w-auto sm:w-full from-indor-black to-indor-brown/40 backdrop-blur-md border border-slate-700/50 rounded-xl p-6 hover:bg-indor-brown-light/20 transition-all duration-300"
       >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -240,9 +251,7 @@ const MatchesPage = () => {
 
         <div className="flex items-center gap-4 mb-4">
           <div className="flex-1 text-center">
-            <h4 className="font-semibold text-white">
-              {match.challengerTeam.name}
-            </h4>
+            <h4 className="font-semibold text-white">Jugador 1 & Jugador 2</h4>
             <p className="text-sm text-white">
               Cat. {match.challengerTeam.categoryId}
             </p>
@@ -251,9 +260,7 @@ const MatchesPage = () => {
           <div className="text-lg text-white">vs</div>
 
           <div className="flex-1 text-center">
-            <h4 className="font-semibold text-white">
-              {match.defenderTeam.name}
-            </h4>
+            <h4 className="font-semibold text-white">Jugador 1 & Jugador 2</h4>
             <p className="text-sm text-white">
               Cat. {match.defenderTeam.categoryId}
             </p>
@@ -265,7 +272,7 @@ const MatchesPage = () => {
             <div className="flex items-center justify-center gap-2">
               <Trophy className="text-yellow-400" size={16} />
               <span className="text-yellow-300 font-medium">
-                Ganadores: {match.winnerTeam.name}
+                Ganadores: {"Jugador 1 & Jugador 2"}
               </span>
             </div>
           </div>
@@ -292,10 +299,12 @@ const MatchesPage = () => {
   return (
     <div className="min-h-screen min-w-screen bg-indor-black/80 p-4">
       <UserDropdownMenu />
-      <div className="max-w-4xl mx-auto flex flex-col">
+      <div className="max-w-4xl mx-auto h-screen no-scrollbar pb-10 flex flex-col overflow-y-scroll">
         {/* Header */}
         <div className="text-center mb-8 mt-6 md:mt-4">
-          <h1 className="text-xl font-bold text-white mb-2 md:text-2xl">Mis Combates</h1>
+          <h1 className="text-xl font-bold text-white mb-2 md:text-2xl">
+            Mis Combates
+          </h1>
           <p className="text-white text-md md:text-xl">
             Gestiona tus desafíos pendientes y revisa tu historial
           </p>
@@ -365,7 +374,7 @@ const MatchesPage = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-4"
+              className="space-y-4 flex flex-col items-center"
             >
               {matchHistory.length > 0 ? (
                 matchHistory.map((match) => (
@@ -373,12 +382,12 @@ const MatchesPage = () => {
                 ))
               ) : (
                 <div className="text-center py-12">
-                  <History className="text-slate-600 mx-auto mb-4" size={48} />
+                  <History className="text-white mx-auto mb-4" size={48} />
                   <h3 className="text-xl font-semibold text-slate-400 mb-2">
-                    No tienes historial de combates
+                    No tienes historial de retas
                   </h3>
                   <p className="text-slate-500">
-                    Tus combates anteriores aparecerán aquí
+                    Tus retas anteriores aparecerán aquí
                   </p>
                 </div>
               )}

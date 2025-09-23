@@ -13,6 +13,7 @@ type Team = {
   wins: number | null;
   status: "winner" | "idle" | "looser" | "risky";
   losses: number | null;
+  players: string[];
   categoryId: number | null;
 };
 
@@ -131,7 +132,6 @@ const PyramidRow = ({
     return false;
   };
 
-  // ... rest of JSX (unchanged), but pass isChallengable into TeamCard
   return (
     <div
       ref={scrollContainerRef}
@@ -143,7 +143,10 @@ const PyramidRow = ({
             <TeamCard
               key={pos.id}
               data={pos}
+              players={pos.team.players}
               challengable={isChallengable(pos)}
+              isPlayer={pos.team.id === userTeamId}
+              isTop={pos.row === 1}
               onChallenge={(team) => handleChallenge(team)}
             />
           ) : (

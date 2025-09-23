@@ -1,7 +1,6 @@
 "use client";
 import { Fa1, Fa2, Fa3, Fa4, Fa5 } from "react-icons/fa6";
-import { PiMedalBold } from "react-icons/pi";
-import { Sword } from "lucide-react";
+import { Sword, Crown, Flag } from "lucide-react";
 
 interface Team {
   id: number;
@@ -10,6 +9,7 @@ interface Team {
   status: "idle" | "winner" | "looser" | "risky";
   wins: number | null;
   losses: number | null;
+  players: string[]
 }
 
 interface Position {
@@ -23,86 +23,227 @@ interface TeamCardProps {
   data: Position;
   challengable?: boolean;
   onChallenge?: (team: Team) => void;
+  isTop?: boolean;
+  isPlayer?: boolean;
+  players: string[];
 }
 
-const TeamCard = ({ data, challengable = false, onChallenge }: TeamCardProps) => {
+const TeamCard = ({
+  data,
+  challengable = false,
+  onChallenge,
+  isTop = false,
+  isPlayer = false,
+  players = ["Jugador 2", "Jugador 1"],
+}: TeamCardProps) => {
   const getIcon = (category: number) => {
     switch (category) {
       case 1:
-        return <Fa1 strokeWidth={24} size={15} />;
+        return <Fa1 size={12} />;
       case 2:
-        return <Fa2 strokeWidth={24} size={15} />;
+        return <Fa2 size={12} />;
       case 3:
-        return <Fa3 strokeWidth={24} size={15} />;
+        return <Fa3 size={12} />;
       case 4:
-        return <Fa4 strokeWidth={24} size={15} />;
+        return <Fa4 size={12} />;
       case 5:
-        return <Fa5 strokeWidth={24} size={15} />;
+        return <Fa5 size={12} />;
     }
   };
 
-  const handleChallenge = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleChallenge = () => {
     if (data.team && onChallenge) {
       onChallenge(data.team);
     }
   };
 
   const statusColors: Record<Team["status"], string> = {
-    looser: "bg-red-900/60 border-red-900/90 hover:bg-red-800/70",
-    winner: "bg-green-900/60 border-green-900/90 hover:bg-green-800/70",
-    idle: "bg-slate-900/50 border-slate-900/90 hover:bg-slate-800/60",
-    risky: "bg-yellow-700/60 border-yellow-900 hover:bg-yellow-600/70"
+    looser: "bg-red-500/10 border-red-500/40 hover:border-red-500/60",
+    winner: "bg-green-500/10 border-green-500/40 hover:border-green-500/60",
+    idle: "bg-slate-500/5 border-slate-400/30 hover:border-slate-400/50",
+    risky: "bg-orange-500/10 border-orange-500/40 hover:border-orange-500/60", // shifted toward orange
+  };
+
+  const specialColors = {
+    champion:
+      "bg-gradient-to-br from-yellow-300/20 via-yellow-400/15 to-amber-500/25 border-yellow-400/70 hover:border-yellow-400/90 shadow-yellow-300/30 shadow-lg", // brighter gold
+  };
+
+  const statusAccents: Record<Team["status"], string> = {
+    looser: "bg-red-500",
+    winner: "bg-green-500",
+    idle: "bg-slate-400",
+    risky: "bg-orange-500", // more orange than yellow
+  };
+
+  const specialAccents = {
+    champion: "bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500",
+  };
+
+  const getStatusIcon = () => {
+    if (isTop) {
+      return (
+        <>
+          {!challengable ? (
+            <div className="absolute -top-2 -right-2 bg-gradient-to-br from-yellow-400 to-amber-500 text-slate-800 rounded-full p-1.5 shadow-lg z-10 animate-pulse">
+              <Crown size={12} />
+            </div>
+          ) : (
+            <div className="absolute -top-3 -right-3 bg-gradient-to-br from-amber-600 to-yellow-600 via-yellow-400 text-amber-900 rounded-full p-1 shadow-md z-10">
+              <Sword size={18} strokeWidth={2} />
+            </div>
+          )}
+        </>
+      );
+    }
+
+    if (isPlayer) {
+      return (
+        <div className="absolute -top-2 -right-2 bg-gradient-to-br from-yellow-200 to-amber-400 text-black rounded-full p-1.5 shadow-lg z-10">
+          <Flag size={12} />
+        </div>
+      );
+    }
+
+    if (challengable) {
+      return (
+        <div className="absolute -top-3 -right-3 bg-gradient-to-br from-amber-600 to-yellow-600 via-yellow-400 text-amber-900 rounded-full p-1 shadow-md z-10">
+          <Sword size={18} strokeWidth={2} />
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const getCardAnimation = () => {
+    if (isTop) {
+      return "hover:shadow-xl hover:shadow-yellow-400/30 hover:scale-[1.03]";
+    }
+    if (isPlayer) {
+      return "hover:shadow-xl hover:shadow-blue-400/30 hover:scale-[1.03]";
+    }
+    return challengable ? "hover:shadow-lg hover:scale-[1.02]" : "";
   };
 
   return (
     <>
       {data.team && (
-        <div className={`relative ${statusColors[data.team.status!]} border-dashed border-4 rounded-xl transition-all duration-200 p-4 min-w-[150px] max-w-[170px] backdrop-blur-sm snap-center ${
-          challengable 
-            ? 'hover:shadow-2xl hover:scale-[1.02] cursor-pointer border-yellow-400/50' 
-            : 'hover:opacity-90'
-        }`}>
-          
-          {/* Challenge Button */}
-          {challengable && (
-            <button
-              onClick={handleChallenge}
-              className="absolute -top-2 -right-2 cursor-pointer bg-amber-600 hover:bg-gradient-to-br from-yellow-600 to-yellow-500 via-amber-300 text-white rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110 z-10"
-              title="Desafiar equipo"
-            >
-              <Sword size={16} />
-            </button>
+        <div
+          onClick={challengable ? handleChallenge : undefined}
+          className={`relative group ${
+            isTop ? specialColors.champion : statusColors[data.team.status!]
+          } border-2 rounded-lg transition-all duration-300 p-3 min-w-[140px] max-w-[180px] backdrop-blur-sm snap-center ${getCardAnimation()} ${
+            challengable ? "cursor-pointer border-dashed" : ""
+          }`}
+        >
+          {/* Status indicator */}
+          <div
+            className={`absolute top-0 left-0 w-full h-1 ${
+              isTop ? specialAccents.champion : statusAccents[data.team.status!]
+            } rounded-t-md`}
+          />
+
+          {/* Champion glow effect */}
+          {isTop && (
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 via-transparent to-amber-400/10 rounded-lg pointer-events-none" />
           )}
 
-          <div className="text-center">
-            <div
-              className="font-bold text-base text-white truncate mb-3"
-              title={data.team?.name || ""}
-            >
-              {data.team?.name || "Equipo sin nombre"}
-            </div>
-            {data.team && (
-              <div className="flex flex-col">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-emerald-400 font-medium">
-                    W: {data.team.wins}
-                  </span>
-                  <span className="text-red-400 font-medium">
-                    L: {data.team.losses}
-                  </span>
-                  <div title="Categoría" className="relative">
-                    <PiMedalBold
-                      className="text-yellow-500 absolute -top-4 -left-5"
-                      size={50}
-                    />
-                    <div className="text-slate-900 bg-gradient-to-bl from-yellow-500 to-amber-400 via-amber-200 rounded-full p-2 absolute -top-[0.8rem] -left-[0.62rem]">
-                      {getIcon(data.team.categoryId!)}
-                    </div>
-                  </div>
+          {/* Player glow effect */}
+          {isPlayer && (
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 via-transparent to-cyan-400/10 rounded-lg pointer-events-none" />
+          )}
+
+          {/* Status icon */}
+          {getStatusIcon()}
+
+          {/* Header with category and name */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex-1 min-w-0">
+              <div
+                className={`font-semibold text-sm truncate ${
+                  isTop ? "text-yellow-200" : "text-white"
+                }`}
+                title="Nombre del equipo"
+              >
+                <div className="flex flex-col min-h-10 justify-center max-h-10">
+                  {players.length < 1 ? (
+                    "Equipo vacío"
+                  ) : (
+                    <>
+                      {players.reverse().map((p, i) => (
+                        <span key={i}>
+                          {p}
+                          {i === 0 && p && " &"}
+                        </span>
+                      ))}
+                    </>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* Category badge */}
+            <div className="flex-shrink-0 ml-2">
+              <div
+                className={`${
+                  isTop
+                    ? "bg-gradient-to-bl from-yellow-300 via-amber-200 to-yellow-400 text-slate-900"
+                    : "bg-gradient-to-bl from-amber-400 via-amber-300 to-amber-500 text-slate-800"
+                } rounded-full w-6 h-6 flex items-center justify-center font-bold`}
+              >
+                {getIcon(data.team.categoryId!)}
+              </div>
+            </div>
+          </div>
+
+          {/* Win/Loss stats */}
+          <div className="flex justify-center items-center space-x-4 text-xs">
+            <div className="flex items-center">
+              <span
+                className={`font-medium ${
+                  isTop
+                    ? "text-green-300"
+                    : isPlayer
+                    ? "text-green-300"
+                    : "text-green-400"
+                }`}
+              >
+                W
+              </span>
+              <span
+                className={`ml-1 ${
+                  isTop || isPlayer ? "text-slate-100" : "text-white"
+                }`}
+              >
+                {data.team.wins}
+              </span>
+            </div>
+            <div
+              className={`w-px h-3 ${
+                isTop || isPlayer ? "bg-slate-400" : "bg-slate-600"
+              }`}
+            />
+            <div className="flex items-center">
+              <span
+                className={`font-medium ${
+                  isTop
+                    ? "text-red-300"
+                    : isPlayer
+                    ? "text-red-300"
+                    : "text-red-400"
+                }`}
+              >
+                L
+              </span>
+              <span
+                className={`ml-1 ${
+                  isTop || isPlayer ? "text-slate-100" : "text-white"
+                }`}
+              >
+                {data.team.losses}
+              </span>
+            </div>
           </div>
         </div>
       )}

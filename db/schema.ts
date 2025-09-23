@@ -19,17 +19,14 @@ export const matchStatus = pgEnum("match_status", [
   "cancelled",
 ]);
 
-export const roles = pgEnum("role", [
-  "player",
-  "admin"
-])
+export const roles = pgEnum("role", ["player", "admin"]);
 
 export const teamStatus = pgEnum("team_status", [
   "looser",
   "winner",
   "idle",
-  "risky"
-])
+  "risky",
+]);
 
 export const users = pgTable("users", {
   id: text("id")
@@ -41,8 +38,8 @@ export const users = pgTable("users", {
   image: text("image"),
   role: roles("role").notNull().default("player"),
   passwordHash: text("password_hash"),
-})
- 
+});
+
 export const accounts = pgTable(
   "accounts",
   {
@@ -67,16 +64,16 @@ export const accounts = pgTable(
       }),
     },
   ]
-)
- 
+);
+
 export const sessions = pgTable("sessions", {
   sessionToken: text("sessionToken").primaryKey(),
   userId: text("userId")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   expires: timestamp("expires", { mode: "date" }).notNull(),
-})
- 
+});
+
 export const verificationTokens = pgTable(
   "verificationTokens",
   {
@@ -91,8 +88,8 @@ export const verificationTokens = pgTable(
       }),
     },
   ]
-)
- 
+);
+
 export const authenticators = pgTable(
   "authenticators",
   {
@@ -114,7 +111,7 @@ export const authenticators = pgTable(
       }),
     },
   ]
-)
+);
 
 // 1. Pyramid table
 export const pyramid = pgTable("pyramid", {
@@ -214,6 +211,7 @@ export const position = pgTable(
 );
 
 // 7. Match table
+// Add these fields to your existing match table
 export const match = pgTable("match", {
   id: serial("id").primaryKey(),
   pyramidId: integer("pyramid_id")
@@ -228,9 +226,28 @@ export const match = pgTable("match", {
   winnerTeamId: integer("winner_team_id").references(() => team.id),
   evidenceUrl: text("evidence_url"),
   status: matchStatus("status").notNull().default("pending"),
+  
+  challengerViewedAt: timestamp("challenger_viewed_at", { withTimezone: true }),
+  defenderViewedAt: timestamp("defender_viewed_at", { withTimezone: true }),
+  lastStatusChange: timestamp("last_status_change", { withTimezone: true }).defaultNow(),
+  
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
+
+// OR create a separate table for better scalability
+export const matchViews = pgTable("match_views", {
+  id: serial("id").primaryKey(),
+  matchId: integer("match_id")
+    .notNull()
+    .references(() => match.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  viewedAt: timestamp("viewed_at", { withTimezone: true }).defaultNow(),
+}, (t) => ({
+  uniqueMatchUser: uniqueIndex("unique_match_user_view").on(t.matchId, t.userId)
+}));
 
 // 8. Position history
 export const positionHistory = pgTable("position_history", {
@@ -257,6 +274,10 @@ export const positionHistory = pgTable("position_history", {
   challengerNewCol: integer("challenger_new_col"),
   defenderNewRow: integer("defender_new_row"),
   defenderNewCol: integer("defender_new_col"),
+
+  effectiveDate: timestamp("effectiveDate", {
+    withTimezone: true,
+  }).defaultNow(),
 
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),

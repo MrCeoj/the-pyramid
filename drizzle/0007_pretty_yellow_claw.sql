@@ -1,0 +1,1 @@
+ALTER TABLE "position_history" ADD COLUMN "effectiveDate" timestamp with time zone DEFAULT now();

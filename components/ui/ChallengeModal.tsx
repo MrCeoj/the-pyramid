@@ -59,7 +59,7 @@ export default function ChallengeModal({
     } else if (categoryDiff > 0) {
       return {
         type: "warning",
-        message: `Tu equipo enfrentará un desafío mayor. El rival iniciará con ${handicapPoints} puntos de ventaja.`,
+        message: `Tu equipo enfrentará un desafío mayor. El rival iniciará con ${handicapPoints} puntos de ventaja en su servicio.`,
         icon: <AlertTriangle className="text-amber-400" size={20} />,
         bgColor: "from-amber-900/20 to-orange-900/20",
         borderColor: "border-amber-500/30",
@@ -67,7 +67,7 @@ export default function ChallengeModal({
     } else {
       return {
         type: "advantage",
-        message: `¡Tienes ventaja! Tu equipo recibirá ${handicapPoints} puntos adicionales.`,
+        message: `¡Tienes ventaja! Tu equipo recibirá ${handicapPoints} puntos adicionales en su servicio.`,
         icon: <TrendingUp className="text-emerald-400" size={20} />,
         bgColor: "from-emerald-900/20 to-green-900/20",
         borderColor: "border-emerald-500/30",
@@ -86,10 +86,9 @@ export default function ChallengeModal({
         defenderTeamId: defender.id,
       });
 
-      // Trigger pyramid data refresh to update positions for challenge logic
       refreshPyramidData();
 
-      toast.success("Desafío creado exitosamente");
+      toast.success("¡Has desafiado al equipo! Espera su respuesta.", {duration: 5000});
       onClose();
     } catch (error) {
       console.error("Error creating match:", error);
@@ -138,7 +137,7 @@ export default function ChallengeModal({
 
       <div className="text-center mt-4">
         <h3 className="font-bold text-xl mb-2 text-white/95 leading-tight">
-          {team.name || "Equipo sin nombre"}
+          {"Jugador 1 & Jugador 2" }
         </h3>
 
         <div className="mb-4">
@@ -293,7 +292,7 @@ export default function ChallengeModal({
                   ) : (
                     <>
                       <Sword size={18} />
-                      <span>Confirmar Desafío</span>
+                      <span className="font-semibold">Confirmar Desafío</span>
                     </>
                   )}
                 </button>

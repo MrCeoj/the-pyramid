@@ -3,491 +3,150 @@ import React, { useState, useEffect } from "react";
 import {
   Plus,
   Edit,
-  Trash2,
   Users,
   UserPlus,
   UserMinus,
-  Filter,
+  Save,
+  X,
 } from "lucide-react";
-import { getTeams, getCategories, getPlayers } from "@/actions/TeamsActions";
-import toast from "react-hot-toast";
-import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 
-interface Category {
-  id: number;
-  name: string;
-  description: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-}
+// Import your API functions
+import {
+  getTeams,
+  getCategories,
+  getPlayers,
+  createTeam,
+  updateTeam,
+  addPlayerToTeam,
+  removePlayerFromTeam,
+} from "@/actions/TeamsActions"; // Update this path
 
-interface Profile {
-  id: number;
-  userId: string;
-  nickname?: string | null;
-  avatarUrl?: string | null;
-  teamId?: number | null;
-  createdAt?: Date | null;
-  updatedAt?: Date | null;
-}
+const TeamManagement = () => {
+  const [teams, setTeams] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [availablePlayers, setAvailablePlayers] = useState([]);
+  const [allPlayers, setAllPlayers] = useState([]);
+  const [editingTeam, setEditingTeam] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showPlayerModal, setShowPlayerModal] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-interface User {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  emailVerified?: Date | null;
-  image?: string | null;
-  role: "player" | "admin";
-  passwordHash?: string | null;
-}
-
-interface Player {
-  profile: Profile;
-  users?: User | null;
-}
-
-interface Team {
-  id: number;
-  name: string;
-  categoryId?: number | null;
-  wins?: number | null;
-  losses?: number | null;
-  status: "idle" | "winner" | "looser" | "risky" | null;
-  createdAt?: Date | null;
-  updatedAt?: Date | null;
-}
-
-interface TeamData {
-  players: Player[];
-  category: Category | null;
-  team: Team;
-}
-
-const TeamManagementPage = () => {
-  const [teams, setTeams] = useState<TeamData[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showPlayerModal, setShowPlayerModal] = useState(false);
-  const [currentTeam, setCurrentTeam] = useState<TeamData | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  // Mock data - replace with actual API calls
+  // Load data on component mount
   useEffect(() => {
-    const fetchData = async () => {
-      const data = await getTeams();
-      const categories = await getCategories();
-      const players = await getPlayers();
-      if (!data || !categories || !players) return;
-
-      setCategories(categories);
-      setPlayers(players);
-      setTeams(data);
-    };
-    fetchData();
+    loadData();
   }, []);
 
-  const filteredTeams =
-    selectedCategory === "all"
-      ? teams
-      : teams.filter((t) => t.team.categoryId === parseInt(selectedCategory));
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [teamsData, categoriesData, playersData] = await Promise.all([
+        getTeams(),
+        getCategories(),
+        getPlayers(),
+      ]);
 
-  const availablePlayers = players.filter((p) => !p.profile.teamId);
+      setTeams(teamsData);
+      setCategories(categoriesData);
+      setAllPlayers(playersData);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "winner":
-        return "bg-green-100 text-green-800";
-      case "looser":
-        return "bg-red-100 text-red-800";
-      case "risky":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+      // Filter available players (those not in any team)
+      const available = playersData.filter((player) => !player.profile?.teamId);
+      setAvailablePlayers(available);
+
+      setError(null);
+    } catch (err) {
+      console.error("Error loading data:", err);
+      setError("Error al cargar equipos, inténtelo de nuevo.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const statusColors = {
+    idle: "bg-gray-100 text-gray-800",
+    winner: "bg-green-100 text-green-800",
+    looser: "bg-red-100 text-red-800",
+    risky: "bg-yellow-100 text-yellow-800",
   };
 
   const handleCreateTeam = async (formData) => {
-    setLoading(true);
     try {
-      // Simulate API call - replace with actual createTeam call
-      const newTeam = {
-        team: {
-          id: Date.now(),
-          name: formData.name,
-          categoryId: parseInt(formData.categoryId),
-          status: formData.status,
-        },
-        category: categories.find(
-          (c) => c.id === parseInt(formData.categoryId)
-        ),
-        players: [],
-      };
-      setTeams([...teams, newTeam]);
-      setShowCreateModal(false);
-    } catch (error) {
-      alert("Error creating team: " + error.message);
+      const newTeam = await createTeam({
+        name: formData.name,
+        categoryId: parseInt(formData.categoryId),
+        status: formData.status,
+      });
+
+      // Reload data to get updated teams with proper joins
+      await loadData();
+      setShowCreateForm(false);
+    } catch (err) {
+      console.error("Error creating team:", err);
+      setError("Failed to create team. Please try again.");
     }
-    setLoading(false);
   };
 
-  const handleUpdateTeam = async (formData) => {
-    setLoading(true);
+  const handleUpdateTeam = async (teamId, updatedData) => {
     try {
-      // Simulate API call - replace with actual updateTeam call
-      setTeams(
-        teams.map((t) =>
-          t.team.id === currentTeam.team.id
-            ? {
-                ...t,
-                team: {
-                  ...t.team,
-                  ...formData,
-                  categoryId: parseInt(formData.categoryId),
-                },
-                category: categories.find(
-                  (c) => c.id === parseInt(formData.categoryId)
-                ),
-              }
-            : t
-        )
-      );
-      setShowEditModal(false);
-      setCurrentTeam(null);
-    } catch (error) {
-      alert("Error updating team: " + error.message);
+      await updateTeam(teamId, {
+        name: updatedData.name,
+        categoryId: parseInt(updatedData.categoryId),
+        status: updatedData.status,
+      });
+
+      // Reload data to get updated information
+      await loadData();
+      setEditingTeam(null);
+    } catch (err) {
+      console.error("Error updating team:", err);
+      setError("Failed to update team. Please try again.");
     }
-    setLoading(false);
   };
 
-  const handleDeleteTeam = async (teamId) => {
-    if (!confirm("Are you sure you want to delete this team?")) return;
-
-    setLoading(true);
+  const handleAddPlayerToTeam = async (teamId, playerId) => {
     try {
-      // Simulate API call - replace with actual deleteTeam call
-      const teamToDelete = teams.find((t) => t.team.id === teamId);
-
-      // Remove players from team first
-      setPlayers(
-        players.map((p) =>
-          teamToDelete.players.some((tp) => tp.profile.id === p.profile.id)
-            ? { ...p, profile: { ...p.profile, teamId: null } }
-            : p
-        )
+      await addPlayerToTeam(teamId, playerId);
+      await loadData(); // Reload to update the UI
+      setShowPlayerModal(null);
+    } catch (err) {
+      console.error("Error adding player to team:", err);
+      setError(
+        err.message || "Error al agregar jugador al equipo."
       );
-
-      setTeams(teams.filter((t) => t.team.id !== teamId));
-    } catch (error) {
-      alert("Error deleting team: " + error.message);
     }
-    setLoading(false);
-  };
-
-  const handleAddPlayerToTeam = async (playerId: number) => {
-    setLoading(true);
-    try {
-      if (!currentTeam) return
-      if (currentTeam.players.length >= 2) {
-        alert("Team already has 2 players");
-        return;
-      }
-
-      // Simulate API call - replace with actual addPlayerToTeam call
-      const player = players.find((p) => p.profile.id === playerId);
-
-      // Update players list
-      setPlayers(
-        players.map((p) =>
-          p.profile.id === playerId
-            ? { ...p, profile: { ...p.profile, teamId: currentTeam.team.id } }
-            : p
-        )
-      );
-
-      // Update teams list
-      setTeams(
-        teams.map((t) =>
-          t.team.id === currentTeam.team.id
-            ? { ...t, players: [...t.players, player] }
-            : t
-        )
-      );
-      
-      setCurrentTeam((prev) => ({
-        ...prev,
-        players: [...prev.players, player],
-      }));
-    } catch (error) {
-      if (error instanceof Error)
-        toast.error("Error adding player: " + error.message);
-    }
-    setLoading(false);
   };
 
   const handleRemovePlayerFromTeam = async (playerId) => {
-    setLoading(true);
     try {
-      // Simulate API call - replace with actual removePlayerFromTeam call
-
-      // Update players list
-      setPlayers(
-        players.map((p) =>
-          p.profile.id === playerId
-            ? { ...p, profile: { ...p.profile, teamId: null } }
-            : p
-        )
-      );
-
-      // Update teams list
-      setTeams(
-        teams.map((t) =>
-          t.team.id === currentTeam.team.id
-            ? {
-                ...t,
-                players: t.players.filter((p) => p.profile.id !== playerId),
-              }
-            : t
-        )
-      );
-
-      setCurrentTeam((prev) => ({
-        ...prev,
-        players: prev.players.filter((p) => p.profile.id !== playerId),
-      }));
-    } catch (error) {
-      alert("Error removing player: " + error.message);
-    }
-    setLoading(false);
-  };
-
-  const newTeamName = (team: TeamData) => {
-    try {
-
-      if (!team.players) throw new Error;
-  
-      team.players.map((player) => {
-        if (player.users === undefined || player.users === null) throw new Error;
-      });
-  
-      if (team.players.length === 1) return team.players[0].users?.name;
-  
-      const name1 = team.players[0].users?.name?.split(" ")[0];
-      const name2 = team.players[1].users?.name?.split(" ")[0];
-  
-      return name1 + " & " + name2;
-    }catch(error){
-      if (error instanceof Error) return null
+      await removePlayerFromTeam(playerId);
+      await loadData(); // Reload to update the UI
+    } catch (err) {
+      console.error("Error removing player from team:", err);
+      setError("Error al quitar jugador del equipo.");
     }
   };
 
-  return (
-    <div className="min-h-screen bg-indor-black/60 p-6">
-    <UserDropdownMenu />
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-white">Equipos</h1>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-indor-orange hover:bg-orange-dense text-white px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Crear Equipo
-          </button>
-        </div>
+  const CreateTeamForm = ({ onSubmit, onCancel }) => {
+    const [formData, setFormData] = useState({
+      name: "",
+      categoryId: "",
+      status: "idle",
+    });
 
-        {/* Filters */}
-        <div className="mb-6">
-          <div className="flex items-center gap-4">
-            <Filter className="w-5 h-5 text-gray-500" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2"
-            >
-              <option value="all">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+    const handleSubmit = () => {
+      if (formData.name && formData.categoryId) {
+        onSubmit(formData);
+      }
+    };
 
-        {/* Teams Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTeams.map((teamData) => (
-            <div
-              key={teamData.team.id}
-              className="bg-white rounded-lg shadow-md p-6"
-            >
-              {/* Team Header */}
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {teamData.team.name ||
-                      newTeamName(teamData) ||
-                      "Equipo sin nombre"}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {teamData.category?.name}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setCurrentTeam(teamData);
-                      setShowEditModal(true);
-                    }}
-                    className="text-gray-600 hover:text-blue-600"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteTeam(teamData.team.id)}
-                    className="text-gray-600 hover:text-red-600"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Status Badge */}
-              <div className="mb-4">
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                    teamData.team.status
-                  )}`}
-                >
-                  {teamData.team.status}
-                </span>
-              </div>
-
-              {/* Players */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    Players ({teamData.players.length}/2)
-                  </span>
-                  <button
-                    onClick={() => {
-                      setCurrentTeam(teamData);
-                      setShowPlayerModal(true);
-                    }}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    <Users className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="space-y-1">
-                  {teamData.players.map((player) => (
-                    <div
-                      key={player.profile.id}
-                      className="text-sm text-gray-600"
-                    >
-                      {player.users.name}
-                    </div>
-                  ))}
-                  {teamData.players.length === 0 && (
-                    <div className="text-sm text-gray-400 italic">
-                      No players assigned
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Create Team Modal */}
-        {showCreateModal && (
-          <TeamModal
-            title="Create Team"
-            categories={categories}
-            onSubmit={handleCreateTeam}
-            onClose={() => setShowCreateModal(false)}
-            loading={loading}
-          />
-        )}
-
-        {/* Edit Team Modal */}
-        {showEditModal && currentTeam && (
-          <TeamModal
-            title="Edit Team"
-            categories={categories}
-            team={currentTeam.team}
-            onSubmit={handleUpdateTeam}
-            onClose={() => {
-              setShowEditModal(false);
-              setCurrentTeam(null);
-            }}
-            loading={loading}
-          />
-        )}
-
-        {/* Player Management Modal */}
-        {showPlayerModal && currentTeam && (
-          <PlayerModal
-            team={currentTeam}
-            availablePlayers={availablePlayers}
-            onAddPlayer={handleAddPlayerToTeam}
-            onRemovePlayer={handleRemovePlayerFromTeam}
-            onClose={() => {
-              setShowPlayerModal(false);
-              setCurrentTeam(null);
-            }}
-            loading={loading}
-          />
-        )}
-      </div>
-    </div>
-  );
-};
-
-const TeamModal = ({
-  title,
-  categories,
-  team,
-  onSubmit,
-  onClose,
-  loading,
-}: {
-  title: string;
-  team: Team;
-  categories: Category[];
-  loading: boolean;
-  onSubmit: Promise<void>;
-  onClose: void;
-}) => {
-  const newName = () => {
-    "Ola";
-  };
-  const [formData, setFormData] = useState({
-    name: team?.name || "Equipo Sin Nombre",
-    categoryId: team?.categoryId || "",
-    status: team?.status || "idle",
-  });
-
-  const handleSubmit = () => {
-    if (!formData.name.trim() || !formData.categoryId) {
-      alert("Please fill in all required fields");
-      return;
-    }
-    onSubmit(formData);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">{title}</h2>
+    return (
+      <div className="bg-white p-6 rounded-lg border border-gray-200 mb-6">
+        <h3 className="text-lg font-semibold mb-4">Create New Team</h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Team Name*
+              Team Name
             </label>
             <input
               type="text"
@@ -495,32 +154,29 @@ const TeamModal = ({
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter team name"
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category *
+              Category
             </label>
             <select
               value={formData.categoryId}
               onChange={(e) =>
                 setFormData({ ...formData, categoryId: e.target.value })
               }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Select Category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
+              <option value="">Select category</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
                 </option>
               ))}
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Status
@@ -530,7 +186,7 @@ const TeamModal = ({
               onChange={(e) =>
                 setFormData({ ...formData, status: e.target.value })
               }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="idle">Idle</option>
               <option value="winner">Winner</option>
@@ -538,126 +194,287 @@ const TeamModal = ({
               <option value="risky">Risky</option>
             </select>
           </div>
-
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-2">
             <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              onClick={handleSubmit}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              Cancel
+              <Save size={16} />
+              Create Team
             </button>
             <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+              onClick={onCancel}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
             >
-              {loading
-                ? "Saving..."
-                : title.includes("Create")
-                ? "Create"
-                : "Update"}
+              <X size={16} />
+              Cancel
             </button>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-const PlayerModal = ({
-  team,
-  availablePlayers,
-  onAddPlayer,
-  onRemovePlayer,
-  onClose,
-  loading,
-}) => {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-        <h2 className="text-xl font-bold mb-4">Jugadores - {team.team.name}</h2>
+  const EditTeamForm = ({ team, onSave, onCancel }) => {
+    const [formData, setFormData] = useState({
+      name: team.team.name,
+      categoryId: team.team.categoryId,
+    });
+    const handleSubmit = () => {
+      onSave(team.team.id, formData);
+    };
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Current Players */}
-          <div>
-            <h3 className="text-lg font-medium mb-3">
-              Current Players ({team.players.length}/2)
-            </h3>
-            <div className="space-y-2">
-              {team.players.map((player) => (
-                <div
-                  key={player.profile.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div>
-                    <div className="font-medium">{player.users.name}</div>
-                    <div className="text-sm text-gray-600">
-                      {player.users.email}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => onRemovePlayer(player.profile.id)}
-                    disabled={loading}
-                    className="text-red-600 hover:text-red-800 disabled:opacity-50"
-                  >
-                    <UserMinus className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              {team.players.length === 0 && (
-                <div className="text-gray-500 italic text-center py-4">
-                  No players assigned
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Available Players */}
-          <div>
-            <h3 className="text-lg font-medium mb-3">Available Players</h3>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {availablePlayers.map((player) => (
-                <div
-                  key={player.profile.id}
-                  className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-                >
-                  <div>
-                    <div className="font-medium">{player.users.name}</div>
-                    <div className="text-sm text-gray-600">
-                      {player.users.email}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => onAddPlayer(player.profile.id)}
-                    disabled={loading || team.players.length >= 2}
-                    className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              {availablePlayers.length === 0 && (
-                <div className="text-gray-500 italic text-center py-4">
-                  No available players
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-6">
+    return (
+      <div className="space-y-3">
+        <label>Nombre del equipo:</label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indor-orange"
+        />
+        <label>Categoría</label>
+        <select
+          value={formData.categoryId}
+          onChange={(e) =>
+            setFormData({ ...formData, categoryId: parseInt(e.target.value) })
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indor-orange accent-indor-orange"
+        >
+          {categories.map((category) => (
+            <option className="text-black" key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+        <label>Estado en la pirámide</label>
+        <select
+          value={formData.status}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indor-orange"
+        >
+          <option className="text-black" value="idle">Activo</option>
+          <option className="text-black" value="winner">Ganador</option>
+          <option className="text-black" value="looser">Perdedor</option>
+          <option className="text-black" value="risky">En riesgo</option>
+        </select>
+        <div className="flex gap-2">
           <button
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            onClick={handleSubmit}
+            className="flex items-center gap-1 px-3 py-1 bg-indor-orange/80 text-white rounded text-sm hover:bg-indor-orange"
           >
-            Close
+            <Save size={14} />
+            Guardar
+          </button>
+          <button
+            onClick={onCancel}
+            className="flex items-center gap-1 px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm hover:bg-gray-400"
+          >
+            <X size={14} />
+            Cancelar
           </button>
         </div>
       </div>
+    );
+  };
+
+  const PlayerModal = ({ teamId, onClose, onAddPlayer }) => {
+    return (
+      <div className="fixed inset-0 backdrop-blur-lg bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-indor-black/90 text-white border-black border-2 p-6 rounded-lg max-w-md w-full mx-4">
+          <h3 className="text-lg font-semibold mb-4">Agregar al equipo</h3>
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {availablePlayers.length === 0 ? (
+              <p className="text-white">Sin jugadores disponibles</p>
+            ) : (
+              availablePlayers.map((player) => (
+                <div
+                  key={player.profile.id}
+                  className="flex items-center justify-between p-3 border-b border-gray-200 hover:bg-indor-brown/60"
+                >
+                  <div>
+                    <div className="font-medium">
+                      {player.profile?.nickname ||
+                        player.users?.name ||
+                        "Jugador sin nombre"}
+                    </div>
+                    <div className="text-sm">
+                      {player.users?.email}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => onAddPlayer(teamId, player.profile.id)}
+                    className="px-3 py-1 bg-indor-orange/60 text-white rounded text-sm hover:bg-indor-orange"
+                  >
+                    Agregar
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="mt-4 w-full px-4 py-2 bg-gray-300 text-black rounded-md hover:bg-gray-400"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-6 mx-auto bg-indor-black/60 text-white">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-white">Gestión de equipos</h1>
+        <button
+          onClick={() => setShowCreateForm(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-indor-orange text-white rounded-md"
+        >
+          <Plus size={20} />
+          Añadir equipo
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-lg text-gray-500">Cargando...</div>
+        </div>
+      ) : (
+        <>
+          {showCreateForm && (
+            <CreateTeamForm
+              onSubmit={handleCreateTeam}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          )}
+
+          <div className="flex flex-wrap justify-between w-full gap-2 h-screen pb-36 overflow-scroll no-scrollbar">
+            {teams.map((teamData) => (
+              <div
+                key={teamData.team.id}
+                className="bg-indor-black/90 rounded-lg border max-w-5/6 w-max border-black p-6"
+              >
+                {editingTeam === teamData.team.id ? (
+                  <EditTeamForm
+                    team={teamData}
+                    onSave={handleUpdateTeam}
+                    onCancel={() => setEditingTeam(null)}
+                  />
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        <h3 className="text-xl font-semibold">
+                          {teamData.team.name}
+                        </h3>
+                        <span className="text-sm text-gray-500">
+                          {teamData.category?.name || "No Category"}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            statusColors[teamData.team.status]
+                          }`}
+                        >
+                          {teamData.team.status}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditingTeam(teamData.team.id)}
+                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-md"
+                        >
+                          <Edit size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users size={16} className="text-gray-500" />
+                        <span className="text-sm font-medium text-gray-700">
+                          Jugadores ({teamData.players?.length || 0}/2)
+                        </span>
+                      </div>
+                      {(!teamData.players || teamData.players.length < 2) && (
+                        <button
+                          onClick={() => setShowPlayerModal(teamData.team.id)}
+                          className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                        >
+                          <UserPlus size={14} />
+                          Añadir jugador
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="mt-3 space-y-2">
+                      {!teamData.players || teamData.players.length === 0 ? (
+                        <p className="text-white text-sm">
+                          Sin jugadores asignados
+                        </p>
+                      ) : (
+                        teamData.players.map((player) => (
+                          <div
+                            key={player.profile?.id}
+                            className="flex items-center justify-between p-3 bg-indor-black rounded-md"
+                          >
+                            <div>
+                              <div className="font-medium">
+                                {player.profile?.nickname ||
+                                  player.users?.name ||
+                                  "Unknown Player"}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {player.users?.email}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() =>
+                                handleRemovePlayerFromTeam(player.profile?.id)
+                              }
+                              className="p-1 text-red-600 hover:bg-red-100 rounded"
+                            >
+                              <UserMinus size={14} />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+
+            {teams.length === 0 && (
+              <div className="text-center py-12">
+                <Users size={48} className="mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No teams found
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Get started by creating your first team.
+                </p>
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Create Team
+                </button>
+              </div>
+            )}
+          </div>
+
+          {showPlayerModal && (
+            <PlayerModal
+              teamId={showPlayerModal}
+              onClose={() => setShowPlayerModal(null)}
+              onAddPlayer={handleAddPlayerToTeam}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 };
 
-export default TeamManagementPage;
+export default TeamManagement;

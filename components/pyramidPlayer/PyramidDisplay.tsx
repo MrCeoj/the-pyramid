@@ -16,6 +16,7 @@ type Team = {
   losses: number;
   status: "winner" | "idle" | "looser" | "risky";
   categoryId: number;
+  players: string[]
 };
 
 type Position = {
@@ -127,7 +128,7 @@ export default function PyramidDisplay({
                 unresolvedMatches={unresolvedMatches}
                 userTeamId={userTeamId}
                 pyramidId={data.pyramid_id!}
-                className={`flex gap-4 p-4 justify-start min-w-max overflow-x-scroll scroll-smooth no-scrollbar items-center snap-x rounded-t-2xl border-2 border-slate-400/40 border-dashed bg-indor-black/90 ${
+                className={`flex gap-4 p-4 justify-start min-w-max overflow-x-scroll scroll-smooth no-scrollbar items-center snap-x rounded-t-2xl border-2 border-slate-400/40 border-dashed bg-indor-black/80 ${
                   isLast ? "border-b-2 rounded-b-2xl" : "border-b-0"
                 }`}
               />
