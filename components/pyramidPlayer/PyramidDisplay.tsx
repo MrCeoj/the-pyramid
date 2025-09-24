@@ -98,9 +98,10 @@ export default function PyramidDisplay({
         <div className="max-w-1/4 w-[16rem] h-[8rem] lg:w-[400px] lg:h-[160px] absolute left-2">
           <Image
             src={"/piramide_logo_title_naranja.svg"}
+            priority
             alt="Logo"
             fill
-            objectFit="cover"
+            style={{objectFit:"cover"}}
             className="drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
           />
         </div>
@@ -113,7 +114,6 @@ export default function PyramidDisplay({
             const rowPositions = filledRows[Number(rowKey)];
             const isFirst = index === 0;
             const isLast = index === array.length - 1;
-
             return (
               <PyramidRow
                 key={rowKey}

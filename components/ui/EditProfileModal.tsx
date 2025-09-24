@@ -10,7 +10,8 @@ interface Profile {
 }
 
 interface User {
-  name?: string;
+  paternalSurname?: string;
+  maternalSurname?: string;
   email?: string;
   image?: string;
 }
@@ -27,7 +28,8 @@ interface EditProfileModalProps {
 }
 
 interface FormData {
-  name: string;
+  paternalSurname: string;
+  maternalSurname: string;
   email: string;
   image: string;
   nickname: string;
@@ -54,23 +56,26 @@ export default function EditProfileModal({
   }, [passwordError]);
 
   const [formData, setFormData] = useState<FormData>({
-    // Common data (users)
-    name: "",
+    paternalSurname: "",
+    maternalSurname: "",
     email: "",
     image: "",
-    // Player's profile data
     nickname: "",
-    // Passwords (optional)
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
+  const sanitizeNickname = (value: string): string => {
+    return value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10);
+  };
+
   useEffect(() => {
     if (initialData) {
       setFormData((prev) => ({
         ...prev,
-        name: initialData.user.name || "",
+        paternalSurname: initialData.user.paternalSurname || "",
+        maternalSurname: initialData.user.maternalSurname || "",
         email: initialData.user.email || "",
         image: initialData.user.image || "",
         nickname: initialData.profile?.nickname || "",
@@ -80,7 +85,8 @@ export default function EditProfileModal({
 
   const handleClose = () => {
     setFormData({
-      name: "",
+      paternalSurname: "",
+      maternalSurname: "",
       email: "",
       image: "",
       nickname: "",
@@ -101,14 +107,16 @@ export default function EditProfileModal({
     }
 
     const initialBaseData = {
-      name: initialData.user.name || "",
+      paternalSurname: initialData.user.paternalSurname || "",
+      maternalSurname: initialData.user.maternalSurname || "",
       email: initialData.user.email || "",
       image: initialData.user.image || "",
       nickname: initialData.profile?.nickname || "",
     };
 
     const currentBaseData = {
-      name: formData.name,
+      paternalSurname: formData.paternalSurname,
+      maternalSurname: formData.maternalSurname,
       email: formData.email,
       image: formData.image,
       nickname: formData.nickname,
@@ -159,6 +167,14 @@ export default function EditProfileModal({
     }));
   };
 
+  const handleNicknameChange = (value: string) => {
+    const sanitizedValue = sanitizeNickname(value);
+    setFormData((prev) => ({
+      ...prev,
+      nickname: sanitizedValue,
+    }));
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -180,19 +196,32 @@ export default function EditProfileModal({
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div className="space-y-4">
-            <div>
-              <label className="block text-gray-300 text-sm mb-2">
-                Primer apellido
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                className="w-full px-3 py-2 bg-indor-black border border-indor-brown-light rounded text-white placeholder-gray-400 focus:border-indor-brown-light focus:outline-none"
-                placeholder="Primer apellido"
-              />
+            <div className="flex justify-between gap-2">
+              <div className="w-1/2">
+                <label className="block text-gray-300 text-sm mb-2">
+                  Primer apellido
+                </label>
+                <input
+                  type="text"
+                  value={formData.paternalSurname}
+                  onChange={(e) => handleInputChange("paternalSurname", e.target.value)}
+                  className="w-full px-3 py-2 bg-indor-black border border-indor-brown-light rounded text-white placeholder-gray-400 focus:border-indor-brown-light focus:outline-none"
+                  placeholder="Primer apellido"
+                />
+              </div>
+              <div className="w-1/2">
+                <label className="block text-gray-300 text-sm mb-2">
+                  Segundo apellido
+                </label>
+                <input
+                  type="text"
+                  value={formData.maternalSurname}
+                  onChange={(e) => handleInputChange("maternalSurname", e.target.value)}
+                  className="w-full px-3 py-2 bg-indor-black border border-indor-brown-light rounded text-white placeholder-gray-400 focus:border-indor-brown-light focus:outline-none"
+                  placeholder="Segundo apellido"
+                />
+              </div>
             </div>
-
             {/* Player Profile Info (only for players) */}
             {!isAdmin && (
               <div className="space-y-4">
@@ -203,12 +232,14 @@ export default function EditProfileModal({
                   <input
                     type="text"
                     value={formData.nickname}
-                    onChange={(e) =>
-                      handleInputChange("nickname", e.target.value)
-                    }
+                    onChange={(e) => handleNicknameChange(e.target.value)}
                     className="w-full px-3 py-2 bg-indor-black border border-indor-brown-light rounded text-white placeholder-gray-400 focus:border-indor-brown-light focus:outline-none"
                     placeholder="¿Cómo te gustaria que te llamen?"
+                    maxLength={10}
                   />
+                  <div className="text-xs text-gray-400 mt-1">
+                    {formData.nickname.length}/10 caracteres
+                  </div>
                 </div>
               </div>
             )}

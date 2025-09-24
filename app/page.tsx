@@ -15,7 +15,6 @@ export default async function Home() {
   const session = await auth();
   
   const result = await getUserTeamId(session!.user.id);
-
   let userTeamId: number | null | undefined;
   if ("error" in result) {
     console.error(result.error);

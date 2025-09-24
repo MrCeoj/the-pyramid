@@ -32,7 +32,7 @@ export default function UserDropdownMenu() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Use both NextAuth session and your session store
-  const { data: nextAuthSession, status } = useSession();
+  const { data: nextAuthSession, status, update } = useSession();
   const { session: storeSession } = useSessionStore();
   const router = useRouter();
 
@@ -41,6 +41,11 @@ export default function UserDropdownMenu() {
 
   const isAdmin = session?.user?.role === "admin";
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    console.log(status)
+    if (status === "unauthenticated") update();
+  }, [status, update]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

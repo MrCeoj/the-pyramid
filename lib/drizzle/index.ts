@@ -7,11 +7,13 @@ declare global {
 
 const connectionString = process.env.CONNECTION_STRING!;
 
-const pool = global.dbClient || postgres(connectionString, { max: 10 });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const pool = (globalThis as any).dbClient || postgres(connectionString, { max: 10 });
 
 // In development, we attach the client to the global object
 if (process.env.NODE_ENV !== "production") {
-  global.dbClient = pool;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).dbClient = pool;
 }
 
 export const db = drizzle(pool);

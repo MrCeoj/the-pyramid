@@ -2,7 +2,6 @@ import "./globals.css";
 import type { Metadata } from "next";
 import HellBackground from "@/components/lightswind/hell-background";
 import Image from "next/image";
-
 export const metadata: Metadata = {
   title: "La pirámide | Página no encontrada",
   description: "La página que buscas no existe.",
@@ -10,10 +9,11 @@ export const metadata: Metadata = {
 
 export default function GlobalNotFound() {
   return (
-      <div>
+    <html lang="es">
+      <body>
         <HellBackground
-          color1="#f48a34"
-          color2="#2c2c2c"
+          color1="#2c2c2c"
+          color2="#f48a34"
           backdropBlurAmount="lg"
           className="fixed h-full w-full -z-10"
         />
@@ -32,6 +32,7 @@ export default function GlobalNotFound() {
             <p className="text-xl mt-2 font-semibold">La página que buscas no existe.</p>
           </div>
         </div>
-      </div>
+      </body>
+    </html>
   );
 }

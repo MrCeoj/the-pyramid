@@ -122,7 +122,7 @@ const TeamCard = ({
           onClick={challengable ? handleChallenge : undefined}
           className={`relative group ${
             isTop ? specialColors.champion : statusColors[data.team.status!]
-          } border-2 rounded-lg transition-all duration-300 p-3 min-w-[140px] max-w-[180px] backdrop-blur-sm snap-center ${getCardAnimation()} ${
+          } border-2 rounded-lg transition-all duration-300 p-3 min-w-[140px] max-w-[140px] backdrop-blur-sm snap-center ${getCardAnimation()} ${
             challengable ? "cursor-pointer border-dashed" : ""
           }`}
         >
@@ -147,21 +147,15 @@ const TeamCard = ({
           {getStatusIcon()}
 
           {/* Header with category and name */}
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 min-h-[2.5rem] max-h-[2.5rem]">
             <div className="flex-1 min-w-0">
               <div
-                className={`font-semibold text-sm truncate ${
+                className={`font-semibold text-sm text-wrap ${
                   isTop ? "text-yellow-200" : "text-white"
                 }`}
                 title="Nombre del equipo"
               >
-                {data.team.displayName.includes("&") ? (
-                  <div className="flex flex-col min-h-10 justify-center max-h-10">
-                    {data.team.displayName.split("&").map((s, key) => (<span key={key}>{s}</span>))}
-                  </div>
-                ) : (
-                  ""
-                )}
+                {data.team.displayName}
               </div>
             </div>
 

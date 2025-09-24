@@ -1,7 +1,14 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { eq, and, or, isNull } from "drizzle-orm";
-import { position, team, pyramid, profile, users, getTeamDisplayName } from "@/db/schema";
+import {
+  position,
+  team,
+  pyramid,
+  profile,
+  users,
+  getTeamDisplayName,
+} from "@/db/schema";
 
 export type Team = {
   id: number;
@@ -44,8 +51,6 @@ export type PyramidOption = {
   description: string | null;
 };
 
-
-
 export async function getPlayerPyramid(
   userId: string
 ): Promise<PyramidData | null> {
@@ -62,8 +67,6 @@ export async function getPlayerPyramid(
       return null;
     }
 
-    // For simplicity, let's get the pyramid for the first team
-    // You might want to modify this logic based on your needs
     const teamId = userTeams[0].id;
 
     // Find pyramid where this team is positioned
@@ -116,10 +119,11 @@ export async function getPlayerPyramid(
       .from(position)
       .where(eq(position.pyramidId, pyramidId))
       .innerJoin(team, eq(position.teamId, team.id))
-      .innerJoin(users, eq(team.player1Id, users.id))
+      .leftJoin(users, eq(team.player1Id, users.id))
       .leftJoin(profile, eq(users.id, profile.userId));
 
     // Get player2 data for each team
+    console.log(positionsWithTeams);
 
     const positions: Position[] = await Promise.all(
       positionsWithTeams.map(async (pos) => {
@@ -138,18 +142,18 @@ export async function getPlayerPyramid(
         const player1 = pos.player1Id
           ? {
               id: pos.player1Id,
-              paternalSurname: pos.player1PaternalSurname,
-              maternalSurname: pos.player1MaternalSurname,
-              nickname: pos.player1Nickname,
+              paternalSurname: pos.player1PaternalSurname ?? "",
+              maternalSurname: pos.player1MaternalSurname ?? "",
+              nickname: pos.player1Nickname ?? "",
             }
           : null;
 
         const player2 = pos.player2Id
           ? {
               id: pos.player2Id,
-              paternalSurname: player2Data?.[0]?.paternalSurname || "",
-              maternalSurname: player2Data?.[0]?.maternalSurname || "",
-              nickname: player2Data?.[0]?.nickname,
+              paternalSurname: player2Data?.[0]?.paternalSurname ?? "",
+              maternalSurname: player2Data?.[0]?.maternalSurname ?? "",
+              nickname: player2Data?.[0]?.nickname ?? "",
             }
           : null;
 
@@ -172,6 +176,8 @@ export async function getPlayerPyramid(
         };
       })
     );
+
+    console.log("player positions:", positions);
 
     return {
       positions,
@@ -264,7 +270,7 @@ export async function getPyramidData(
       .from(position)
       .where(eq(position.pyramidId, pyramidId))
       .innerJoin(team, eq(position.teamId, team.id))
-      .innerJoin(users, eq(team.player1Id, users.id))
+      .leftJoin(users, eq(team.player1Id, users.id))
       .leftJoin(profile, eq(users.id, profile.userId));
 
     // Get player2 data for each team
@@ -285,17 +291,17 @@ export async function getPyramidData(
         const player1 = pos.player1Id
           ? {
               id: pos.player1Id,
-              paternalSurname: pos.player1PaternalSurname,
-              maternalSurname: pos.player1MaternalSurname,
-              nickname: pos.player1Nickname,
+              paternalSurname: pos.player1PaternalSurname ?? "",
+              maternalSurname: pos.player1MaternalSurname ?? "",
+              nickname: pos.player1Nickname ?? null,
             }
           : null;
 
         const player2 = pos.player2Id
           ? {
               id: pos.player2Id,
-              paternalSurname: player2Data?.[0]?.paternalSurname || "",
-              maternalSurname: player2Data?.[0]?.maternalSurname || "",
+              paternalSurname: player2Data?.[0]?.paternalSurname ?? "",
+              maternalSurname: player2Data?.[0]?.maternalSurname ?? "",
               nickname: player2Data?.[0]?.nickname,
             }
           : null;
@@ -334,7 +340,6 @@ export async function getPyramidData(
 
 export async function getAllPyramids(): Promise<PyramidOption[]> {
   try {
-    console.log("Fetching pyramids");
     const pyramids = await db
       .select({
         id: pyramid.id,
@@ -354,7 +359,6 @@ export async function getAllPyramids(): Promise<PyramidOption[]> {
 
 export async function getAllPyramidsTotal(): Promise<PyramidOption[]> {
   try {
-    console.log("Fetching pyramids");
     const pyramids = await db
       .select({
         id: pyramid.id,

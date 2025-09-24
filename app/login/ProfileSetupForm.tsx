@@ -6,7 +6,7 @@ import { Button } from "@/components/lightswind/button";
 import { Card } from "@/components/lightswind/card";
 import { Input } from "@/components/lightswind/input";
 import { Label } from "@/components/lightswind/label";
-import { updateProfile, login } from "../../actions/LoginActions"; // Assuming actions are in the same folder
+import { updateProfile, login } from "@/actions/LoginActions";// Assuming actions are in the same folder
 import toast from "react-hot-toast";
 
 interface User {
@@ -54,8 +54,8 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
     }
 
     startTransition(async () => {
+      const password = formData.password.replaceAll(" ", "");
       try {
-        const password = formData.password.replaceAll(" ", "");
         
         // 1. Create the profile and set the password
         const createResult = await updateProfile({
@@ -69,31 +69,26 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
 
         if (!createResult.success) {
           setError(createResult.error || "Error al crear el perfil.");
-          return; // Stop if profile creation failed
+          return;
         }
 
-        // 2. On success, notify the user and attempt to log them in automatically
         toast.success("¡Perfil completado! Iniciando sesión...");
-
-        // The `login` action will handle the redirect on success.
-        // We only need to handle the case where it might fail.
+        
+      } catch (err) {
+        if (err instanceof Error){
+          console.log(err)
+          setError(err.message)
+        }
+      } finally {
         const loginResult = await login({
           email: user.email!,
           password: password,
         });
 
         if (loginResult?.error) {
-          // This is an unlikely edge case, but it's good practice to handle it.
-          // It means profile was created, but auto-login failed.
           setError(loginResult.error);
-          toast.error("No se pudo iniciar sesión. Por favor, inténtelo nuevamente.");
           router.push("/login");
         }
-        
-
-      } catch (err) {
-        if (err instanceof Error) {console.log(error)}
-        toast.error("Algo salió mal. Por favor, inténtalo de nuevo.");
       }
     });
   };

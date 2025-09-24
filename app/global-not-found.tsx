@@ -12,8 +12,8 @@ export default function GlobalNotFound() {
     <html lang="es">
       <body>
         <HellBackground
-          color1="#f48a34"
-          color2="#2c2c2c"
+          color1="#2c2c2c"
+          color2="#f48a34"
           backdropBlurAmount="lg"
           className="fixed h-full w-full -z-10"
         />

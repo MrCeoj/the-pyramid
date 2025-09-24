@@ -155,25 +155,34 @@ export const pyramidCategory = pgTable(
 );
 
 // 4. Updated Team table - no more team names, computed from players
-export const team = pgTable("team", {
-  id: serial("id").primaryKey(),
-  // Removed 'name' field - will be computed from players
-  categoryId: integer("category_id").references(() => category.id, {
-    onDelete: "set null",
-  }),
-  player1Id: text("player1_id")
-    .references(() => users.id, { onDelete: "cascade" }),
-  player2Id: text("player2_id")
-    .references(() => users.id, { onDelete: "cascade" }),
-  wins: integer("wins").default(0),
-  losses: integer("losses").default(0),
-  status: teamStatus("status").default("idle"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-}, (t) => ({
-  // Ensure a team can't have the same player twice
-  uniquePlayers: uniqueIndex("unique_team_players").on(t.player1Id, t.player2Id),
-}));
+export const team = pgTable(
+  "team",
+  {
+    id: serial("id").primaryKey(),
+    // Removed 'name' field - will be computed from players
+    categoryId: integer("category_id").references(() => category.id, {
+      onDelete: "set null",
+    }),
+    player1Id: text("player1_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    player2Id: text("player2_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    wins: integer("wins").default(0),
+    losses: integer("losses").default(0),
+    status: teamStatus("status").default("idle"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    // Ensure a team can't have the same player twice
+    uniquePlayers: uniqueIndex("unique_team_players").on(
+      t.player1Id,
+      t.player2Id
+    ),
+  })
+);
 
 // 5. Updated Profile table
 export const profile = pgTable("profile", {
@@ -233,41 +242,55 @@ export const match = pgTable("match", {
   winnerTeamId: integer("winner_team_id").references(() => team.id),
   evidenceUrl: text("evidence_url"),
   status: matchStatus("status").notNull().default("pending"),
-  
+
   // Notification tracking - track when each player has seen the match
-  challengerPlayer1ViewedAt: timestamp("challenger_player1_viewed_at", { withTimezone: true }),
-  challengerPlayer2ViewedAt: timestamp("challenger_player2_viewed_at", { withTimezone: true }),
-  defenderPlayer1ViewedAt: timestamp("defender_player1_viewed_at", { withTimezone: true }),
-  defenderPlayer2ViewedAt: timestamp("defender_player2_viewed_at", { withTimezone: true }),
-  
+  challengerPlayer1ViewedAt: timestamp("challenger_player1_viewed_at", {
+    withTimezone: true,
+  }),
+  challengerPlayer2ViewedAt: timestamp("challenger_player2_viewed_at", {
+    withTimezone: true,
+  }),
+  defenderPlayer1ViewedAt: timestamp("defender_player1_viewed_at", {
+    withTimezone: true,
+  }),
+  defenderPlayer2ViewedAt: timestamp("defender_player2_viewed_at", {
+    withTimezone: true,
+  }),
+
   // Track important events for notifications
-  lastStatusChange: timestamp("last_status_change", { withTimezone: true }).defaultNow(),
+  lastStatusChange: timestamp("last_status_change", {
+    withTimezone: true,
+  }).defaultNow(),
   notificationsSent: boolean("notifications_sent").default(false),
-  
+
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 // Alternative: More scalable notification system
-export const matchNotifications = pgTable("match_notifications", {
-  id: serial("id").primaryKey(),
-  matchId: integer("match_id")
-    .notNull()
-    .references(() => match.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  notificationType: text("notification_type").notNull(), // 'challenge', 'accepted', 'played', 'result'
-  isRead: boolean("is_read").default(false),
-  readAt: timestamp("read_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-}, (t) => ({
-  uniqueMatchUserType: uniqueIndex("unique_match_user_notification").on(
-    t.matchId, 
-    t.userId, 
-    t.notificationType
-  )
-}));
+export const matchNotifications = pgTable(
+  "match_notifications",
+  {
+    id: serial("id").primaryKey(),
+    matchId: integer("match_id")
+      .notNull()
+      .references(() => match.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    notificationType: text("notification_type").notNull(), // 'challenge', 'accepted', 'played', 'result'
+    isRead: boolean("is_read").default(false),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    uniqueMatchUserType: uniqueIndex("unique_match_user_notification").on(
+      t.matchId,
+      t.userId,
+      t.notificationType
+    ),
+  })
+);
 
 // 8. Position history
 export const positionHistory = pgTable("position_history", {
@@ -328,14 +351,20 @@ export function getTeamDisplayName(
   player1: Team["player1"],
   player2: Team["player2"]
 ): string {
-  if (!player1?.id) player1 = null
-  if (!player2?.id) player2 = null
-  if (!player1 && !player2) 
-    return "Equipo vacío";
-  if (!player1)
-    return `"${player2?.nickname}" ${player2?.paternalSurname}`
-  if (!player2)
-    return `"${player1?.nickname}" ${player1?.paternalSurname}`
+  if (!player1?.id) player1 = null;
+  if (!player2?.id) player2 = null;
+  if (!player1 && !player2) return "Equipo vacío";
+  if (!player1) {
+    return player2?.nickname
+      ? `"${player2?.nickname}" ${player2?.paternalSurname}`
+      : `${player2?.paternalSurname} ${player2?.maternalSurname}`;
+  }
+  if (!player2) {
+    return player1?.nickname
+      ? `"${player1?.nickname}" ${player1?.paternalSurname}`
+      : `${player1?.paternalSurname} ${player1?.maternalSurname}`;
+  }
+
   if (player1?.nickname && player2?.nickname)
     return `${player1.nickname} & ${player2.nickname}`;
   if (player1?.nickname && player2)
@@ -344,7 +373,9 @@ export function getTeamDisplayName(
     return `${player1.paternalSurname} & ${player2.nickname}`;
   if (player1 && player2)
     return `${player1.paternalSurname} & ${player2.paternalSurname}`;
-  if (player1 && !player2) return player1.paternalSurname + " " + player1.maternalSurname;
-  if (player2 && !player1) return player2.paternalSurname + " " + player2.maternalSurname;
+  if (player1 && !player2)
+    return player1.paternalSurname + " " + player1.maternalSurname;
+  if (player2 && !player1)
+    return player2.paternalSurname + " " + player2.maternalSurname;
   return "Equipo vacío";
 }

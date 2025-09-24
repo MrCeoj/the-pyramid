@@ -37,7 +37,25 @@ export default auth((req: NextRequest & { auth: any }) => {
   }
 
   // Admin routes protection
-  if (pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/equipos")) {
+    if (userRole !== "admin") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
+  
+  if (pathname.startsWith("/retas")) {
+    if (userRole !== "admin") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
+
+  if (pathname.startsWith("/piramides")) {
+    if (userRole !== "admin") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
+
+  if (pathname.startsWith("/perfiles")) {
     if (userRole !== "admin") {
       return NextResponse.redirect(new URL("/", req.url));
     }

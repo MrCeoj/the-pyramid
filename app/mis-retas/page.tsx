@@ -383,10 +383,10 @@ const MatchesPage = () => {
               ) : (
                 <div className="text-center py-12">
                   <History className="text-white mx-auto mb-4" size={48} />
-                  <h3 className="text-xl font-semibold text-slate-400 mb-2">
+                  <h3 className="text-xl font-semibold text-white mb-2">
                     No tienes historial de retas
                   </h3>
-                  <p className="text-slate-500">
+                  <p className="text-white">
                     Tus retas anteriores aparecerán aquí
                   </p>
                 </div>

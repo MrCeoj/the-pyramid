@@ -62,7 +62,6 @@ export async function validateMailExistance(email: string) {
   }
 }
 
-
 export async function login(values: z.infer<typeof LoginSchema>) {
   const validatedFields = LoginSchema.safeParse(values);
 
@@ -78,6 +77,9 @@ export async function login(values: z.infer<typeof LoginSchema>) {
       password,
       redirectTo: "/",
     });
+
+    // This line will never be reached because signIn redirects
+    return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
       if (error.type === "CallbackRouteError") {
@@ -95,6 +97,51 @@ export async function login(values: z.infer<typeof LoginSchema>) {
     }
 
     throw error;
+  }
+}
+
+// New function for login without redirect
+export async function loginWithoutRedirect(
+  values: z.infer<typeof LoginSchema>
+) {
+  const validatedFields = LoginSchema.safeParse(values);
+
+  if (!validatedFields.success) {
+    return { error: "Campos inválidos." };
+  }
+
+  const { email, password } = validatedFields.data;
+
+  try {
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false, // This prevents the redirect
+    });
+
+    if (result?.error) {
+      return { error: "Correo o contraseña inválidos." };
+    }
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      if (error.type === "CallbackRouteError") {
+        const cause = error.cause?.err?.message;
+        if (cause && cause === "CredentialsSignin") {
+          return { error: "Correo o contraseña inválidos." };
+        }
+      }
+
+      if (error.type === "CredentialsSignin") {
+        return { error: "Correo o contraseña inválidos." };
+      }
+
+      return { error: "¡Algo salió mal!.\nInténtalo de nuevo mas tarde." };
+    }
+
+    console.error("Login error:", error);
+    return { error: "Error de autenticación." };
   }
 }
 
@@ -155,6 +202,32 @@ export async function updateProfile(data: CreateProfileData) {
       success: false,
       error: "Error al crear el perfil o actualizar el usuario.",
     };
+  }
+}
+
+// New combined function for profile setup with login
+export async function updateProfileAndLogin(
+  data: CreateProfileData & { email: string }
+) {
+  try {
+    // First update the profile
+    const profileResult = await updateProfile(data);
+
+    if (!profileResult.success) {
+      return profileResult;
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in updateProfileAndLogin:", error);
+
+    if (error instanceof AuthError) {
+      return {
+        success: false,
+        error: "Error de autenticación después de crear el perfil.",
+      };
+    }
+
   }
 }
 
