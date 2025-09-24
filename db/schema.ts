@@ -28,11 +28,14 @@ export const teamStatus = pgEnum("team_status", [
   "risky",
 ]);
 
+// Updated users table to handle Mexican naming convention
 export const users = pgTable("users", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  name: text("name"),
+  name: text("name").notNull(),
+  paternalSurname: text("paternal_surname").notNull(), // Apellido paterno
+  maternalSurname: text("maternal_surname").notNull(), // Apellido materno
   email: text("email").unique(),
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
@@ -143,40 +146,47 @@ export const pyramidCategory = pgTable(
     categoryId: integer("category_id")
       .notNull()
       .references(() => category.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.pyramidId, t.categoryId] }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   })
 );
 
-// 4. Team table
+// 4. Updated Team table - no more team names, computed from players
 export const team = pgTable("team", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
+  // Removed 'name' field - will be computed from players
   categoryId: integer("category_id").references(() => category.id, {
     onDelete: "set null",
   }),
+  player1Id: text("player1_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  player2Id: text("player2_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   wins: integer("wins").default(0),
   losses: integer("losses").default(0),
   status: teamStatus("status").default("idle"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+}, (t) => ({
+  // Ensure a team can't have the same player twice
+  uniquePlayers: uniqueIndex("unique_team_players").on(t.player1Id, t.player2Id),
+}));
 
-// 5. Profile table
+// 5. Updated Profile table
 export const profile = pgTable("profile", {
   id: serial("id").primaryKey(),
   userId: text("user_id")
     .notNull()
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
-  nickname: text("nickname"),
+  nickname: text("nickname"), // Optional nickname for team name generation
   avatarUrl: text("avatar_url"),
-  teamId: integer("team_id").references(() => team.id, {
-    onDelete: "set null",
-  }),
+  // Removed teamId since users can be in multiple teams
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
@@ -194,6 +204,8 @@ export const position = pgTable(
       .references(() => team.id, { onDelete: "cascade" }),
     row: integer("row").notNull(),
     col: integer("col").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
     uniquePyramidRowCol: uniqueIndex("unique_pyramid_row_col").on(
@@ -205,13 +217,10 @@ export const position = pgTable(
       t.pyramidId,
       t.teamId
     ),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   })
 );
 
-// 7. Match table
-// Add these fields to your existing match table
+// 7. Updated Match table with notification system
 export const match = pgTable("match", {
   id: serial("id").primaryKey(),
   pyramidId: integer("pyramid_id")
@@ -227,16 +236,22 @@ export const match = pgTable("match", {
   evidenceUrl: text("evidence_url"),
   status: matchStatus("status").notNull().default("pending"),
   
-  challengerViewedAt: timestamp("challenger_viewed_at", { withTimezone: true }),
-  defenderViewedAt: timestamp("defender_viewed_at", { withTimezone: true }),
+  // Notification tracking - track when each player has seen the match
+  challengerPlayer1ViewedAt: timestamp("challenger_player1_viewed_at", { withTimezone: true }),
+  challengerPlayer2ViewedAt: timestamp("challenger_player2_viewed_at", { withTimezone: true }),
+  defenderPlayer1ViewedAt: timestamp("defender_player1_viewed_at", { withTimezone: true }),
+  defenderPlayer2ViewedAt: timestamp("defender_player2_viewed_at", { withTimezone: true }),
+  
+  // Track important events for notifications
   lastStatusChange: timestamp("last_status_change", { withTimezone: true }).defaultNow(),
+  notificationsSent: boolean("notifications_sent").default(false),
   
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-// OR create a separate table for better scalability
-export const matchViews = pgTable("match_views", {
+// Alternative: More scalable notification system
+export const matchNotifications = pgTable("match_notifications", {
   id: serial("id").primaryKey(),
   matchId: integer("match_id")
     .notNull()
@@ -244,9 +259,16 @@ export const matchViews = pgTable("match_views", {
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  viewedAt: timestamp("viewed_at", { withTimezone: true }).defaultNow(),
+  notificationType: text("notification_type").notNull(), // 'challenge', 'accepted', 'played', 'result'
+  isRead: boolean("is_read").default(false),
+  readAt: timestamp("read_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 }, (t) => ({
-  uniqueMatchUser: uniqueIndex("unique_match_user_view").on(t.matchId, t.userId)
+  uniqueMatchUserType: uniqueIndex("unique_match_user_notification").on(
+    t.matchId, 
+    t.userId, 
+    t.notificationType
+  )
 }));
 
 // 8. Position history
@@ -282,3 +304,26 @@ export const positionHistory = pgTable("position_history", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
+
+// Helper function to generate team display name
+export const getTeamDisplayName = (
+  player1: { paternalSurname: string; maternalSurname: string; nickname?: string | null },
+  player2: { paternalSurname: string; maternalSurname: string; nickname?: string | null }
+): string => {
+  // If both players have nicknames, use those
+  if (player1.nickname && player2.nickname) {
+    return `${player1.nickname} / ${player2.nickname}`;
+  }
+  
+  // If only one has nickname, use nickname + surname
+  if (player1.nickname && !player2.nickname) {
+    return `${player1.nickname} / ${player2.paternalSurname}`;
+  }
+  
+  if (!player1.nickname && player2.nickname) {
+    return `${player1.paternalSurname} / ${player2.nickname}`;
+  }
+  
+  // Default: use both paternal surnames
+  return `${player1.paternalSurname} / ${player2.paternalSurname}`;
+};

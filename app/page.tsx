@@ -12,7 +12,7 @@ import { pyramid } from "@/db/schema";
 import { getUserTeamId } from "@/actions/IndexActions";
 
 export default async function Home() {
-  const session = await auth();  
+  const session = await auth();
   const userTeamId = await getUserTeamId(session!.user.id);
 
   // This should never happen
@@ -67,7 +67,9 @@ export default async function Home() {
               <h1 className="text-2xl font-bold mb-4">
                 No hay pirámides disponibles.
               </h1>
-              <p className="mb-4">No existen pirámides activas en este momento.</p>
+              <p className="mb-4">
+                No existen pirámides activas en este momento.
+              </p>
             </div>
           </div>
         </main>
@@ -108,16 +110,20 @@ export default async function Home() {
 
     if (!playerPyramid) {
       return (
-        <main className="h-screen flex flex-col justify-center items-center z-10 text-white ">
+        <main className="h-screen flex flex-col justify-center items-center bg-gradient-to-b from-black/20 to-indor-black/80 text-white px-4">
           <ZustandSessionInitializer />
-          <div className="text-center  bg-indor-black/40 p-2">
-            <h1 className="text-2xl font-bold mb-4">Sin participación</h1>
-            <p className="mb-4">Aún no te asignan a una pirámide.</p>
-            <p className="text-sm mb-4 ">
+          <UserDropdownMenu />
+          <div className="bg-indor-black/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 max-w-md text-center border border-white/10">
+            <h1 className="text-3xl font-extrabold mb-3 tracking-wide">
+              Sin participación
+            </h1>
+            <p className="mb-3 text-lg text-white/80">
+              Aún no te asignan a una pirámide.
+            </p>
+            <p className="mb-6 text-sm text-white/60">
               Por favor, contacta con un organizador si crees que se trata de un
               error.
             </p>
-            <UserDropdownMenu />
           </div>
         </main>
       );

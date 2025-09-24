@@ -28,9 +28,10 @@ export async function validateMailExistance(email: string) {
       .select({
         id: users.id,
         email: users.email,
-        name: users.name,
+        paternalSurname: users.paternalSurname,
+        maternalSurname: users.maternalSurname,
         image: users.image,
-        password: users.passwordHash, // This will be null if not set
+        password: users.passwordHash,
         role: users.role,
       })
       .from(users)
@@ -45,9 +46,6 @@ export async function validateMailExistance(email: string) {
 
     const foundUser = userResult[0];
 
-    // ✅ **NEW LOGIC HERE**
-    // Determine if the profile setup form is needed.
-    // This is true if the user is a 'player' and has not set a password yet.
     const needsProfileSetup =
       foundUser.role === "player" && !foundUser.password;
 
@@ -56,10 +54,6 @@ export async function validateMailExistance(email: string) {
       needsProfileSetup: needsProfileSetup,
     };
 
-    // The check for an existing profile row is no longer needed,
-    // as the password status is our new source of truth.
-    // This makes the function more efficient by removing a database call.
-
     return { user: userWithSetupStatus };
   } catch (err) {
     console.error(err);
@@ -67,7 +61,6 @@ export async function validateMailExistance(email: string) {
   }
 }
 
-// No changes are needed for the functions below, they remain the same.
 
 export async function login(values: z.infer<typeof LoginSchema>) {
   const validatedFields = LoginSchema.safeParse(values);
@@ -150,7 +143,7 @@ export async function updateProfile(data: CreateProfileData) {
 
     await unstable_update({
       user: {
-        hasProfile: true, // You can keep this or use a new flag if needed
+        hasProfile: true,
       },
     });
 

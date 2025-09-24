@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm"
 
 export const matchStatus = pgEnum("match_status", ['pending', 'accepted', 'played', 'rejected', 'cancelled'])
 export const role = pgEnum("role", ['player', 'admin'])
+export const teamStatus = pgEnum("team_status", ['looser', 'winner', 'idle', 'risky'])
 
 
 export const authenticators = pgTable("authenticators", {
@@ -82,6 +83,7 @@ export const positionHistory = pgTable("position_history", {
 	defenderNewCol: integer("defender_new_col"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	effectiveDate: timestamp({ withTimezone: true, mode: 'string' }).defaultNow(),
 }, (table) => [
 	foreignKey({
 			columns: [table.pyramidId],
@@ -128,8 +130,6 @@ export const accounts = pgTable("accounts", {
 export const profile = pgTable("profile", {
 	id: serial().primaryKey().notNull(),
 	userId: text("user_id").notNull(),
-	firstName: text("first_name").notNull(),
-	lastName: text("last_name").notNull(),
 	nickname: text(),
 	avatarUrl: text("avatar_url"),
 	teamId: integer("team_id"),
@@ -159,6 +159,24 @@ export const category = pgTable("category", {
 	unique("category_name_unique").on(table.name),
 ]);
 
+export const verificationTokens = pgTable("verificationTokens", {
+	identifier: text().notNull(),
+	token: text().notNull(),
+	expires: timestamp({ mode: 'string' }).notNull(),
+});
+
+export const users = pgTable("users", {
+	id: text().primaryKey().notNull(),
+	name: text(),
+	email: text(),
+	emailVerified: timestamp({ mode: 'string' }),
+	image: text(),
+	role: role().default('player').notNull(),
+	passwordHash: text("password_hash"),
+}, (table) => [
+	unique("users_email_unique").on(table.email),
+]);
+
 export const match = pgTable("match", {
 	id: serial().primaryKey().notNull(),
 	pyramidId: integer("pyramid_id").notNull(),
@@ -169,6 +187,9 @@ export const match = pgTable("match", {
 	status: matchStatus().default('pending').notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	challengerViewedAt: timestamp("challenger_viewed_at", { withTimezone: true, mode: 'string' }),
+	defenderViewedAt: timestamp("defender_viewed_at", { withTimezone: true, mode: 'string' }),
+	lastStatusChange: timestamp("last_status_change", { withTimezone: true, mode: 'string' }).defaultNow(),
 }, (table) => [
 	foreignKey({
 			columns: [table.pyramidId],
@@ -192,22 +213,23 @@ export const match = pgTable("match", {
 		}),
 ]);
 
-export const verificationTokens = pgTable("verificationTokens", {
-	identifier: text().notNull(),
-	token: text().notNull(),
-	expires: timestamp({ mode: 'string' }).notNull(),
-});
-
-export const users = pgTable("users", {
-	id: text().primaryKey().notNull(),
-	name: text(),
-	email: text(),
-	emailVerified: timestamp({ mode: 'string' }),
-	image: text(),
-	role: role().default('player').notNull(),
-	passwordHash: text("password_hash"),
+export const matchViews = pgTable("match_views", {
+	id: serial().primaryKey().notNull(),
+	matchId: integer("match_id").notNull(),
+	userId: text("user_id").notNull(),
+	viewedAt: timestamp("viewed_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 }, (table) => [
-	unique("users_email_unique").on(table.email),
+	uniqueIndex("unique_match_user_view").using("btree", table.matchId.asc().nullsLast().op("int4_ops"), table.userId.asc().nullsLast().op("int4_ops")),
+	foreignKey({
+			columns: [table.matchId],
+			foreignColumns: [match.id],
+			name: "match_views_match_id_match_id_fk"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "match_views_user_id_users_id_fk"
+		}).onDelete("cascade"),
 ]);
 
 export const team = pgTable("team", {
@@ -218,6 +240,7 @@ export const team = pgTable("team", {
 	losses: integer().default(0),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	status: teamStatus().default('idle'),
 }, (table) => [
 	foreignKey({
 			columns: [table.categoryId],

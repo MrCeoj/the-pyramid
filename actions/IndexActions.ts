@@ -1,15 +1,27 @@
 "use server"
 import { db } from "@/lib/drizzle";
-import { eq, and } from "drizzle-orm";
-import { position, team, pyramid, profile } from "@/db/schema";
+import { eq, and, or } from "drizzle-orm";
+import { position, team, pyramid, profile, users } from "@/db/schema";
 
 export type Team = {
   id: number;
-  name: string;
+  displayName: string; // Changed from 'name' to 'displayName'
   wins: number;
   losses: number;
   status: "winner" | "looser" | "idle" | "risky";
-  categoryId: number;
+  categoryId: number | null;
+  player1: {
+    id: string;
+    paternalSurname: string;
+    maternalSurname: string;
+    nickname?: string | null;
+  };
+  player2: {
+    id: string;
+    paternalSurname: string;
+    maternalSurname: string;
+    nickname?: string | null;
+  };
 };
 
 export type Position = {
@@ -32,22 +44,46 @@ export type PyramidOption = {
   description: string | null;
 };
 
+// Helper function to generate team display name
+function getTeamDisplayName(
+  player1: { paternalSurname: string; maternalSurname: string; nickname?: string | null },
+  player2: { paternalSurname: string; maternalSurname: string; nickname?: string | null }
+): string {
+  // If both players have nicknames, use those
+  if (player1.nickname && player2.nickname) {
+    return `${player1.nickname} / ${player2.nickname}`;
+  }
+  
+  // If only one has nickname, use nickname + surname
+  if (player1.nickname && !player2.nickname) {
+    return `${player1.nickname} / ${player2.paternalSurname}`;
+  }
+  
+  if (!player1.nickname && player2.nickname) {
+    return `${player1.paternalSurname} / ${player2.nickname}`;
+  }
+  
+  // Default: use both paternal surnames
+  return `${player1.paternalSurname} / ${player2.paternalSurname}`;
+}
+
 export async function getPlayerPyramid(userId: string): Promise<PyramidData | null> {
   try {
-    // Get user's team through profile
-    const userProfile = await db
+    // Find all teams where this user is a player
+    const userTeams = await db
       .select({
-        teamId: profile.teamId,
+        id: team.id,
       })
-      .from(profile)
-      .where(eq(profile.userId, userId))
-      .limit(1);
+      .from(team)
+      .where(or(eq(team.player1Id, userId), eq(team.player2Id, userId)));
 
-    if (!userProfile.length || !userProfile[0].teamId) {
+    if (!userTeams.length) {
       return null;
     }
 
-    const teamId = userProfile[0].teamId;
+    // For simplicity, let's get the pyramid for the first team
+    // You might want to modify this logic based on your needs
+    const teamId = userTeams[0].id;
 
     // Find pyramid where this team is positioned
     const teamPosition = await db
@@ -79,24 +115,77 @@ export async function getPlayerPyramid(userId: string): Promise<PyramidData | nu
       return null;
     }
 
-    // Get all positions for this pyramid
-    const positions = await db
+    // Get all positions for this pyramid with team and player data
+    const positionsWithTeams = await db
       .select({
-        id: position.id,
+        positionId: position.id,
         row: position.row,
         col: position.col,
-        team: {
-          id: team.id,
-          name: team.name,
-          wins: team.wins,
-          losses: team.losses,
-          status: team.status,
-          categoryId: team.categoryId
-        },
+        teamId: team.id,
+        teamWins: team.wins,
+        teamLosses: team.losses,
+        teamStatus: team.status,
+        teamCategoryId: team.categoryId,
+        player1Id: team.player1Id,
+        player2Id: team.player2Id,
+        player1PaternalSurname: users.paternalSurname,
+        player1MaternalSurname: users.maternalSurname,
+        player1Nickname: profile.nickname,
       })
       .from(position)
       .where(eq(position.pyramidId, pyramidId))
-      .innerJoin(team, eq(position.teamId, team.id)) as Position[];
+      .innerJoin(team, eq(position.teamId, team.id))
+      .innerJoin(users, eq(team.player1Id, users.id))
+      .leftJoin(profile, eq(users.id, profile.userId));
+
+    // Get player2 data for each team
+    const positions: Position[] = await Promise.all(
+      positionsWithTeams.map(async (pos) => {
+        // Get player2 data
+        const player2Data = await db
+          .select({
+            paternalSurname: users.paternalSurname,
+            maternalSurname: users.maternalSurname,
+            nickname: profile.nickname,
+          })
+          .from(users)
+          .where(eq(users.id, pos.player2Id))
+          .leftJoin(profile, eq(users.id, profile.userId))
+          .limit(1);
+
+        const player1 = {
+          id: pos.player1Id,
+          paternalSurname: pos.player1PaternalSurname,
+          maternalSurname: pos.player1MaternalSurname,
+          nickname: pos.player1Nickname,
+        };
+
+        const player2 = {
+          id: pos.player2Id,
+          paternalSurname: player2Data[0]?.paternalSurname || "",
+          maternalSurname: player2Data[0]?.maternalSurname || "",
+          nickname: player2Data[0]?.nickname,
+        };
+
+        const teamData: Team = {
+          id: pos.teamId,
+          displayName: getTeamDisplayName(player1, player2),
+          wins: pos.teamWins || 0,
+          losses: pos.teamLosses || 0,
+          status: pos.teamStatus || "idle",
+          categoryId: pos.teamCategoryId,
+          player1,
+          player2,
+        };
+
+        return {
+          id: pos.positionId,
+          row: pos.row,
+          col: pos.col,
+          team: teamData,
+        };
+      })
+    );
 
     return {
       positions,
@@ -110,25 +199,37 @@ export async function getPlayerPyramid(userId: string): Promise<PyramidData | nu
   }
 }
 
-export async function getUserTeamId(userId: string){
+export async function getUserTeamIds(userId: string): Promise<{ teamIds: number[] } | { error: string }> {
   try {
     if (!userId) {
       return { error: 'User ID is required' };
     }
 
-    const userProfile = await db
+    // Get all teams where user is either player1 or player2
+    const userTeams = await db
       .select({
-        teamId: profile.teamId,
+        id: team.id,
       })
-      .from(profile)
-      .where(eq(profile.userId, userId))
-      .limit(1);
+      .from(team)
+      .where(or(eq(team.player1Id, userId), eq(team.player2Id, userId)));
 
-    if (!userProfile.length) {
-      return { teamId: null };
+    return { teamIds: userTeams.map(t => t.id) };
+  } catch (error) {
+    console.error('Error fetching user teams:', error);
+    return { error: 'Internal server error' };
+  }
+}
+
+
+export async function getUserTeamId(userId: string): Promise<{ teamId: number | null } | { error: string }> {
+  try {
+    const result = await getUserTeamIds(userId);
+    
+    if ('error' in result) {
+      return result;
     }
 
-    return { teamId: userProfile[0].teamId };
+    return { teamId: result.teamIds.length > 0 ? result.teamIds[0] : null };
   } catch (error) {
     console.error('Error fetching user team:', error);
     return { error: 'Internal server error' };
@@ -152,24 +253,77 @@ export async function getPyramidData(pyramidId: number): Promise<PyramidData | n
       return null;
     }
 
-    // Get all positions for this pyramid
-    const positions = await db
+    // Get all positions for this pyramid with team and player data
+    const positionsWithTeams = await db
       .select({
-        id: position.id,
+        positionId: position.id,
         row: position.row,
         col: position.col,
-        team: {
-          id: team.id,
-          name: team.name,
-          wins: team.wins,
-          losses: team.losses,
-          status: team.status,
-          categoryId: team.categoryId,
-        },
+        teamId: team.id,
+        teamWins: team.wins,
+        teamLosses: team.losses,
+        teamStatus: team.status,
+        teamCategoryId: team.categoryId,
+        player1Id: team.player1Id,
+        player2Id: team.player2Id,
+        player1PaternalSurname: users.paternalSurname,
+        player1MaternalSurname: users.maternalSurname,
+        player1Nickname: profile.nickname,
       })
       .from(position)
       .where(eq(position.pyramidId, pyramidId))
-      .innerJoin(team, eq(position.teamId, team.id)) as Position[];
+      .innerJoin(team, eq(position.teamId, team.id))
+      .innerJoin(users, eq(team.player1Id, users.id))
+      .leftJoin(profile, eq(users.id, profile.userId));
+
+    // Get player2 data for each team
+    const positions: Position[] = await Promise.all(
+      positionsWithTeams.map(async (pos) => {
+        // Get player2 data
+        const player2Data = await db
+          .select({
+            paternalSurname: users.paternalSurname,
+            maternalSurname: users.maternalSurname,
+            nickname: profile.nickname,
+          })
+          .from(users)
+          .where(eq(users.id, pos.player2Id))
+          .leftJoin(profile, eq(users.id, profile.userId))
+          .limit(1);
+
+        const player1 = {
+          id: pos.player1Id,
+          paternalSurname: pos.player1PaternalSurname,
+          maternalSurname: pos.player1MaternalSurname,
+          nickname: pos.player1Nickname,
+        };
+
+        const player2 = {
+          id: pos.player2Id,
+          paternalSurname: player2Data[0]?.paternalSurname || "",
+          maternalSurname: player2Data[0]?.maternalSurname || "",
+          nickname: player2Data[0]?.nickname,
+        };
+
+        const teamData: Team = {
+          id: pos.teamId,
+          displayName: getTeamDisplayName(player1, player2),
+          wins: pos.teamWins || 0,
+          losses: pos.teamLosses || 0,
+          status: pos.teamStatus || "idle",
+          categoryId: pos.teamCategoryId,
+          player1,
+          player2,
+        };
+
+        return {
+          id: pos.positionId,
+          row: pos.row,
+          col: pos.col,
+          team: teamData,
+        };
+      })
+    );
 
     return {
       positions,
@@ -224,3 +378,100 @@ export async function getAllPyramidsTotal(): Promise<PyramidOption[]> {
   }
 }
 
+export async function getTeamData(teamId: number): Promise<Team | null> {
+  try {
+    const teamData = await db
+      .select({
+        id: team.id,
+        wins: team.wins,
+        losses: team.losses,
+        status: team.status,
+        categoryId: team.categoryId,
+        player1Id: team.player1Id,
+        player2Id: team.player2Id,
+      })
+      .from(team)
+      .where(eq(team.id, teamId))
+      .limit(1);
+
+    if (!teamData.length) {
+      return null;
+    }
+
+    // Get both players' data
+    const [player1Data, player2Data] = await Promise.all([
+      db
+        .select({
+          paternalSurname: users.paternalSurname,
+          maternalSurname: users.maternalSurname,
+          nickname: profile.nickname,
+        })
+        .from(users)
+        .where(eq(users.id, teamData[0].player1Id))
+        .leftJoin(profile, eq(users.id, profile.userId))
+        .limit(1),
+      db
+        .select({
+          paternalSurname: users.paternalSurname,
+          maternalSurname: users.maternalSurname,
+          nickname: profile.nickname,
+        })
+        .from(users)
+        .where(eq(users.id, teamData[0].player2Id))
+        .leftJoin(profile, eq(users.id, profile.userId))
+        .limit(1)
+    ]);
+
+    if (!player1Data.length || !player2Data.length) {
+      return null;
+    }
+
+    const player1 = {
+      id: teamData[0].player1Id,
+      paternalSurname: player1Data[0].paternalSurname,
+      maternalSurname: player1Data[0].maternalSurname,
+      nickname: player1Data[0].nickname,
+    };
+
+    const player2 = {
+      id: teamData[0].player2Id,
+      paternalSurname: player2Data[0].paternalSurname,
+      maternalSurname: player2Data[0].maternalSurname,
+      nickname: player2Data[0].nickname,
+    };
+
+    return {
+      id: teamData[0].id,
+      displayName: getTeamDisplayName(player1, player2),
+      wins: teamData[0].wins || 0,
+      losses: teamData[0].losses || 0,
+      status: teamData[0].status || "idle",
+      categoryId: teamData[0].categoryId,
+      player1,
+      player2,
+    };
+  } catch (error) {
+    console.error("Error fetching team data:", error);
+    return null;
+  }
+}
+
+export async function isUserInTeam(userId: string, teamId: number): Promise<boolean> {
+  try {
+    const result = await db
+      .select({ id: team.id })
+      .from(team)
+      .where(
+        and(
+          eq(team.id, teamId),
+          or(eq(team.player1Id, userId), eq(team.player2Id, userId))
+        )
+      )
+      .limit(1);
+
+    return result.length > 0;
+  } catch (error) {
+    console.error("Error checking if user is in team:", error);
+    return false;
+  }
+}

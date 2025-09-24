@@ -8,35 +8,69 @@ import {
   profile,
   position,
   positionHistory,
+  users,
 } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 
-export async function createMatch({
-  pyramidId,
-  challengerTeamId,
-  defenderTeamId,
-}: {
-  pyramidId: number;
-  challengerTeamId: number;
-  defenderTeamId: number;
-}) {
-  try {
-    const [newMatch] = await db
-      .insert(match)
-      .values({
-        pyramidId,
-        challengerTeamId,
-        defenderTeamId,
-        status: "pending",
-      })
-      .returning();
-
-    return { success: true, match: newMatch };
-  } catch (err) {
-    console.error("Error creating match:", err);
-    return { success: false, error: "No se pudo establecer la reta" };
+// Helper function to generate team display name
+function getTeamDisplayName(
+  player1: {
+    paternalSurname: string;
+    maternalSurname: string;
+    nickname?: string | null;
+  },
+  player2: {
+    paternalSurname: string;
+    maternalSurname: string;
+    nickname?: string | null;
   }
+): string {
+  if (player1.nickname && player2.nickname) {
+    return `${player1.nickname} / ${player2.nickname}`;
+  }
+  if (player1.nickname && !player2.nickname) {
+    return `${player1.nickname} / ${player2.paternalSurname}`;
+  }
+  if (!player1.nickname && player2.nickname) {
+    return `${player1.paternalSurname} / ${player2.nickname}`;
+  }
+  return `${player1.paternalSurname} / ${player2.paternalSurname}`;
 }
+
+// Updated types for new schema
+export type TeamInfo = {
+  id: number;
+  displayName: string;
+  categoryId: number | null;
+  wins: number;
+  losses: number;
+  status: "winner" | "looser" | "idle" | "risky";
+  player1: {
+    id: string;
+    paternalSurname: string;
+    maternalSurname: string;
+    nickname: string | null;
+  };
+  player2: {
+    id: string;
+    paternalSurname: string;
+    maternalSurname: string;
+    nickname: string | null;
+  };
+};
+
+export type MatchWithDetails = {
+  id: number;
+  status: "pending" | "accepted" | "played" | "rejected" | "cancelled";
+  createdAt: Date;
+  updatedAt: Date;
+  pyramidId: number;
+  pyramidName: string;
+  challengerTeam: TeamInfo;
+  defenderTeam: TeamInfo;
+  winnerTeam?: TeamInfo | null;
+  evidenceUrl?: string | null;
+};
 
 export type UnresolvedMatch = {
   id: number;
@@ -47,29 +81,19 @@ export type UnresolvedMatch = {
   createdAt: Date;
 };
 
-
-export type MatchWithDetails = {
+export type AcceptedMatchWithDetails = {
   id: number;
-  status: "pending" | "accepted" | "played" | "rejected" | "cancelled";
-  createdAt: Date;
-  updatedAt: Date;
   pyramidId: number;
   pyramidName: string;
-  challengerTeam: {
-    id: number;
-    name: string;
-    categoryId: number | null;
+  challengerTeam: TeamInfo & {
+    currentRow: number;
+    currentCol: number;
   };
-  defenderTeam: {
-    id: number;
-    name: string;
-    categoryId: number | null;
+  defenderTeam: TeamInfo & {
+    currentRow: number;
+    currentCol: number;
   };
-  winnerTeam?: {
-    id: number;
-    name: string;
-  } | null;
-  evidenceUrl?: string | null;
+  createdAt: Date;
 };
 
 export type MatchResult = {
@@ -77,35 +101,204 @@ export type MatchResult = {
   message: string;
 };
 
-export type Profile = {
-  id: number;
-  userId: string;
-  nickname: string | null;
-  teamId: number | null;
+export type MatchCompletionResult = {
+  success: boolean;
+  message: string;
 };
+
+// Helper function to get team info with players
+async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
+  const teamData = await db
+    .select({
+      id: team.id,
+      categoryId: team.categoryId,
+      wins: team.wins,
+      losses: team.losses,
+      status: team.status,
+      player1Id: team.player1Id,
+      player2Id: team.player2Id,
+    })
+    .from(team)
+    .where(eq(team.id, teamId))
+    .limit(1);
+
+  if (!teamData.length) return null;
+
+  const [player1Data, player2Data] = await Promise.all([
+    db
+      .select({
+        id: users.id,
+        paternalSurname: users.paternalSurname,
+        maternalSurname: users.maternalSurname,
+        nickname: profile.nickname,
+      })
+      .from(users)
+      .where(eq(users.id, teamData[0].player1Id))
+      .leftJoin(profile, eq(users.id, profile.userId))
+      .limit(1),
+    db
+      .select({
+        id: users.id,
+        paternalSurname: users.paternalSurname,
+        maternalSurname: users.maternalSurname,
+        nickname: profile.nickname,
+      })
+      .from(users)
+      .where(eq(users.id, teamData[0].player2Id))
+      .leftJoin(profile, eq(users.id, profile.userId))
+      .limit(1),
+  ]);
+
+  if (!player1Data.length || !player2Data.length) return null;
+
+  const player1 = {
+    id: player1Data[0].id,
+    paternalSurname: player1Data[0].paternalSurname,
+    maternalSurname: player1Data[0].maternalSurname,
+    nickname: player1Data[0].nickname,
+  };
+
+  const player2 = {
+    id: player2Data[0].id,
+    paternalSurname: player2Data[0].paternalSurname,
+    maternalSurname: player2Data[0].maternalSurname,
+    nickname: player2Data[0].nickname,
+  };
+
+  return {
+    id: teamData[0].id,
+    displayName: getTeamDisplayName(player1, player2),
+    categoryId: teamData[0].categoryId,
+    wins: teamData[0].wins || 0,
+    losses: teamData[0].losses || 0,
+    status: teamData[0].status || "idle",
+    player1,
+    player2,
+  };
+}
+
+// Check if user belongs to a team
+async function getUserTeamIds(userId: string): Promise<number[]> {
+  const userTeams = await db
+    .select({ id: team.id })
+    .from(team)
+    .where(or(eq(team.player1Id, userId), eq(team.player2Id, userId)));
+
+  return userTeams.map((t) => t.id);
+}
+
+export async function createMatch({
+  pyramidId,
+  challengerTeamId,
+  defenderTeamId,
+  userId,
+}: {
+  pyramidId: number;
+  challengerTeamId: number;
+  defenderTeamId: number;
+  userId: string;
+}) {
+  try {
+    // Verify user belongs to challenger team
+    const userTeamIds = await getUserTeamIds(userId);
+    if (!userTeamIds.includes(challengerTeamId)) {
+      return {
+        success: false,
+        error: "No tienes permisos para crear este desafío",
+      };
+    }
+
+    // Check if teams exist and are in the pyramid
+    const [challengerPos, defenderPos] = await Promise.all([
+      db
+        .select({ id: position.id })
+        .from(position)
+        .where(
+          and(
+            eq(position.teamId, challengerTeamId),
+            eq(position.pyramidId, pyramidId)
+          )
+        )
+        .limit(1),
+      db
+        .select({ id: position.id })
+        .from(position)
+        .where(
+          and(
+            eq(position.teamId, defenderTeamId),
+            eq(position.pyramidId, pyramidId)
+          )
+        )
+        .limit(1),
+    ]);
+
+    if (!challengerPos.length || !defenderPos.length) {
+      return {
+        success: false,
+        error: "Uno o ambos equipos no están en esta pirámide",
+      };
+    }
+
+    // Check for existing unresolved matches between these teams
+    const existingMatch = await db
+      .select({ id: match.id })
+      .from(match)
+      .where(
+        and(
+          eq(match.pyramidId, pyramidId),
+          or(
+            and(
+              eq(match.challengerTeamId, challengerTeamId),
+              eq(match.defenderTeamId, defenderTeamId)
+            ),
+            and(
+              eq(match.challengerTeamId, defenderTeamId),
+              eq(match.defenderTeamId, challengerTeamId)
+            )
+          ),
+          or(eq(match.status, "pending"), eq(match.status, "accepted"))
+        )
+      )
+      .limit(1);
+
+    if (existingMatch.length > 0) {
+      return {
+        success: false,
+        error: "Ya existe un desafío pendiente entre estos equipos",
+      };
+    }
+
+    const [newMatch] = await db
+      .insert(match)
+      .values({
+        pyramidId,
+        challengerTeamId,
+        defenderTeamId,
+        status: "pending",
+      })
+      .returning();
+
+    revalidatePath("/matches");
+    return { success: true, match: newMatch };
+  } catch (err) {
+    console.error("Error creating match:", err);
+    return { success: false, error: "No se pudo establecer la reta" };
+  }
+}
+
 export async function getUserMatches(userId: string): Promise<{
   pendingMatches: MatchWithDetails[];
   matchHistory: MatchWithDetails[];
 }> {
   try {
-    console.log(userId);
-    // Get user's team ID
-    const userProfile = await db
-      .select({ teamId: profile.teamId })
-      .from(profile)
-      .where(eq(profile.userId, userId))
-      .limit(1);
+    // Get all teams user belongs to
+    const userTeamIds = await getUserTeamIds(userId);
 
-    console.log(userProfile);
-
-    if (!userProfile.length || !userProfile[0].teamId) {
-      console.log("No perfil o no equipo");
+    if (userTeamIds.length === 0) {
       return { pendingMatches: [], matchHistory: [] };
     }
 
-    const teamId = userProfile[0].teamId;
-
-    // Get all matches where user's team is involved
+    // Get all matches where user's teams are involved
     const matches = await db
       .select({
         id: match.id,
@@ -118,90 +311,72 @@ export async function getUserMatches(userId: string): Promise<{
         winnerTeamId: match.winnerTeamId,
         evidenceUrl: match.evidenceUrl,
         pyramidName: pyramid.name,
-        challengerName: team.name,
-        challengerCategory: team.categoryId,
-        defenderName: team.name,
-        defenderCategory: team.categoryId,
       })
       .from(match)
       .innerJoin(pyramid, eq(match.pyramidId, pyramid.id))
-      .innerJoin(team, eq(match.challengerTeamId, team.id))
       .where(
-        or(eq(match.challengerTeamId, teamId), eq(match.defenderTeamId, teamId))
+        or(
+          ...userTeamIds.map((teamId) =>
+            or(
+              eq(match.challengerTeamId, teamId),
+              eq(match.defenderTeamId, teamId)
+            )
+          )
+        )
       )
       .orderBy(desc(match.createdAt));
 
-    // We need to get defender team info separately due to join limitations
-    const matchesWithDetails: MatchWithDetails[] = await Promise.all(
-      matches.map(async (m) => {
-        // Get challenger team details
-        const challengerTeam = await db
-          .select({
-            id: team.id,
-            name: team.name,
-            categoryId: team.categoryId,
-          })
-          .from(team)
-          .where(eq(team.id, m.challengerTeamId))
-          .limit(1);
+    // Get team info for all involved teams
+    const teamIds = new Set<number>();
+    matches.forEach((m) => {
+      teamIds.add(m.challengerTeamId);
+      teamIds.add(m.defenderTeamId);
+      if (m.winnerTeamId) teamIds.add(m.winnerTeamId);
+    });
 
-        // Get defender team details
-        const defenderTeam = await db
-          .select({
-            id: team.id,
-            name: team.name,
-            categoryId: team.categoryId,
-          })
-          .from(team)
-          .where(eq(team.id, m.defenderTeamId))
-          .limit(1);
-
-        // Get winner team details if exists
-        let winnerTeam = null;
-        if (m.winnerTeamId) {
-          const winner = await db
-            .select({
-              id: team.id,
-              name: team.name,
-            })
-            .from(team)
-            .where(eq(team.id, m.winnerTeamId))
-            .limit(1);
-
-          if (winner.length) {
-            winnerTeam = winner[0];
-          }
+    const teamInfoMap = new Map<number, TeamInfo>();
+    await Promise.all(
+      Array.from(teamIds).map(async (teamId) => {
+        const teamInfo = await getTeamInfo(teamId);
+        if (teamInfo) {
+          teamInfoMap.set(teamId, teamInfo);
         }
-
-        return {
-          id: m.id,
-          status: m.status,
-          createdAt: m.createdAt!,
-          updatedAt: m.updatedAt!,
-          pyramidId: m.pyramidId,
-          pyramidName: m.pyramidName || "Pirámide sin nombre",
-          challengerTeam: {
-            id: challengerTeam[0]?.id || 0,
-            name: challengerTeam[0]?.name || "Equipo sin nombre",
-            categoryId: challengerTeam[0]?.categoryId || null,
-          },
-          defenderTeam: {
-            id: defenderTeam[0]?.id || 0,
-            name: defenderTeam[0]?.name || "Equipo sin nombre1",
-            categoryId: defenderTeam[0]?.categoryId || null,
-          },
-          winnerTeam,
-          evidenceUrl: m.evidenceUrl,
-        };
       })
     );
 
+    const matchesWithDetails: MatchWithDetails[] = matches.map((m) => {
+      const challengerTeam = teamInfoMap.get(m.challengerTeamId);
+      const defenderTeam = teamInfoMap.get(m.defenderTeamId);
+      const winnerTeam = m.winnerTeamId
+        ? teamInfoMap.get(m.winnerTeamId)
+        : null;
+
+      if (!challengerTeam || !defenderTeam) {
+        throw new Error(`Missing team data for match ${m.id}`);
+      }
+
+      return {
+        id: m.id,
+        status: m.status,
+        createdAt: m.createdAt!,
+        updatedAt: m.updatedAt!,
+        pyramidId: m.pyramidId,
+        pyramidName: m.pyramidName || "Pirámide sin nombre",
+        challengerTeam,
+        defenderTeam,
+        winnerTeam,
+        evidenceUrl: m.evidenceUrl,
+      };
+    });
+
     // Separate pending matches (where user is defender) from history
     const pendingMatches = matchesWithDetails.filter(
-      (m) => m.status === "pending" && m.defenderTeam.id === teamId
+      (m) => m.status === "pending" && userTeamIds.includes(m.defenderTeam.id)
     );
 
-    const matchHistory = matchesWithDetails
+    const matchHistory = matchesWithDetails.filter(
+      (m) => m.status !== "pending"
+    );
 
     return { pendingMatches, matchHistory };
   } catch (error) {
@@ -210,8 +385,38 @@ export async function getUserMatches(userId: string): Promise<{
   }
 }
 
-export async function acceptMatch(matchId: number): Promise<MatchResult> {
+export async function acceptMatch(
+  matchId: number,
+  userId: string
+): Promise<MatchResult> {
   try {
+    // Get match info to verify user can accept it
+    const matchData = await db
+      .select({
+        defenderTeamId: match.defenderTeamId,
+        status: match.status,
+      })
+      .from(match)
+      .where(eq(match.id, matchId))
+      .limit(1);
+
+    if (!matchData.length) {
+      return { success: false, message: "Desafío no encontrado" };
+    }
+
+    if (matchData[0].status !== "pending") {
+      return { success: false, message: "Este desafío ya no está pendiente" };
+    }
+
+    // Verify user belongs to defender team
+    const userTeamIds = await getUserTeamIds(userId);
+    if (!userTeamIds.includes(matchData[0].defenderTeamId)) {
+      return {
+        success: false,
+        message: "No tienes permisos para aceptar este desafío",
+      };
+    }
+
     await db
       .update(match)
       .set({
@@ -234,8 +439,37 @@ export async function acceptMatch(matchId: number): Promise<MatchResult> {
   }
 }
 
-export async function rejectMatch(matchId: number): Promise<MatchResult> {
+export async function rejectMatch(
+  matchId: number,
+  userId: string
+): Promise<MatchResult> {
   try {
+    // Similar validation as acceptMatch
+    const matchData = await db
+      .select({
+        defenderTeamId: match.defenderTeamId,
+        status: match.status,
+      })
+      .from(match)
+      .where(eq(match.id, matchId))
+      .limit(1);
+
+    if (!matchData.length) {
+      return { success: false, message: "Desafío no encontrado" };
+    }
+
+    if (matchData[0].status !== "pending") {
+      return { success: false, message: "Este desafío ya no está pendiente" };
+    }
+
+    const userTeamIds = await getUserTeamIds(userId);
+    if (!userTeamIds.includes(matchData[0].defenderTeamId)) {
+      return {
+        success: false,
+        message: "No tienes permisos para rechazar este desafío",
+      };
+    }
+
     await db
       .update(match)
       .set({
@@ -258,42 +492,10 @@ export async function rejectMatch(matchId: number): Promise<MatchResult> {
   }
 }
 
-export type AcceptedMatchWithDetails = {
-  id: number;
-  pyramidId: number;
-  pyramidName: string;
-  challengerTeam: {
-    id: number;
-    name: string;
-    categoryId: number | null;
-    wins: number;
-    losses: number;
-    currentRow: number;
-    currentCol: number;
-    players: Profile[];
-  };
-  defenderTeam: {
-    id: number;
-    name: string;
-    categoryId: number | null;
-    wins: number;
-    losses: number;
-    currentRow: number;
-    currentCol: number;
-  };
-  createdAt: Date;
-};
-
-export type MatchCompletionResult = {
-  success: boolean;
-  message: string;
-};
-
 export async function getAcceptedMatches(): Promise<
   AcceptedMatchWithDetails[]
 > {
   try {
-    // Get all accepted matches
     const acceptedMatches = await db
       .select({
         id: match.id,
@@ -307,81 +509,57 @@ export async function getAcceptedMatches(): Promise<
       .innerJoin(pyramid, eq(match.pyramidId, pyramid.id))
       .where(eq(match.status, "accepted"));
 
-    // Get detailed info for each match
     const matchesWithDetails: AcceptedMatchWithDetails[] = await Promise.all(
       acceptedMatches.map(async (m) => {
-        // Get challenger team and position info
-        const challengerData = await db
-          .select({
-            id: team.id,
-            name: team.name,
-            categoryId: team.categoryId,
-            wins: team.wins,
-            losses: team.losses,
-            row: position.row,
-            col: position.col,
-          })
-          .from(team)
-          .innerJoin(position, eq(team.id, position.teamId))
-          .where(
-            and(
-              eq(team.id, m.challengerTeamId),
-              eq(position.pyramidId, m.pyramidId)
-            )
-          )
-          .limit(1);
+        // Get team info and positions
+        const [challengerTeam, defenderTeam, challengerPos, defenderPos] =
+          await Promise.all([
+            getTeamInfo(m.challengerTeamId),
+            getTeamInfo(m.defenderTeamId),
+            db
+              .select({ row: position.row, col: position.col })
+              .from(position)
+              .where(
+                and(
+                  eq(position.teamId, m.challengerTeamId),
+                  eq(position.pyramidId, m.pyramidId)
+                )
+              )
+              .limit(1),
+            db
+              .select({ row: position.row, col: position.col })
+              .from(position)
+              .where(
+                and(
+                  eq(position.teamId, m.defenderTeamId),
+                  eq(position.pyramidId, m.pyramidId)
+                )
+              )
+              .limit(1),
+          ]);
 
-        // Get defender team and position info
-        const defenderData = await db
-          .select({
-            id: team.id,
-            name: team.name,
-            categoryId: team.categoryId,
-            wins: team.wins,
-            losses: team.losses,
-            row: position.row,
-            col: position.col,
-          })
-          .from(team)
-          .innerJoin(position, eq(team.id, position.teamId))
-          .where(
-            and(
-              eq(team.id, m.defenderTeamId),
-              eq(position.pyramidId, m.pyramidId)
-            )
-          )
-          .limit(1);
+        if (
+          !challengerTeam ||
+          !defenderTeam ||
+          !challengerPos.length ||
+          !defenderPos.length
+        ) {
+          throw new Error(`Missing data for match ${m.id}`);
+        }
 
         return {
           id: m.id,
           pyramidId: m.pyramidId,
           pyramidName: m.pyramidName || "Pirámide sin nombre",
           challengerTeam: {
-            id: challengerData[0]?.id || 0,
-            name: challengerData[0]?.name || "Equipo desconocido",
-            categoryId: challengerData[0]?.categoryId || null,
-            wins: challengerData[0]?.wins || 0,
-            losses: challengerData[0]?.losses || 0,
-            currentRow: challengerData[0]?.row || 0,
-            currentCol: challengerData[0]?.col || 0,
-            players: await db
-              .select({
-                id: profile.id,
-                userId: profile.userId,
-                nickname: profile.nickname,
-                teamId: profile.teamId,
-              })
-              .from(profile)
-              .where(eq(profile.teamId, challengerData[0]?.id || 0)),
+            ...challengerTeam,
+            currentRow: challengerPos[0].row,
+            currentCol: challengerPos[0].col,
           },
           defenderTeam: {
-            id: defenderData[0]?.id || 0,
-            name: defenderData[0]?.name || "Equipo desconocido",
-            categoryId: defenderData[0]?.categoryId || null,
-            wins: defenderData[0]?.wins || 0,
-            losses: defenderData[0]?.losses || 0,
-            currentRow: defenderData[0]?.row || 0,
-            currentCol: defenderData[0]?.col || 0,
+            ...defenderTeam,
+            currentRow: defenderPos[0].row,
+            currentCol: defenderPos[0].col,
           },
           createdAt: m.createdAt!,
         };
@@ -400,28 +578,32 @@ export async function completeMatch(
   winnerTeamId: number
 ): Promise<MatchCompletionResult> {
   try {
-    // Get match details first
     const matchData = await db
       .select({
         pyramidId: match.pyramidId,
         challengerTeamId: match.challengerTeamId,
         defenderTeamId: match.defenderTeamId,
+        status: match.status,
       })
       .from(match)
       .where(eq(match.id, matchId))
       .limit(1);
 
     if (!matchData.length) {
+      return { success: false, message: "Match no encontrado" };
+    }
+
+    if (matchData[0].status !== "accepted") {
       return {
         success: false,
-        message: "Match no encontrado",
+        message: "Solo se pueden completar matches aceptados",
       };
     }
 
     const { pyramidId, challengerTeamId, defenderTeamId } = matchData[0];
-    const attackerWins = winnerTeamId === challengerTeamId;
+    const challengerWins = winnerTeamId === challengerTeamId;
 
-    // Get current positions before any changes
+    // Get current positions
     const [challengerPos, defenderPos] = await Promise.all([
       db
         .select({ row: position.row, col: position.col })
@@ -455,9 +637,8 @@ export async function completeMatch(
     const challengerOldPos = challengerPos[0];
     const defenderOldPos = defenderPos[0];
 
-    // Start transaction for atomic operations
     await db.transaction(async (tx) => {
-      // Update match with winner and status
+      // Update match status
       await tx
         .update(match)
         .set({
@@ -467,34 +648,27 @@ export async function completeMatch(
         })
         .where(eq(match.id, matchId));
 
-      // Update team stats
-      if (attackerWins) {
-        // Challenger wins: increment challenger wins, increment defender losses
+      // Update team stats and status
+      if (challengerWins) {
         await tx
           .update(team)
-          .set({status: "winner",
+          .set({
             wins:
-              challengerTeamId === winnerTeamId
-                ? ((
-                    await tx
-                      .select({ wins: team.wins })
-                      .from(team)
-                      .where(eq(team.id, challengerTeamId))
-                      .limit(1)
-                  )[0].wins || 0) + 1
-                : (
-                    await tx
-                      .select({ wins: team.wins })
-                      .from(team)
-                      .where(eq(team.id, challengerTeamId))
-                      .limit(1)
-                  )[0].wins,
+              ((
+                await tx
+                  .select({ wins: team.wins })
+                  .from(team)
+                  .where(eq(team.id, challengerTeamId))
+                  .limit(1)
+              )[0].wins || 0) + 1,
+            status: "winner",
+            updatedAt: new Date(),
           })
           .where(eq(team.id, challengerTeamId));
 
         await tx
           .update(team)
-          .set({status: "looser",
+          .set({
             losses:
               ((
                 await tx
@@ -503,17 +677,15 @@ export async function completeMatch(
                   .where(eq(team.id, defenderTeamId))
                   .limit(1)
               )[0].losses || 0) + 1,
+            status: "looser",
+            updatedAt: new Date(),
           })
           .where(eq(team.id, defenderTeamId));
 
-        // Swap positions using temporary values to avoid constraint violations
-        // Step 1: Move challenger to a temporary position
+        // Swap positions safely
         await tx
           .update(position)
-          .set({
-            row: -1, // Temporary negative row to avoid conflicts
-            col: -1,
-          })
+          .set({ row: -1, col: -1 })
           .where(
             and(
               eq(position.teamId, challengerTeamId),
@@ -521,12 +693,12 @@ export async function completeMatch(
             )
           );
 
-        // Step 2: Move defender to challenger's old position
         await tx
           .update(position)
           .set({
             row: challengerOldPos.row,
             col: challengerOldPos.col,
+            updatedAt: new Date(),
           })
           .where(
             and(
@@ -535,12 +707,12 @@ export async function completeMatch(
             )
           );
 
-        // Step 3: Move challenger to defender's old position
         await tx
           .update(position)
           .set({
             row: defenderOldPos.row,
             col: defenderOldPos.col,
+            updatedAt: new Date(),
           })
           .where(
             and(
@@ -549,7 +721,7 @@ export async function completeMatch(
             )
           );
 
-        // Record position history (only when positions change)
+        // Record position history
         await tx.insert(positionHistory).values({
           pyramidId,
           matchId,
@@ -563,13 +735,11 @@ export async function completeMatch(
           defenderOldCol: defenderOldPos.col,
           defenderNewRow: challengerOldPos.row,
           defenderNewCol: challengerOldPos.col,
-          effectiveDate: new Date(),
         });
       } else {
-        // Defender wins: increment defender wins, increment challenger losses
         await tx
           .update(team)
-          .set({status: "winner",
+          .set({
             wins:
               ((
                 await tx
@@ -578,13 +748,14 @@ export async function completeMatch(
                   .where(eq(team.id, defenderTeamId))
                   .limit(1)
               )[0].wins || 0) + 1,
+            status: "winner",
+            updatedAt: new Date(),
           })
           .where(eq(team.id, defenderTeamId));
 
         await tx
           .update(team)
           .set({
-            status: "looser",
             losses:
               ((
                 await tx
@@ -593,20 +764,20 @@ export async function completeMatch(
                   .where(eq(team.id, challengerTeamId))
                   .limit(1)
               )[0].losses || 0) + 1,
+            status: "looser",
+            updatedAt: new Date(),
           })
           .where(eq(team.id, challengerTeamId));
-
-        // No position changes when defender wins
-        // No position history entry needed
       }
     });
 
     revalidatePath("/admin/matches");
     revalidatePath("/pyramid");
+    revalidatePath("/matches");
 
     return {
       success: true,
-      message: attackerWins
+      message: challengerWins
         ? "Match completado. Las posiciones han sido intercambiadas."
         : "Match completado. Las posiciones permanecen iguales.",
     };
@@ -623,7 +794,6 @@ export async function getUnresolvedMatchesForTeam(
   teamId: number
 ): Promise<UnresolvedMatch[]> {
   try {
-    // Matches where team is challenger OR defender and status is pending/accepted
     const rows = await db
       .select({
         id: match.id,
@@ -636,17 +806,20 @@ export async function getUnresolvedMatchesForTeam(
       .from(match)
       .where(
         and(
-          or(eq(match.challengerTeamId, teamId), eq(match.defenderTeamId, teamId)),
+          or(
+            eq(match.challengerTeamId, teamId),
+            eq(match.defenderTeamId, teamId)
+          ),
           or(eq(match.status, "pending"), eq(match.status, "accepted"))
         )
-      )
-    // Cast/normalize types if needed
+      );
+
     return rows.map((r) => ({
       id: r.id,
       pyramidId: r.pyramidId,
       challengerTeamId: r.challengerTeamId,
       defenderTeamId: r.defenderTeamId,
-      status: r.status === "pending" ? "pending" : "accepted",
+      status: r.status as "pending" | "accepted",
       createdAt: r.createdAt!,
     }));
   } catch (error) {

@@ -49,7 +49,7 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
     setError(null);
 
     if (!formData.firstName.trim() || !formData.password.trim()) {
-      setError("El nombre y la contraseña son obligatorios.");
+      setError("El primer apellido y la contraseña son obligatorios.");
       return;
     }
 
@@ -92,7 +92,7 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
         
 
       } catch (err) {
-        if (err instanceof Error) {}
+        if (err instanceof Error) {console.log(error)}
         toast.error("Algo salió mal. Por favor, inténtalo de nuevo.");
       }
     });
@@ -118,7 +118,7 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="firstName" className=" font-medium">
-                Nombre(s)*
+                Primer apellido*
               </Label>
               <Input
                 id="firstName"
@@ -126,14 +126,14 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
                 value={formData.firstName}
                 onChange={handleInputChange}
                 className="mt-1 bg-white text-black"
-                placeholder="Tu nombre"
+                placeholder="Tu primer apellido"
                 required
                 disabled={isPending}
               />
             </div>
             <div>
               <Label htmlFor="lastName" className=" font-medium">
-                Apellido(s)
+                Segundo apellido
               </Label>
               <Input
                 id="lastName"
@@ -141,7 +141,7 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
                 value={formData.lastName}
                 onChange={handleInputChange}
                 className="mt-1 bg-white text-black"
-                placeholder="Tu apellido"
+                placeholder="Tu segundo apellido"
                 disabled={isPending}
               />
             </div>

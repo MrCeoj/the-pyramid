@@ -303,7 +303,7 @@ const MatchesPage = () => {
         {/* Header */}
         <div className="text-center mb-8 mt-6 md:mt-4">
           <h1 className="text-xl font-bold text-white mb-2 md:text-2xl">
-            Mis Combates
+            Mis Retas
           </h1>
           <p className="text-white text-md md:text-xl">
             Gestiona tus desafíos pendientes y revisa tu historial
