@@ -28,6 +28,7 @@ export async function validateMailExistance(email: string) {
       .select({
         id: users.id,
         email: users.email,
+        name: users.name,
         paternalSurname: users.paternalSurname,
         maternalSurname: users.maternalSurname,
         image: users.image,

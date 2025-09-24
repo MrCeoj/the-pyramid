@@ -5,26 +5,18 @@ import TeamCard from "@/components/ui/TeamCardEdit";
 import { removeTeamFromPosition } from "@/actions/PositionActions";
 import toast from "react-hot-toast";
 import { createPortal } from "react-dom";
-
-interface Team {
-  id: number;
-  categoryId: number | null;
-  name: string | null;
-  status: "idle" | "winner" | "looser" | "risky" | null;
-  wins: number | null;
-  losses: number | null;
-}
+import { TeamWithPlayers } from "@/actions/PositionActions";
 
 interface Position {
   id: number;
   row: number;
   col: number;
-  team: Team | null;
+  team: TeamWithPlayers | null;
 }
 
 interface TeamCardWithDeleteProps {
   data: Position;
-  onTeamClick: (team: Team) => void;
+  onTeamClick: (team: TeamWithPlayers) => void;
   pyramidId: number;
 }
 

@@ -4,30 +4,18 @@ import {
   getUsersPaginated,
   createUserWithProfile,
   updateUserWithProfile,
-} from "../../actions/ProfileManagementActions";
+  UserWithProfile
+} from "@/actions/ProfileManagementActions";
 import { Plus, Pencil, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import UserFormModal from "./UserFormModal";
 import { toast } from "react-hot-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 
-interface UserData {
-  id: string;
-  name: string | null;
-  email: string | null;
-  role: "admin" | "player";
-  profile?: Profile | null;
-}
-
-interface Profile {
-  nickname?: string | null;
-  avatarUrl?: string | null;
-}
-
 export default function UsersPage() {
-  const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserWithProfile[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserData | null>(null);
+  const [editingUser, setEditingUser] = useState<UserWithProfile | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
@@ -40,12 +28,12 @@ export default function UsersPage() {
 
   const loadUsers = async (searchTerm = appliedSearch) => {
     try {
-      const { users, total } = await getUsersPaginated(
+      const { userArray, total } = await getUsersPaginated(
         page,
         PAGE_SIZE,
         searchTerm
       );
-      setFilteredUsers(users);
+      setFilteredUsers(userArray);
       setTotal(total);
     } catch {
       toast.error("No se pudieron cargar los usuarios.");
@@ -75,12 +63,12 @@ export default function UsersPage() {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const { users, total } = await getUsersPaginated(
+        const { userArray, total } = await getUsersPaginated(
           page,
           PAGE_SIZE,
           appliedSearch // Use appliedSearch instead of search
         );
-        setFilteredUsers(users);
+        setFilteredUsers(userArray);
         setTotal(total);
       } catch {
         toast.error("No se pudieron cargar los usuarios.");
@@ -203,7 +191,7 @@ export default function UsersPage() {
                 >
                   {isMobile ? (
                     <>
-                      <td className="px-3 py-2 text-ellipsis">{u.name}</td>
+                      <td className="px-3 py-2 text-ellipsis">{u.displayName}</td>
                       <td className="px-3 py-2 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis">
                         {u.email}
                       </td>
@@ -221,7 +209,7 @@ export default function UsersPage() {
                     </>
                   ) : (
                     <>
-                      <td className="px-4 py-2">{u.name}</td>
+                      <td className="px-4 py-2">{u.displayName}</td>
                       <td className="px-4 py-2">{u.email}</td>
                       <td className="px-4 py-2 capitalize">
                         {u.role === "admin" ? "Organizador" : "Jugador"}

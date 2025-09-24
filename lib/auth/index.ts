@@ -66,12 +66,10 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         const ok = await bcrypt.compare(password, u.passwordHash);
         if (!ok) throw new Error("CredentialsSignin");
 
-        const fullName = u.paternalSurname + " " + u.paternalSurname
-
         // return minimal user object
         return {
           id: u.id,
-          name: fullName ?? u.email ?? "Usuario",
+          name: u.name ?? u.email ?? "Usuario",
           email: u.email!,
           image: u.image ?? null,
           role: u.role,

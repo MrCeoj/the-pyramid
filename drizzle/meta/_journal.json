@@ -71,6 +71,20 @@
       "when": 1758676084170,
       "tag": "0009_romantic_dreaming_celestial",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1758683129472,
+      "tag": "0010_panoramic_tinkerer",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1758690534998,
+      "tag": "0011_cloudy_martin_li",
+      "breakpoints": true
     }
   ]
 }

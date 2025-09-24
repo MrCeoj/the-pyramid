@@ -1,40 +1,29 @@
 "use client";
 import { Fa1, Fa2, Fa3, Fa4, Fa5 } from "react-icons/fa6";
 import { Sword, Crown, Flag } from "lucide-react";
-
-interface Team {
-  id: number;
-  categoryId: number | null;
-  name: string | null;
-  status: "idle" | "winner" | "looser" | "risky";
-  wins: number | null;
-  losses: number | null;
-  players: string[]
-}
+import { TeamWithPlayers } from "@/actions/PositionActions";
 
 interface Position {
   id: number;
   row: number;
   col: number;
-  team: Team | null;
+  team: TeamWithPlayers | null;
 }
 
 interface TeamCardProps {
   data: Position;
   challengable?: boolean;
-  onChallenge?: (team: Team) => void;
   isTop?: boolean;
   isPlayer?: boolean;
-  players: string[];
+  onChallenge?: (team: TeamWithPlayers) => void;
 }
 
 const TeamCard = ({
   data,
   challengable = false,
-  onChallenge,
   isTop = false,
   isPlayer = false,
-  players = ["Jugador 2", "Jugador 1"],
+  onChallenge,
 }: TeamCardProps) => {
   const getIcon = (category: number) => {
     switch (category) {
@@ -57,7 +46,7 @@ const TeamCard = ({
     }
   };
 
-  const statusColors: Record<Team["status"], string> = {
+  const statusColors: Record<TeamWithPlayers["status"], string> = {
     looser: "bg-red-500/10 border-red-500/40 hover:border-red-500/60",
     winner: "bg-green-500/10 border-green-500/40 hover:border-green-500/60",
     idle: "bg-slate-500/5 border-slate-400/30 hover:border-slate-400/50",
@@ -69,7 +58,7 @@ const TeamCard = ({
       "bg-gradient-to-br from-yellow-300/20 via-yellow-400/15 to-amber-500/25 border-yellow-400/70 hover:border-yellow-400/90 shadow-yellow-300/30 shadow-lg", // brighter gold
   };
 
-  const statusAccents: Record<Team["status"], string> = {
+  const statusAccents: Record<TeamWithPlayers["status"], string> = {
     looser: "bg-red-500",
     winner: "bg-green-500",
     idle: "bg-slate-400",
@@ -166,20 +155,13 @@ const TeamCard = ({
                 }`}
                 title="Nombre del equipo"
               >
-                <div className="flex flex-col min-h-10 justify-center max-h-10">
-                  {players.length < 1 ? (
-                    "Equipo vacío"
-                  ) : (
-                    <>
-                      {players.reverse().map((p, i) => (
-                        <span key={i}>
-                          {p}
-                          {i === 0 && p && " &"}
-                        </span>
-                      ))}
-                    </>
-                  )}
-                </div>
+                {data.team.displayName.includes("&") ? (
+                  <div className="flex flex-col min-h-10 justify-center max-h-10">
+                    {data.team.displayName.split("&").map((s, key) => (<span key={key}>{s}</span>))}
+                  </div>
+                ) : (
+                  ""
+                )}
               </div>
             </div>
 

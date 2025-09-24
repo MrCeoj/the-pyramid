@@ -7,32 +7,19 @@ import { Toaster } from "react-hot-toast";
 import {
   setTeamInPosition,
   getApplicableTeams,
+  TeamWithPlayers
 } from "@/actions/PositionActions";
 import toast from "react-hot-toast";
 import SetTeamModal from "./SetTeamModal";
+import { PyramidData } from "@/actions/IndexActions";
 
-interface Team {
-  id: number;
-  categoryId: number | null;
-  name: string | null;
-  status: "idle" | "winner" | "looser" | "risky" | null;
-  wins: number | null;
-  losses: number | null;
-}
-
-interface Position {
+// Rename to avoid conflict with imported Position type
+interface PyramidPosition {
   id: number;
   row: number;
   col: number;
-  team: Team | null;
+  team: TeamWithPlayers | null;
 }
-
-export type PyramidData = {
-  positions: Position[];
-  row_amount: number;
-  pyramid_id?: number;
-  pyramid_name?: string;
-};
 
 interface SelectedPosition {
   pyramidId: number;
@@ -41,7 +28,7 @@ interface SelectedPosition {
 }
 
 export default function PyramidDisplay({ data }: { data: PyramidData }) {
-  const [applicableTeams, setApplicableTeams] = useState<Team[]>([]);
+  const [applicableTeams, setApplicableTeams] = useState<TeamWithPlayers[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] =
@@ -68,7 +55,7 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
     }
   };
 
-  const handleSetTeam = (position: Position) => {
+  const handleSetTeam = (position: PyramidPosition) => {
     setSelectedPosition({
       pyramidId: data.pyramid_id!,
       row: position.row,
@@ -80,14 +67,21 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
 
   const isMobile = useIsMobile();
 
-  // Data processing logic remains unchanged
-  const rows: { [key: number]: Position[] } = {};
+  // Data processing logic - transform imported Position to PyramidPosition
+  const rows: { [key: number]: PyramidPosition[] } = {};
   data.positions.forEach((pos) => {
     if (!rows[pos.row]) rows[pos.row] = [];
-    rows[pos.row].push(pos);
+    // Transform the position to match our expected type
+    const pyramidPos: PyramidPosition = {
+      id: pos.id,
+      row: pos.row,
+      col: pos.col,
+      team: pos.team as TeamWithPlayers | null, // Type assertion - ensure this is safe
+    };
+    rows[pos.row].push(pyramidPos);
   });
 
-  const handleTeamSelect = async (team: Team) => {
+  const handleTeamSelect = async (team: TeamWithPlayers) => {
     if (!selectedPosition) return;
 
     setIsLoading(true);
@@ -118,11 +112,11 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
     setApplicableTeams([]);
   };
 
-  const filledRows: { [key: number]: Position[] } = {};
+  const filledRows: { [key: number]: PyramidPosition[] } = {};
   for (let row = 1; row <= data.row_amount; row++) {
     const expectedCols = row + 1;
     const existing = rows[row] ?? [];
-    const filled: Position[] = [];
+    const filled: PyramidPosition[] = [];
 
     for (let col = 1; col < expectedCols; col++) {
       const match = existing.find((p) => p.col === col);

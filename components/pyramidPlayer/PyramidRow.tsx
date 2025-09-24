@@ -6,22 +6,13 @@ import { useCenteredScroll } from "@/hooks/useCenteredScroll";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useState } from "react";
 import ChallengeModal from "@/components/ui/ChallengeModal";
+import { TeamWithPlayers } from "@/actions/PositionActions";
 
-type Team = {
-  id: number;
-  name: string | null;
-  wins: number | null;
-  status: "winner" | "idle" | "looser" | "risky";
-  losses: number | null;
-  players: string[];
-  categoryId: number | null;
-};
-
-type Position = {
+type PyramidPosition = {
   id: number;
   row: number;
   col: number;
-  team: Team | null;
+  team: TeamWithPlayers | null;
 };
 
 type UnresolvedMatch = {
@@ -41,10 +32,10 @@ const PyramidRow = ({
   unresolvedMatches = [],
   className,
 }: {
-  positions: Position[];
-  onTeamClick: (team: Team) => void;
+  positions: PyramidPosition[];
+  onTeamClick: (team: TeamWithPlayers) => void;
   isFirst?: boolean;
-  allPositions: Position[];
+  allPositions: PyramidPosition[];
   userTeamId?: number | null;
   pyramidId: number;
   unresolvedMatches?: UnresolvedMatch[];
@@ -54,7 +45,7 @@ const PyramidRow = ({
   const { session } = useSessionStore();
   const [challengeModal, setChallengeModal] = useState<{
     isOpen: boolean;
-    defenderTeam: Team | null;
+    defenderTeam: TeamWithPlayers | null;
   }>({ isOpen: false, defenderTeam: null });
 
   const hasUnresolvedWith = (targetTeamId: number | null) => {
@@ -67,7 +58,7 @@ const PyramidRow = ({
     );
   };
 
-  const handleChallenge = (defenderTeam: Team) => {
+  const handleChallenge = (defenderTeam: TeamWithPlayers) => {
     if (hasUnresolvedWith(defenderTeam.id)) {
       return;
     }
@@ -85,7 +76,7 @@ const PyramidRow = ({
     });
   };
 
-  const isChallengable = (targetPos: Position): boolean => {
+  const isChallengable = (targetPos: PyramidPosition): boolean => {
     // Admins cannot challenge
     if (session?.user.role === "admin") return false;
 
@@ -143,7 +134,6 @@ const PyramidRow = ({
             <TeamCard
               key={pos.id}
               data={pos}
-              players={pos.team.players}
               challengable={isChallengable(pos)}
               isPlayer={pos.team.id === userTeamId}
               isTop={pos.row === 1}

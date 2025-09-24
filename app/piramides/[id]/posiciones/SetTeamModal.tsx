@@ -1,23 +1,15 @@
 import React from "react";
 import { X, Users, Trophy, AlertCircle } from "lucide-react";
-
-interface Team {
-  id: number;
-  categoryId: number | null;
-  name: string | null;
-  status: "idle" | "winner" | "looser" | "risky" | null;
-  wins: number | null;
-  losses: number | null;
-}
+import { TeamWithPlayers } from "@/actions/PositionActions";
 
 interface SetTeamModalProps {
   isOpen: boolean;
   onClose: () => void;
-  teams: Team[];
+  teams: TeamWithPlayers[];
   pyramidId: number;
   rowNumber: number;
   posNumber: number;
-  onTeamSelect: (team: Team) => Promise<void>;
+  onTeamSelect: (team: TeamWithPlayers) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -33,7 +25,7 @@ const SetTeamModal = ({
 }: SetTeamModalProps) => {
   if (!isOpen) return null;
 
-  const getStatusColor = (status: Team["status"]) => {
+  const getStatusColor = (status: TeamWithPlayers["status"]) => {
     switch (status) {
       case "winner":
         return "text-green-800 bg-green-200";
@@ -47,7 +39,7 @@ const SetTeamModal = ({
     }
   };
 
-  const getStatusIcon = (status: Team["status"]) => {
+  const getStatusIcon = (status: TeamWithPlayers["status"]) => {
     switch (status) {
       case "winner":
         return <Trophy className="w-4 h-4" />;
@@ -58,7 +50,7 @@ const SetTeamModal = ({
     }
   };
 
-  const getStatusText = (status: Team["status"]) => {
+  const getStatusText = (status: TeamWithPlayers["status"]) => {
     switch(status){
         case "winner":
             return "Ganador"
@@ -73,7 +65,7 @@ const SetTeamModal = ({
     }
   }
 
-  const handleTeamClick = async (team: Team) => {
+  const handleTeamClick = async (team: TeamWithPlayers) => {
     try {
       await onTeamSelect(team);
       onClose();
@@ -134,7 +126,7 @@ const SetTeamModal = ({
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <h3 className="font-medium text-white">
-                          {team.name || "Equipo sin nombre"}
+                          {team.displayName || "Equipo sin nombre"}
                         </h3>
                         <div className="flex items-center mt-1 space-x-4 text-sm text-white/80">
                           <span>Wins: {team.wins || 0}</span>

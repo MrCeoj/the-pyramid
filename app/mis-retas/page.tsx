@@ -71,7 +71,7 @@ const MatchesPage = () => {
   const handleAcceptMatch = async (matchId: number) => {
     setActionLoading(matchId);
     try {
-      const result = await acceptMatch(matchId);
+      const result = await acceptMatch(matchId, data!.user.id);
       if (result.success) {
         toast.success(result.message);
         await fetchMatches(); // Refresh data
@@ -88,7 +88,7 @@ const MatchesPage = () => {
   const handleRejectMatch = async (matchId: number) => {
     setActionLoading(matchId);
     try {
-      const result = await rejectMatch(matchId);
+      const result = await rejectMatch(matchId, data!.user.id);
       if (result.success) {
         toast.success(result.message);
         await fetchMatches(); // Refresh data
@@ -165,7 +165,7 @@ const MatchesPage = () => {
 
       <div className="flex items-center gap-4 mb-6">
         <div className="flex-1 text-center bg-slate-800/50 p-3 rounded-lg">
-          <h4 className="font-semibold text-white">Jugador 1 & Jugador 2</h4>
+          <h4 className="font-semibold text-white">{match.challengerTeam.displayName}</h4>
           <p className="text-sm text-slate-400">
             Categoría {match.challengerTeam.categoryId}
           </p>
@@ -175,7 +175,7 @@ const MatchesPage = () => {
         <div className="text-2xl text-orange-400">VS</div>
 
         <div className="flex-1 text-center bg-blue-900/20 p-3 rounded-lg border border-blue-500/30">
-          <h4 className="font-semibold text-white">Jugador 1 & Jugador 2</h4>
+          <h4 className="font-semibold text-white">{match.defenderTeam.displayName}</h4>
           <p className="text-sm text-slate-400">
             Categoría {match.defenderTeam.categoryId}
           </p>
@@ -185,7 +185,7 @@ const MatchesPage = () => {
 
       <div className="bg-slate-800/30 p-3 rounded-lg mb-4">
         <p className="text-sm text-slate-300 text-center">
-          <strong className="text-white">Jugador 1 & Jugador 2</strong> te han
+          <strong className="text-white">{match.challengerTeam.displayName}</strong> te han
           desafiado en{" "}
           <strong className="text-orange-400">{match.pyramidName}</strong>
         </p>
@@ -251,7 +251,7 @@ const MatchesPage = () => {
 
         <div className="flex items-center gap-4 mb-4">
           <div className="flex-1 text-center">
-            <h4 className="font-semibold text-white">Jugador 1 & Jugador 2</h4>
+            <h4 className="font-semibold text-white">{match.challengerTeam.displayName}</h4>
             <p className="text-sm text-white">
               Cat. {match.challengerTeam.categoryId}
             </p>
@@ -260,7 +260,7 @@ const MatchesPage = () => {
           <div className="text-lg text-white">vs</div>
 
           <div className="flex-1 text-center">
-            <h4 className="font-semibold text-white">Jugador 1 & Jugador 2</h4>
+            <h4 className="font-semibold text-white">{match.defenderTeam.displayName}</h4>
             <p className="text-sm text-white">
               Cat. {match.defenderTeam.categoryId}
             </p>
@@ -272,7 +272,7 @@ const MatchesPage = () => {
             <div className="flex items-center justify-center gap-2">
               <Trophy className="text-yellow-400" size={16} />
               <span className="text-yellow-300 font-medium">
-                Ganadores: {"Jugador 1 & Jugador 2"}
+                Ganadores: {match.winnerTeam.displayName}
               </span>
             </div>
           </div>

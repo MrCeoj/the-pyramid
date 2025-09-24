@@ -4,22 +4,16 @@ import { motion } from "framer-motion";
 import { createMatch } from "@/actions/MatchesActions";
 import { createPortal } from "react-dom";
 import { Swords } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePyramidStore } from "@/stores/pyramidPositionStore";
 import toast from "react-hot-toast";
-
-interface Team {
-  id: number;
-  name: string | null;
-  categoryId: number | null;
-  wins: number | null;
-  losses: number | null;
-}
+import { TeamWithPlayers } from "@/actions/PositionActions";
+import { useSession } from "next-auth/react";
 
 interface ChallengeModalProps {
   isOpen: boolean;
-  attacker: Team | null;
-  defender: Team | null;
+  attacker: TeamWithPlayers | null;
+  defender: TeamWithPlayers | null;
   pyramidId: number;
   onClose: () => void;
 }
@@ -32,19 +26,15 @@ export default function ChallengeModal({
   onClose,
 }: ChallengeModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: session } = useSession();
   const refreshPyramidData = usePyramidStore(
     (state) => state.refreshPyramidData
   );
-
-  useEffect(() => {
-    if (isOpen) console.log("abriendo");
-  }, [isOpen]);
 
   if (!attacker || !defender) return null;
 
   const categoryDiff = (defender.categoryId ?? 0) - (attacker.categoryId ?? 0);
   const handicapPoints = Math.abs(categoryDiff) * 15;
-
 
   const getHandicapInfo = () => {
     if (categoryDiff === 0) {
@@ -78,17 +68,25 @@ export default function ChallengeModal({
   const handicapInfo = getHandicapInfo();
 
   const handleConfirm = async () => {
+    if (!session?.user?.id) {
+      toast.error("Hubo un error al procesar tu solicitud, intentalo de nuevo.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await createMatch({
         pyramidId,
         challengerTeamId: attacker.id,
         defenderTeamId: defender.id,
+        userId: session?.user.id,
       });
 
       refreshPyramidData();
 
-      toast.success("¡Has desafiado al equipo! Espera su respuesta.", {duration: 5000});
+      toast.success("¡Has desafiado al equipo! Espera su respuesta.", {
+        duration: 5000,
+      });
       onClose();
     } catch (error) {
       console.error("Error creating match:", error);
@@ -102,7 +100,7 @@ export default function ChallengeModal({
     team,
     isAttacker,
   }: {
-    team: Team;
+    team: TeamWithPlayers;
     isAttacker: boolean;
   }) => (
     <div
@@ -137,7 +135,7 @@ export default function ChallengeModal({
 
       <div className="text-center mt-4">
         <h3 className="font-bold text-xl mb-2 text-white/95 leading-tight">
-          {"Jugador 1 & Jugador 2" }
+        {team.displayName}
         </h3>
 
         <div className="mb-4">
@@ -177,15 +175,16 @@ export default function ChallengeModal({
     </div>
   );
 
-  return (<>
-      {isOpen && 
+  return (
+    <>
+      {isOpen &&
         createPortal(
           <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-            >
+          >
             <motion.div
               initial={{ scale: 0.8, opacity: 0, y: 50 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -198,7 +197,7 @@ export default function ChallengeModal({
                 <button
                   onClick={onClose}
                   className="absolute top-6 right-6 p-2 rounded-full transition-colors text-slate-400 hover:text-white"
-                  >
+                >
                   <X size={20} />
                 </button>
 
@@ -232,7 +231,7 @@ export default function ChallengeModal({
                         ease: "easeInOut",
                       }}
                       className="text-6xl font-extrabold bg-gradient-to-r from-orange-400 via-red-400 to-orange-400 bg-clip-text text-transparent md:mb-2"
-                      >
+                    >
                       VS
                     </motion.div>
                     <div className="w-12 h-px bg-gradient-to-r from-transparent via-orange-400 to-transparent"></div>
@@ -252,7 +251,7 @@ export default function ChallengeModal({
                       rounded-xl p-4
                       backdrop-blur-sm
                       `}
-                      >
+                  >
                     <div className="flex items-start gap-3">
                       {handicapInfo.icon}
                       <div>
@@ -278,7 +277,7 @@ export default function ChallengeModal({
                   onClick={onClose}
                   disabled={isSubmitting}
                   className="flex-1 px-6 py-4 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white rounded-xl font-medium transition-all duration-200 disabled:opacity-50"
-                  >
+                >
                   Cancelar
                 </button>
 
@@ -286,7 +285,7 @@ export default function ChallengeModal({
                   onClick={handleConfirm}
                   disabled={isSubmitting}
                   className="flex-1 px-6 py-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white rounded-xl font-medium transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg hover:shadow-orange-500/25"
-                  >
+                >
                   {isSubmitting ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   ) : (
@@ -301,6 +300,7 @@ export default function ChallengeModal({
           </motion.div>,
           document.body
         )}
-        I</>
+      I
+    </>
   );
 }

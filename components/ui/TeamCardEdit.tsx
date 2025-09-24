@@ -1,21 +1,13 @@
 "use client";
 import { Fa1, Fa2, Fa3, Fa4, Fa5 } from "react-icons/fa6";
 import { PiMedalBold } from "react-icons/pi";
-
-interface Team {
-  id: number;
-  categoryId: number | null;
-  name: string | null;
-  status: "idle" | "winner" | "looser" | "risky" | null;
-  wins: number | null;
-  losses: number | null;
-}
+import { TeamWithPlayers } from "@/actions/PositionActions";
 
 interface Position {
   id: number;
   row: number;
   col: number;
-  team: Team | null;
+  team: TeamWithPlayers | null;
 }
 
 const TeamCard = ({ data }: { data: Position }) => {
@@ -43,9 +35,9 @@ const TeamCard = ({ data }: { data: Position }) => {
           <div className="text-center">
             <div
               className="font-bold text-base text-white truncate mb-3"
-              title={data.team?.name || ""}
+              title={data.team?.displayName || ""}
             >
-              {data.team?.name || "Equipo sin nombre"}
+              {data.team?.displayName || "Equipo sin nombre"}
             </div>
             {data.team && (
               <div className="flex flex-col">

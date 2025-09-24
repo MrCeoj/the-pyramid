@@ -1,15 +1,7 @@
 "use client";
-
 import { create } from "zustand";
-
-type Team = {
-  id: number;
-  name: string;
-  status: "winner" | "looser" | "idle" | "risky";
-  wins: number;
-  losses: number;
-  categoryId: number;
-};
+import { TeamWithPlayers } from "@/actions/PositionActions";
+import { Team } from "@/actions/IndexActions";
 
 type Position = {
   id: number;

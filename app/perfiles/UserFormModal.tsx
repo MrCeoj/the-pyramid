@@ -2,25 +2,13 @@
 
 import { X, Save, User } from "lucide-react";
 import { useState, useEffect } from "react";
-
-interface Profile {
-  nickname?: string | null;
-  avatarUrl?: string | null;
-}
-
-interface UserData {
-  id: string;
-  name: string | null;
-  email: string | null;
-  role: "admin" | "player";
-  profile?: Profile | null;
-}
+import { UserWithProfile } from "@/actions/ProfileManagementActions";
 
 interface UserFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: UserData) => Promise<void>;
-  initialData?: UserData;
+  onSave: (data: UserWithProfile) => Promise<void>;
+  initialData?: UserWithProfile;
 }
 
 export default function UserFormModal({
@@ -29,9 +17,13 @@ export default function UserFormModal({
   onSave,
   initialData,
 }: UserFormModalProps) {
-  const [formData, setFormData] = useState<UserData>({
+
+  const [formData, setFormData] = useState<UserWithProfile>({
     id: "",
-    name: "",
+    fullName: "",
+    displayName: "",
+    paternalSurname: "",
+    maternalSurname: "",
     email: "",
     role: "player",
     profile: { nickname: "", avatarUrl: "" },
@@ -48,7 +40,6 @@ export default function UserFormModal({
     } else {
       setFormData((prev) => ({
         ...prev,
-        profile: { ...prev.profile, [field]: value },
       }));
     }
   };
@@ -90,11 +81,23 @@ export default function UserFormModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label className="block text-gray-300 text-sm mb-2">Nombre</label>
+            <label className="block text-gray-300 text-sm mb-2">Primer apellido*</label>
             <input
               type="text"
-              value={formData.name!}
-              onChange={(e) => handleChange("name", e.target.value)}
+              value={formData.paternalSurname}
+              onChange={(e) => handleChange("paternalSurname", e.target.value)}
+              className="w-full px-3 py-2 bg-indor-black border border-indor-brown-light rounded text-white placeholder-gray-400 focus:border-indor-brown-light focus:outline-none"
+              placeholder="Primer apellido"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm mb-2">Segundo apellido*</label>
+            <input
+              type="text"
+              value={formData.maternalSurname}
+              onChange={(e) => handleChange("maternalSurname", e.target.value)}
               className="w-full px-3 py-2 bg-indor-black border border-indor-brown-light rounded text-white placeholder-gray-400 focus:border-indor-brown-light focus:outline-none"
               placeholder="Nombre completo"
               required

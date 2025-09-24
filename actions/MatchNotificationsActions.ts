@@ -12,7 +12,7 @@ async function getUserTeamIds(userId: string): Promise<number[]> {
     .from(team)
     .where(or(eq(team.player1Id, userId), eq(team.player2Id, userId)));
 
-  return userTeams.map(t => t.id);
+  return userTeams.map((t) => t.id);
 }
 
 // Enhanced notification data type
@@ -62,7 +62,7 @@ export async function getUnreadMatchNotifications(userId: string) {
       .where(
         and(
           or(
-            ...userTeamIds.map(teamId => 
+            ...userTeamIds.map((teamId) =>
               or(
                 eq(match.challengerTeamId, teamId),
                 eq(match.defenderTeamId, teamId)
@@ -79,13 +79,13 @@ export async function getUnreadMatchNotifications(userId: string) {
 
     // Get team info for display names
     const teamIds = new Set<number>();
-    matchesData.forEach(m => {
+    matchesData.forEach((m) => {
       teamIds.add(m.challengerTeamId);
       teamIds.add(m.defenderTeamId);
     });
 
     const teamsInfo = await Promise.all(
-      Array.from(teamIds).map(async teamId => {
+      Array.from(teamIds).map(async (teamId) => {
         const teamData = await db
           .select({
             id: team.id,
@@ -97,6 +97,10 @@ export async function getUnreadMatchNotifications(userId: string) {
           .limit(1);
 
         if (!teamData.length) return null;
+
+        if (!teamData[0].player1Id || !teamData[0].player2Id) {
+          return null;
+        }
 
         // Get player names for display
         const [player1, player2] = await Promise.all([
@@ -119,7 +123,7 @@ export async function getUnreadMatchNotifications(userId: string) {
             .from(users)
             .leftJoin(profile, eq(users.id, profile.userId))
             .where(eq(users.id, teamData[0].player2Id))
-            .limit(1)
+            .limit(1),
         ]);
 
         if (!player1.length || !player2.length) return null;
@@ -149,7 +153,7 @@ export async function getUnreadMatchNotifications(userId: string) {
     );
 
     const teamInfoMap = new Map();
-    teamsInfo.forEach(team => {
+    teamsInfo.forEach((team) => {
       if (team) teamInfoMap.set(team.id, team);
     });
 
@@ -159,7 +163,7 @@ export async function getUnreadMatchNotifications(userId: string) {
     for (const m of matchesData) {
       const challengerTeam = teamInfoMap.get(m.challengerTeamId);
       const defenderTeam = teamInfoMap.get(m.defenderTeamId);
-      
+
       const isUserInChallenger = userTeamIds.includes(m.challengerTeamId);
       const isUserInDefender = userTeamIds.includes(m.defenderTeamId);
 
@@ -185,7 +189,8 @@ export async function getUnreadMatchNotifications(userId: string) {
       }
 
       // Check if notification is unread
-      const isUnread = !userViewedAt || 
+      const isUnread =
+        !userViewedAt ||
         (m.lastStatusChange && userViewedAt < m.lastStatusChange);
 
       if (isUnread) {
@@ -240,7 +245,9 @@ export async function markMatchAsViewed(matchId: number, userId: string) {
       return { success: false, error: "Match not found" };
     }
 
-    const isUserInChallenger = userTeamIds.includes(matchData[0].challengerTeamId);
+    const isUserInChallenger = userTeamIds.includes(
+      matchData[0].challengerTeamId
+    );
     const isUserInDefender = userTeamIds.includes(matchData[0].defenderTeamId);
 
     if (!isUserInChallenger && !isUserInDefender) {
@@ -258,9 +265,10 @@ export async function markMatchAsViewed(matchId: number, userId: string) {
         .limit(1);
 
       if (challengerTeam.length) {
-        const updateField = challengerTeam[0].player1Id === userId 
-          ? "challengerPlayer1ViewedAt" 
-          : "challengerPlayer2ViewedAt";
+        const updateField =
+          challengerTeam[0].player1Id === userId
+            ? "challengerPlayer1ViewedAt"
+            : "challengerPlayer2ViewedAt";
 
         await db
           .update(match)
@@ -275,9 +283,10 @@ export async function markMatchAsViewed(matchId: number, userId: string) {
         .limit(1);
 
       if (defenderTeam.length) {
-        const updateField = defenderTeam[0].player1Id === userId 
-          ? "defenderPlayer1ViewedAt" 
-          : "defenderPlayer2ViewedAt";
+        const updateField =
+          defenderTeam[0].player1Id === userId
+            ? "defenderPlayer1ViewedAt"
+            : "defenderPlayer2ViewedAt";
 
         await db
           .update(match)
@@ -326,7 +335,10 @@ export async function getUnreadMatchNotificationsAdvanced(userId: string) {
   }
 }
 
-export async function markNotificationAsRead(notificationId: number, userId: string) {
+export async function markNotificationAsRead(
+  notificationId: number,
+  userId: string
+) {
   try {
     const result = await db
       .update(matchNotifications)
@@ -351,7 +363,7 @@ export async function markNotificationAsRead(notificationId: number, userId: str
 
 // Create notifications when match status changes
 export async function createMatchNotifications(
-  matchId: number, 
+  matchId: number,
   notificationType: string,
   excludeUserId?: string
 ) {
@@ -379,24 +391,23 @@ export async function createMatchNotifications(
         .select({ player1Id: team.player1Id, player2Id: team.player2Id })
         .from(team)
         .where(eq(team.id, matchData[0].defenderTeamId))
-        .limit(1)
+        .limit(1),
     ]);
 
     if (!challengerTeam.length || !defenderTeam.length) {
       return { success: false };
     }
 
-    const allPlayerIds = [
+    const allPlayerIds: string[] = [
       challengerTeam[0].player1Id,
       challengerTeam[0].player2Id,
       defenderTeam[0].player1Id,
       defenderTeam[0].player2Id,
-    ].filter(id => id !== excludeUserId); // Exclude the user who triggered the action
+    ].filter((id): id is string => id !== null && id !== excludeUserId); // type guard ensures string[]
 
-    // Create notifications for all involved players
-    const notifications = allPlayerIds.map(userId => ({
+    const notifications = allPlayerIds.map((userId) => ({
       matchId,
-      userId,
+      userId, // now TypeScript knows this is string
       notificationType,
       isRead: false,
     }));
@@ -411,7 +422,10 @@ export async function createMatchNotifications(
 }
 
 // Updated function to track status changes
-export async function updateMatchStatusChange(matchId: number, triggeredByUserId?: string) {
+export async function updateMatchStatusChange(
+  matchId: number,
+  triggeredByUserId?: string
+) {
   try {
     await db
       .update(match)
@@ -423,7 +437,11 @@ export async function updateMatchStatusChange(matchId: number, triggeredByUserId
 
     // Create notifications for the status change
     if (triggeredByUserId) {
-      await createMatchNotifications(matchId, "status_change", triggeredByUserId);
+      await createMatchNotifications(
+        matchId,
+        "status_change",
+        triggeredByUserId
+      );
     }
 
     return { success: true };

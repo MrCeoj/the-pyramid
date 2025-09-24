@@ -13,7 +13,16 @@ import { getUserTeamId } from "@/actions/IndexActions";
 
 export default async function Home() {
   const session = await auth();
-  const userTeamId = await getUserTeamId(session!.user.id);
+  
+  const result = await getUserTeamId(session!.user.id);
+
+  let userTeamId: number | null | undefined;
+  if ("error" in result) {
+    console.error(result.error);
+    userTeamId = null; // or undefined, depending on what you want
+  } else {
+    userTeamId = result.teamId;
+  }
 
   // This should never happen
   if (!session?.user?.id) {
@@ -133,7 +142,7 @@ export default async function Home() {
       <main className="h-screen flex flex-col justify-center">
         <ZustandSessionInitializer />
         <div className="flex flex-col justify-start py-16 overflow-y-scroll no-scrollbar">
-          <PyramidDisplay data={playerPyramid} userTeamId={userTeamId.teamId} />
+          <PyramidDisplay data={playerPyramid} userTeamId={userTeamId} />
         </div>
         <UserDropdownMenu />
       </main>

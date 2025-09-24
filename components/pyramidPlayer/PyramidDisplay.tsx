@@ -9,28 +9,15 @@ import {
   getUnresolvedMatchesForTeam,
 } from "@/actions/MatchesActions";
 
-type Team = {
-  id: number;
-  name: string;
-  wins: number;
-  losses: number;
-  status: "winner" | "idle" | "looser" | "risky";
-  categoryId: number;
-  players: string[]
-};
+import { PyramidData } from "@/actions/IndexActions";
+import { TeamWithPlayers } from "@/actions/PositionActions";
 
-type Position = {
+// Rename to avoid conflict with imported Position type
+type PyramidPosition = {
   id: number;
   row: number;
   col: number;
-  team: Team | null;
-};
-
-export type PyramidData = {
-  positions: Position[];
-  row_amount: number;
-  pyramid_id?: number;
-  pyramid_name?: string;
+  team: TeamWithPlayers | null;
 };
 
 export default function PyramidDisplay({
@@ -58,17 +45,26 @@ export default function PyramidDisplay({
 
   const isMobile = useIsMobile();
 
-  const rows: { [key: number]: Position[] } = {};
-  data.positions.forEach((pos) => {
+  // Transform all positions once at the beginning
+  const allPyramidPositions: PyramidPosition[] = data.positions.map((pos) => ({
+    id: pos.id,
+    row: pos.row,
+    col: pos.col,
+    team: pos.team as TeamWithPlayers | null, // Type assertion
+  }));
+
+  const rows: { [key: number]: PyramidPosition[] } = {};
+  allPyramidPositions.forEach((pos) => {
+    if (!pos) return;
     if (!rows[pos.row]) rows[pos.row] = [];
     rows[pos.row].push(pos);
   });
 
-  const filledRows: { [key: number]: Position[] } = {};
+  const filledRows: { [key: number]: PyramidPosition[] } = {};
   for (let row = 1; row <= data.row_amount; row++) {
     const expectedCols = row + 1;
     const existing = rows[row] ?? [];
-    const filled: Position[] = [];
+    const filled: PyramidPosition[] = [];
 
     for (let col = 1; col < expectedCols; col++) {
       const match = existing.find((p) => p.col === col);
@@ -124,7 +120,7 @@ export default function PyramidDisplay({
                 positions={rowPositions}
                 onTeamClick={() => {}}
                 isFirst={isFirst}
-                allPositions={data.positions}
+                allPositions={allPyramidPositions}
                 unresolvedMatches={unresolvedMatches}
                 userTeamId={userTeamId}
                 pyramidId={data.pyramid_id!}

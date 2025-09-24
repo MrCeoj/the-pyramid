@@ -1,21 +1,9 @@
 // hooks/useMatchNotifications.ts
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { getUnreadMatchNotifications, markMatchAsViewed } from "@/actions/MatchNotificationsActions";
-
-interface MatchNotification {
-  id: number;
-  status: string;
-  challengerTeamId: number;
-  defenderTeamId: number;
-  challengerViewedAt: Date | null;
-  defenderViewedAt: Date | null;
-  lastStatusChange: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { getUnreadMatchNotifications, markMatchAsViewed, MatchNotification } from "@/actions/MatchNotificationsActions";
 
 interface NotificationState {
   count: number;
@@ -33,34 +21,37 @@ export function useMatchNotifications() {
     error: null,
   });
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(() => {
     if (!session?.user?.id) return;
 
     setNotifications(prev => ({ ...prev, loading: true, error: null }));
-    
-    try {
-      const result = await getUnreadMatchNotifications(session.user.id);
-      setNotifications({
-        count: result.count,
-        matches: result.matches,
-        loading: false,
-        error: null,
-      });
-    } catch (error) {
-      setNotifications(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : "Failed to fetch notifications",
-      }));
+    const gettingunreadnotifs = async() => {
+      try {
+        const result = await getUnreadMatchNotifications(session.user.id);
+        setNotifications({
+          count: result.count,
+          matches: result.matches,
+          loading: false,
+          error: null,
+        });
+      } catch (error) {
+        setNotifications(prev => ({
+          ...prev,
+          loading: false,
+          error: error instanceof Error ? error.message : "Failed to fetch notifications",
+        }));
+      }
     }
-  };
+
+    gettingunreadnotifs()
+  }, [session?.user.id])
 
   const markAsViewed = async (matchId: number) => {
     if (!session?.user?.id) return;
 
     try {
       const result = await markMatchAsViewed(matchId, session.user.id);
-      if (result.success) {
+      if (result?.success) {
         // Refresh notifications after marking as viewed
         await fetchNotifications();
       }
@@ -74,7 +65,7 @@ export function useMatchNotifications() {
   // Fetch notifications on mount and when session changes
   useEffect(() => {
     fetchNotifications();
-  }, [session?.user?.id]);
+  }, [fetchNotifications, session?.user.id]);
 
   // Optional: Poll for new notifications every 30 seconds
   useEffect(() => {
@@ -82,7 +73,7 @@ export function useMatchNotifications() {
 
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-  }, [session?.user?.id]);
+  }, [fetchNotifications, session?.user?.id]);
 
   return {
     ...notifications,

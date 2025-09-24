@@ -1,537 +1,263 @@
 "use server";
-import { db } from "@/lib/drizzle";
-import { team, profile, category, users } from "@/db/schema";
-import { eq, or, and } from "drizzle-orm";
 
-// Helper function to generate team display name
-function getTeamDisplayName(
+import { db } from "@/lib/drizzle"; // Assuming your db instance is here
+import {
+  team,
+  users,
+  profile,
+  category,
+  getTeamDisplayName,
+} from "@/db/schema"; // Assuming your schema is here
+import { eq, aliasedTable } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+
+export type TeamWithPlayers = {
+  team: typeof team.$inferSelect;
+  category: typeof category.$inferSelect | null;
   player1: {
-    paternalSurname: string;
-    maternalSurname: string;
-    nickname?: string | null;
-  },
+    user: typeof users.$inferSelect;
+    profile: typeof profile.$inferSelect | null;
+  } | null; // 👈 ahora acepta null
   player2: {
-    paternalSurname: string;
-    maternalSurname: string;
-    nickname?: string | null;
-  }
-): string {
-  // If both players have nicknames, use those
-  if (player1.nickname && player2.nickname) {
-    return `${player1.nickname} / ${player2.nickname}`;
-  }
-
-  // If only one has nickname, use nickname + surname
-  if (player1.nickname && !player2.nickname) {
-    return `${player1.nickname} / ${player2.paternalSurname}`;
-  }
-
-  if (!player1.nickname && player2.nickname) {
-    return `${player1.paternalSurname} / ${player2.nickname}`;
-  }
-
-  // Default: use both paternal surnames
-  return `${player1.paternalSurname} / ${player2.paternalSurname}`;
-}
-
-export interface TeamWithPlayers {
-  id: number;
+    user: typeof users.$inferSelect;
+    profile: typeof profile.$inferSelect | null;
+  } | null; // 👈 ahora acepta null
   displayName: string;
-  wins: number;
-  losses: number;
-  status: "winner" | "looser" | "idle" | "risky";
-  categoryId: number | null;
-  category: {
-    id: number;
-    name: string;
-    description: string | null;
-  } | null;
-  player1: {
-    id: string;
-    paternalSurname: string;
-    maternalSurname: string;
-    fullName: string;
-    nickname: string | null;
-    email: string | null;
-  };
-  player2: {
-    id: string;
-    paternalSurname: string;
-    maternalSurname: string;
-    fullName: string;
-    nickname: string | null;
-    email: string | null;
-  };
-  createdAt: Date | null;
-  updatedAt: Date | null;
+};
+
+/**
+ * Fetches all teams with their associated players, profiles, and categories.
+ */
+export async function getTeams(): Promise<TeamWithPlayers[]> {
+  try {
+    const user1 = aliasedTable(users, "user1");
+    const user2 = aliasedTable(users, "user2");
+    const profile1 = aliasedTable(profile, "profile1");
+    const profile2 = aliasedTable(profile, "profile2");
+
+    const teamsData = await db
+      .select({
+        team,
+        category,
+        user1,
+        profile1,
+        user2,
+        profile2,
+      })
+      .from(team)
+      .leftJoin(category, eq(team.categoryId, category.id))
+      .leftJoin(user1, eq(team.player1Id, user1.id))
+      .leftJoin(profile1, eq(user1.id, profile1.userId))
+      .leftJoin(user2, eq(team.player2Id, user2.id))
+      .leftJoin(profile2, eq(user2.id, profile2.userId));
+
+    const structuredTeams = teamsData.map((row) => {
+      const player1User = row.user1 as typeof users.$inferSelect | null;
+      const player2User = row.user2 as typeof users.$inferSelect | null;
+
+      const player1Profile = row.profile1 ?? null;
+      const player2Profile = row.profile2 ?? null;
+
+      const p1 = player1User
+        ? { user: player1User, profile: player1Profile }
+        : null;
+
+      const p2 = player2User
+        ? { user: player2User, profile: player2Profile }
+        : null;
+
+      const displayName = getTeamDisplayName(
+        p1
+          ? {
+              id: p1.user.id,
+              paternalSurname: p1.user.paternalSurname,
+              maternalSurname: p1.user.maternalSurname,
+              nickname: p1.profile?.nickname,
+            }
+          : null,
+        p2
+          ? {
+              id: p2.user.id,
+              paternalSurname: p2.user.paternalSurname,
+              maternalSurname: p2.user.maternalSurname,
+              nickname: p2.profile?.nickname,
+            }
+          : null
+      );
+
+      return {
+        team: row.team,
+        category: row.category,
+        player1: p1,
+        player2: p2,
+        displayName,
+      };
+    });
+
+    // Deduplicate teams since the joins can result in multiple rows per team
+    const uniqueTeams = Array.from(
+      new Map(structuredTeams.map((t) => [t.team.id, t])).values()
+    );
+
+    return uniqueTeams;
+  } catch (error) {
+    console.error("Failed to get teams:", error);
+    throw new Error("Could not fetch teams.");
+  }
 }
 
-export interface CreateTeamData {
+/**
+ * Fetches all categories.
+ */
+export async function getCategories() {
+  try {
+    const categories = await db.select().from(category);
+    return categories.sort((a, b) => {
+      return a.id - b.id;
+    });
+  } catch (error) {
+    console.error("Failed to get categories:", error);
+    throw new Error("Could not fetch categories.");
+  }
+}
+
+/**
+ * Fetches all users who can be players.
+ */
+export async function getPlayers() {
+  try {
+    return await db
+      .select({
+        id: users.id,
+        name: users.name,
+        paternalSurname: users.paternalSurname,
+        maternalSurname: users.maternalSurname,
+        email: users.email,
+        nickname: profile.nickname,
+      })
+      .from(profile)
+      .leftJoin(users, eq(users.id, profile.userId));
+
+  } catch (error) {
+    console.error("Failed to get players:", error);
+    throw new Error("Could not fetch players.");
+  }
+}
+
+/**
+ * Creates a new team with two specified players.
+ */
+export async function createTeam(data: {
   player1Id: string;
   player2Id: string;
   categoryId: number;
-  status?: "idle" | "winner" | "looser" | "risky";
-}
-
-export interface UpdateTeamData {
-  player1Id?: string;
-  player2Id?: string;
-  categoryId?: number;
-  status?: "idle" | "winner" | "looser" | "risky";
-}
-
-// Fetch all teams with their players and category info
-export async function getTeams(): Promise<TeamWithPlayers[]> {
-  const teamsData = await db
-    .select({
-      teamId: team.id,
-      teamWins: team.wins,
-      teamLosses: team.losses,
-      teamStatus: team.status,
-      teamCategoryId: team.categoryId,
-      teamCreatedAt: team.createdAt,
-      teamUpdatedAt: team.updatedAt,
-      player1Id: team.player1Id,
-      player2Id: team.player2Id,
-      categoryId: category.id,
-      categoryName: category.name,
-      categoryDescription: category.description,
-    })
-    .from(team)
-    .leftJoin(category, eq(team.categoryId, category.id));
-
-  const teamsWithPlayers: TeamWithPlayers[] = await Promise.all(
-    teamsData.map(async (teamData) => {
-      // Get both players' data
-      const [player1Data, player2Data] = await Promise.all([
-        db
-          .select({
-            id: users.id,
-            paternalSurname: users.paternalSurname,
-            maternalSurname: users.maternalSurname,
-            email: users.email,
-            nickname: profile.nickname,
-          })
-          .from(users)
-          .where(eq(users.id, teamData.player1Id))
-          .leftJoin(profile, eq(users.id, profile.userId))
-          .limit(1),
-        db
-          .select({
-            id: users.id,
-            paternalSurname: users.paternalSurname,
-            maternalSurname: users.maternalSurname,
-            email: users.email,
-            nickname: profile.nickname,
-          })
-          .from(users)
-          .where(eq(users.id, teamData.player2Id))
-          .leftJoin(profile, eq(users.id, profile.userId))
-          .limit(1),
-      ]);
-
-      if (!player1Data.length || !player2Data.length) {
-        throw new Error(`Missing player data for team ${teamData.teamId}`);
-      }
-
-      const player1 = {
-        id: player1Data[0].id,
-        paternalSurname: player1Data[0].paternalSurname,
-        maternalSurname: player1Data[0].maternalSurname,
-        fullName: `${player1Data[0].paternalSurname} ${player1Data[0].maternalSurname}`,
-        nickname: player1Data[0].nickname,
-        email: player1Data[0].email,
-      };
-
-      const player2 = {
-        id: player2Data[0].id,
-        paternalSurname: player2Data[0].paternalSurname,
-        maternalSurname: player2Data[0].maternalSurname,
-        fullName: `${player2Data[0].paternalSurname} ${player2Data[0].maternalSurname}`,
-        nickname: player2Data[0].nickname,
-        email: player2Data[0].email,
-      };
-
-      return {
-        id: teamData.teamId,
-        displayName: getTeamDisplayName(player1, player2),
-        wins: teamData.teamWins || 0,
-        losses: teamData.teamLosses || 0,
-        status: teamData.teamStatus || "idle",
-        categoryId: teamData.teamCategoryId,
-        category: teamData.categoryId
-          ? {
-              id: teamData.categoryId,
-              name: teamData.categoryName!,
-              description: teamData.categoryDescription,
-            }
-          : null,
-        player1,
-        player2,
-        createdAt: teamData.teamCreatedAt,
-        updatedAt: teamData.teamUpdatedAt,
-      };
-    })
-  );
-
-  return teamsWithPlayers;
-}
-
-// Fetch categories
-export async function getCategories() {
-  return await db.select().from(category);
-}
-
-// Create team with two players
-export async function createTeam(data: CreateTeamData) {
-  // Validate that both players exist and are different
+}) {
   if (data.player1Id === data.player2Id) {
-    throw new Error(
-      "No se puede crear un equipo con el mismo jugador dos veces"
-    );
+    throw new Error("Un equipo debe tener dos miembros distintos.");
   }
 
-  // Check if players exist and are players (not admins)
-  const [player1, player2] = await Promise.all([
-    db
-      .select({ id: users.id, role: users.role })
-      .from(users)
-      .where(eq(users.id, data.player1Id))
-      .limit(1),
-    db
-      .select({ id: users.id, role: users.role })
-      .from(users)
-      .where(eq(users.id, data.player2Id))
-      .limit(1),
-  ]);
+  try {
+    const newTeam = await db
+      .insert(team)
+      .values({
+        player1Id: data.player1Id || null,
+        player2Id: data.player2Id || null,
+        categoryId: data.categoryId,
+        status: "idle",
+      })
+      .returning();
 
-  if (!player1.length || !player2.length) {
-    throw new Error("Uno o ambos jugadores no existen");
+    revalidatePath("/equipos");
+    return newTeam[0];
+  } catch (error) {
+    console.error("Failed to create team:", error);
+    if (error instanceof Error)
+      if (error.message.includes("unique_team_players")) {
+        throw new Error("A team with these two players already exists.");
+      }
+    throw new Error("No se pudo crear el equipo.");
   }
-
-  if (player1[0].role !== "player" || player2[0].role !== "player") {
-    throw new Error("Ambos usuarios deben tener el rol de jugador");
-  }
-
-  // Check if either player is already in a team
-  const existingTeams = await db
-    .select({ id: team.id })
-    .from(team)
-    .where(
-      or(
-        eq(team.player1Id, data.player1Id),
-        eq(team.player2Id, data.player1Id),
-        eq(team.player1Id, data.player2Id),
-        eq(team.player2Id, data.player2Id)
-      )
-    );
-
-  if (existingTeams.length > 0) {
-    throw new Error("Uno o ambos jugadores ya están en un equipo");
-  }
-
-  const [newTeam] = await db
-    .insert(team)
-    .values({
-      player1Id: data.player1Id,
-      player2Id: data.player2Id,
-      categoryId: data.categoryId,
-      status: data.status || "idle",
-      wins: 0,
-      losses: 0,
-    })
-    .returning();
-
-  return newTeam;
 }
 
-// Update team
-export async function updateTeam(teamId: number, data: UpdateTeamData) {
-  // Validate if changing players
-  if (data.player1Id || data.player2Id) {
-    const currentTeam = await db
-      .select({ player1Id: team.player1Id, player2Id: team.player2Id })
-      .from(team)
+/**
+ * Updates a team's category or status.
+ */
+export async function updateTeam(
+  teamId: number,
+  data: { categoryId?: number; status?: "looser" | "winner" | "idle" | "risky" }
+) {
+  try {
+    const updatedTeam = await db
+      .update(team)
+      .set({ ...data, updatedAt: new Date() })
       .where(eq(team.id, teamId))
-      .limit(1);
+      .returning();
 
-    if (!currentTeam.length) {
-      throw new Error("Equipo no encontrado");
-    }
+    revalidatePath("/equipos");
+    return updatedTeam[0];
+  } catch (error) {
+    console.error("Failed to update team:", error);
+    throw new Error("Could not update the team.");
+  }
+}
 
-    const newPlayer1Id = data.player1Id || currentTeam[0].player1Id;
-    const newPlayer2Id = data.player2Id || currentTeam[0].player2Id;
-
-    if (newPlayer1Id === newPlayer2Id) {
-      throw new Error(
-        "No se puede tener el mismo jugador dos veces en un equipo"
-      );
-    }
-
-    // Check if new players are already in other teams
-    if (data.player1Id && data.player1Id !== currentTeam[0].player1Id) {
-      const existingTeam = await db
-        .select({ id: team.id })
-        .from(team)
-        .where(
-          and(
-            or(
-              eq(team.player1Id, data.player1Id),
-              eq(team.player2Id, data.player1Id)
-            ),
-            eq(eq(team.id, teamId), false)
-          )
-        )
-        .limit(1);
-
-      if (existingTeam.length > 0) {
-        throw new Error("El jugador 1 ya está en otro equipo");
-      }
-    }
-
-    if (data.player2Id && data.player2Id !== currentTeam[0].player2Id) {
-      const existingTeam = await db
-        .select({ id: team.id })
-        .from(team)
-        .where(
-          and(
-            or(
-              eq(team.player1Id, data.player2Id),
-              eq(team.player2Id, data.player2Id)
-            ),
-            eq(eq(team.id, teamId), false)
-          )
-        )
-        .limit(1);
-
-      if (existingTeam.length > 0) {
-        throw new Error("El jugador 2 ya está en otro equipo");
-      }
-    }
+/**
+ * Updates a team's players.
+ */
+export async function updateTeamPlayers(
+  teamId: number,
+  data: { player1Id?: string | null; player2Id?: string | null }
+) {
+  // Validate that if both players are provided, they are different
+  if (data.player1Id && data.player2Id && data.player1Id === data.player2Id) {
+    throw new Error("Los jugadores no pueden ser la misma persona.");
   }
 
-  const updateData: Partial<typeof team.$inferInsert> = {};
-  if (data.player1Id !== undefined) updateData.player1Id = data.player1Id;
-  if (data.player2Id !== undefined) updateData.player2Id = data.player2Id;
-  if (data.status !== undefined) updateData.status = data.status;
-  if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
+  // Validate that at least one player is provided or explicitly set to null
+  if (data.player1Id === "" && data.player2Id === "") {
+    throw new Error("Un equipo debe tener al menos un jugador.");
+  }
 
-  const [updated] = await db
-    .update(team)
-    .set({
-      ...updateData,
+  try {
+    const updateData: { player1Id?: string | null; player2Id?: string | null; updatedAt: Date } = {
       updatedAt: new Date(),
-    })
-    .where(eq(team.id, teamId))
-    .returning();
+    };
 
-  return updated;
+    if (data.player1Id !== undefined) {
+      updateData.player1Id = data.player1Id || null;
+    }
+
+    if (data.player2Id !== undefined) {
+      updateData.player2Id = data.player2Id || null;
+    }
+
+    const updatedTeam = await db
+      .update(team)
+      .set(updateData)
+      .where(eq(team.id, teamId))
+      .returning();
+
+    revalidatePath("/equipos");
+    return updatedTeam[0];
+  } catch (error) {
+    console.error("Failed to update team players:", error);
+    if (error instanceof Error && error.message.includes("unique_team_players")) {
+      throw new Error("Ya existe un equipo con estos jugadores.");
+    }
+    throw new Error("No se pudieron actualizar los jugadores del equipo.");
+  }
 }
 
-// Delete team
+/**
+ * Deletes a team.
+ */
 export async function deleteTeam(teamId: number) {
-  // Check if team has any positions in pyramids
-  // This would need to be implemented based on your position table relationships
-
-  const deletedTeam = await db
-    .delete(team)
-    .where(eq(team.id, teamId))
-    .returning();
-
-  if (!deletedTeam.length) {
-    throw new Error("Equipo no encontrado");
+  try {
+    await db.delete(team).where(eq(team.id, teamId));
+    revalidatePath("/equipos");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete team:", error);
+    throw new Error("Could not delete the team.");
   }
-
-  return deletedTeam[0];
-}
-
-// Get available players (not currently in any team)
-export async function getAvailablePlayers() {
-  // Get all player users
-  const allPlayers = await db
-    .select({
-      id: users.id,
-      paternalSurname: users.paternalSurname,
-      maternalSurname: users.maternalSurname,
-      email: users.email,
-      nickname: profile.nickname,
-    })
-    .from(users)
-    .where(eq(users.role, "player"))
-    .leftJoin(profile, eq(users.id, profile.userId));
-
-  // Get all players currently in teams
-  const playersInTeams = await db
-    .select({
-      player1Id: team.player1Id,
-      player2Id: team.player2Id,
-    })
-    .from(team);
-
-  const busyPlayerIds = new Set();
-  playersInTeams.forEach((team) => {
-    busyPlayerIds.add(team.player1Id);
-    busyPlayerIds.add(team.player2Id);
-  });
-
-  // Filter out busy players
-  const availablePlayers = allPlayers
-    .filter((player) => !busyPlayerIds.has(player.id))
-    .map((player) => ({
-      id: player.id,
-      paternalSurname: player.paternalSurname,
-      maternalSurname: player.maternalSurname,
-      fullName: `${player.paternalSurname} ${player.maternalSurname}`,
-      displayName:
-        player.nickname ||
-        `${player.paternalSurname} ${player.maternalSurname}`,
-      email: player.email,
-      nickname: player.nickname,
-    }));
-
-  return availablePlayers;
-}
-
-// Get all players (for reference)
-export async function getPlayers() {
-  const players = await db
-    .select({
-      id: users.id,
-      paternalSurname: users.paternalSurname,
-      maternalSurname: users.maternalSurname,
-      email: users.email,
-      role: users.role,
-      nickname: profile.nickname,
-      avatarUrl: profile.avatarUrl,
-    })
-    .from(users)
-    .leftJoin(profile, eq(users.id, profile.userId))
-    .where(eq(users.role, "player"));
-
-  return players.map((player) => ({
-    id: player.id,
-    paternalSurname: player.paternalSurname,
-    maternalSurname: player.maternalSurname,
-    fullName: `${player.paternalSurname} ${player.maternalSurname}`,
-    displayName:
-      player.nickname || `${player.paternalSurname} ${player.maternalSurname}`,
-    email: player.email,
-    nickname: player.nickname,
-    avatarUrl: player.avatarUrl,
-  }));
-}
-
-// Get team by ID with full player data
-export async function getTeamById(
-  teamId: number
-): Promise<TeamWithPlayers | null> {
-  const teamData = await db
-    .select({
-      teamId: team.id,
-      teamWins: team.wins,
-      teamLosses: team.losses,
-      teamStatus: team.status,
-      teamCategoryId: team.categoryId,
-      teamCreatedAt: team.createdAt,
-      teamUpdatedAt: team.updatedAt,
-      player1Id: team.player1Id,
-      player2Id: team.player2Id,
-      categoryId: category.id,
-      categoryName: category.name,
-      categoryDescription: category.description,
-    })
-    .from(team)
-    .where(eq(team.id, teamId))
-    .leftJoin(category, eq(team.categoryId, category.id))
-    .limit(1);
-
-  if (!teamData.length) {
-    return null;
-  }
-
-  const data = teamData[0];
-
-  // Get both players' data
-  const [player1Data, player2Data] = await Promise.all([
-    db
-      .select({
-        id: users.id,
-        paternalSurname: users.paternalSurname,
-        maternalSurname: users.maternalSurname,
-        email: users.email,
-        nickname: profile.nickname,
-      })
-      .from(users)
-      .where(eq(users.id, data.player1Id))
-      .leftJoin(profile, eq(users.id, profile.userId))
-      .limit(1),
-    db
-      .select({
-        id: users.id,
-        paternalSurname: users.paternalSurname,
-        maternalSurname: users.maternalSurname,
-        email: users.email,
-        nickname: profile.nickname,
-      })
-      .from(users)
-      .where(eq(users.id, data.player2Id))
-      .leftJoin(profile, eq(users.id, profile.userId))
-      .limit(1),
-  ]);
-
-  if (!player1Data.length || !player2Data.length) {
-    return null;
-  }
-
-  const player1 = {
-    id: player1Data[0].id,
-    paternalSurname: player1Data[0].paternalSurname,
-    maternalSurname: player1Data[0].maternalSurname,
-    fullName: `${player1Data[0].paternalSurname} ${player1Data[0].maternalSurname}`,
-    nickname: player1Data[0].nickname,
-    email: player1Data[0].email,
-  };
-
-  const player2 = {
-    id: player2Data[0].id,
-    paternalSurname: player2Data[0].paternalSurname,
-    maternalSurname: player2Data[0].maternalSurname,
-    fullName: `${player2Data[0].paternalSurname} ${player2Data[0].maternalSurname}`,
-    nickname: player2Data[0].nickname,
-    email: player2Data[0].email,
-  };
-
-  return {
-    id: data.teamId,
-    displayName: getTeamDisplayName(player1, player2),
-    wins: data.teamWins || 0,
-    losses: data.teamLosses || 0,
-    status: data.teamStatus || "idle",
-    categoryId: data.teamCategoryId,
-    category: data.categoryId
-      ? {
-          id: data.categoryId,
-          name: data.categoryName!,
-          description: data.categoryDescription,
-        }
-      : null,
-    player1,
-    player2,
-    createdAt: data.teamCreatedAt,
-    updatedAt: data.teamUpdatedAt,
-  };
-}
-
-// Check if a user is part of any team
-export async function getUserTeams(userId: string) {
-  const userTeams = await db
-    .select({
-      id: team.id,
-      player1Id: team.player1Id,
-      player2Id: team.player2Id,
-    })
-    .from(team)
-    .where(or(eq(team.player1Id, userId), eq(team.player2Id, userId)));
-
-  return userTeams;
 }

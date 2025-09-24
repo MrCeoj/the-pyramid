@@ -162,10 +162,8 @@ export const team = pgTable("team", {
     onDelete: "set null",
   }),
   player1Id: text("player1_id")
-    .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   player2Id: text("player2_id")
-    .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   wins: integer("wins").default(0),
   losses: integer("losses").default(0),
@@ -305,25 +303,48 @@ export const positionHistory = pgTable("position_history", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-// Helper function to generate team display name
-export const getTeamDisplayName = (
-  player1: { paternalSurname: string; maternalSurname: string; nickname?: string | null },
-  player2: { paternalSurname: string; maternalSurname: string; nickname?: string | null }
-): string => {
-  // If both players have nicknames, use those
-  if (player1.nickname && player2.nickname) {
-    return `${player1.nickname} / ${player2.nickname}`;
-  }
-  
-  // If only one has nickname, use nickname + surname
-  if (player1.nickname && !player2.nickname) {
-    return `${player1.nickname} / ${player2.paternalSurname}`;
-  }
-  
-  if (!player1.nickname && player2.nickname) {
-    return `${player1.paternalSurname} / ${player2.nickname}`;
-  }
-  
-  // Default: use both paternal surnames
-  return `${player1.paternalSurname} / ${player2.paternalSurname}`;
+type Team = {
+  id: number;
+  displayName: string;
+  wins: number;
+  losses: number;
+  status: "winner" | "looser" | "idle" | "risky";
+  categoryId: number | null;
+  player1: {
+    id: string;
+    paternalSurname: string;
+    maternalSurname: string;
+    nickname?: string | null;
+  } | null;
+  player2: {
+    id: string;
+    paternalSurname: string;
+    maternalSurname: string;
+    nickname?: string | null;
+  } | null;
 };
+
+export function getTeamDisplayName(
+  player1: Team["player1"],
+  player2: Team["player2"]
+): string {
+  if (!player1?.id) player1 = null
+  if (!player2?.id) player2 = null
+  if (!player1 && !player2) 
+    return "Equipo vacío";
+  if (!player1)
+    return `"${player2?.nickname}" ${player2?.paternalSurname}`
+  if (!player2)
+    return `"${player1?.nickname}" ${player1?.paternalSurname}`
+  if (player1?.nickname && player2?.nickname)
+    return `${player1.nickname} & ${player2.nickname}`;
+  if (player1?.nickname && player2)
+    return `${player1.nickname} & ${player2.paternalSurname}`;
+  if (player1 && player2?.nickname)
+    return `${player1.paternalSurname} & ${player2.nickname}`;
+  if (player1 && player2)
+    return `${player1.paternalSurname} & ${player2.paternalSurname}`;
+  if (player1 && !player2) return player1.paternalSurname + " " + player1.maternalSurname;
+  if (player2 && !player1) return player2.paternalSurname + " " + player2.maternalSurname;
+  return "Equipo vacío";
+}

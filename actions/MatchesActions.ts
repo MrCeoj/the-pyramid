@@ -11,31 +11,7 @@ import {
   users,
 } from "@/db/schema";
 import { revalidatePath } from "next/cache";
-
-// Helper function to generate team display name
-function getTeamDisplayName(
-  player1: {
-    paternalSurname: string;
-    maternalSurname: string;
-    nickname?: string | null;
-  },
-  player2: {
-    paternalSurname: string;
-    maternalSurname: string;
-    nickname?: string | null;
-  }
-): string {
-  if (player1.nickname && player2.nickname) {
-    return `${player1.nickname} / ${player2.nickname}`;
-  }
-  if (player1.nickname && !player2.nickname) {
-    return `${player1.nickname} / ${player2.paternalSurname}`;
-  }
-  if (!player1.nickname && player2.nickname) {
-    return `${player1.paternalSurname} / ${player2.nickname}`;
-  }
-  return `${player1.paternalSurname} / ${player2.paternalSurname}`;
-}
+import { getTeamDisplayName } from "@/db/schema";
 
 // Updated types for new schema
 export type TeamInfo = {
@@ -124,57 +100,94 @@ async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
 
   if (!teamData.length) return null;
 
-  const [player1Data, player2Data] = await Promise.all([
-    db
-      .select({
+  const teamRecord = teamData[0];
+  
+  // Create queries only for non-null player IDs
+  const playerQueries = [];
+  
+  if (teamRecord.player1Id) {
+    playerQueries.push(
+      db.select({
         id: users.id,
         paternalSurname: users.paternalSurname,
         maternalSurname: users.maternalSurname,
         nickname: profile.nickname,
       })
       .from(users)
-      .where(eq(users.id, teamData[0].player1Id))
+      .where(eq(users.id, teamRecord.player1Id))
       .leftJoin(profile, eq(users.id, profile.userId))
-      .limit(1),
-    db
-      .select({
+      .limit(1)
+      .then(result => ({ playerIndex: 1, data: result }))
+    );
+  }
+  
+  if (teamRecord.player2Id) {
+    playerQueries.push(
+      db.select({
         id: users.id,
         paternalSurname: users.paternalSurname,
         maternalSurname: users.maternalSurname,
         nickname: profile.nickname,
       })
       .from(users)
-      .where(eq(users.id, teamData[0].player2Id))
+      .where(eq(users.id, teamRecord.player2Id))
       .leftJoin(profile, eq(users.id, profile.userId))
-      .limit(1),
-  ]);
+      .limit(1)
+      .then(result => ({ playerIndex: 2, data: result }))
+    );
+  }
 
-  if (!player1Data.length || !player2Data.length) return null;
+  // If no players at all, return null
+  if (playerQueries.length === 0) return null;
 
-  const player1 = {
-    id: player1Data[0].id,
-    paternalSurname: player1Data[0].paternalSurname,
-    maternalSurname: player1Data[0].maternalSurname,
-    nickname: player1Data[0].nickname,
-  };
+  const playersResults = await Promise.all(playerQueries);
+  
+  // Initialize players as null
+  let player1 = null;
+  let player2 = null;
+  
+  // Process results and assign to correct player slots
+  for (const result of playersResults) {
+    if (result.data.length > 0) {
+      const playerData = {
+        id: result.data[0].id,
+        paternalSurname: result.data[0].paternalSurname,
+        maternalSurname: result.data[0].maternalSurname,
+        nickname: result.data[0].nickname,
+      };
+      
+      if (result.playerIndex === 1) {
+        player1 = playerData;
+      } else {
+        player2 = playerData;
+      }
+    }
+  }
 
-  const player2 = {
-    id: player2Data[0].id,
-    paternalSurname: player2Data[0].paternalSurname,
-    maternalSurname: player2Data[0].maternalSurname,
-    nickname: player2Data[0].nickname,
-  };
+  if (!player1){
+    player1 = {id: "", maternalSurname: "", paternalSurname: "", nickname: ""}
+  }
+  
+  if (!player2){
+    player2 = {id: "", maternalSurname: "", paternalSurname: "", nickname: ""}
+  }
+  
 
-  return {
-    id: teamData[0].id,
-    displayName: getTeamDisplayName(player1, player2),
-    categoryId: teamData[0].categoryId,
-    wins: teamData[0].wins || 0,
-    losses: teamData[0].losses || 0,
-    status: teamData[0].status || "idle",
-    player1,
-    player2,
-  };
+  // If we have at least one valid player, create the team
+  if (player1 || player2) {
+    return {
+      id: teamRecord.id,
+      displayName: getTeamDisplayName(player1, player2),
+      categoryId: teamRecord.categoryId,
+      wins: teamRecord.wins || 0,
+      losses: teamRecord.losses || 0,
+      status: teamRecord.status || "idle",
+      player1,
+      player2,
+    };
+  }
+
+  return null;
 }
 
 // Check if user belongs to a team
@@ -278,7 +291,7 @@ export async function createMatch({
       })
       .returning();
 
-    revalidatePath("/matches");
+    revalidatePath("/mis-retas");
     return { success: true, match: newMatch };
   } catch (err) {
     console.error("Error creating match:", err);
@@ -334,15 +347,20 @@ export async function getUserMatches(userId: string): Promise<{
       if (m.winnerTeamId) teamIds.add(m.winnerTeamId);
     });
 
+    console.log(Array.from(teamIds))
+
     const teamInfoMap = new Map<number, TeamInfo>();
     await Promise.all(
       Array.from(teamIds).map(async (teamId) => {
         const teamInfo = await getTeamInfo(teamId);
+        console.log(teamInfo)
         if (teamInfo) {
           teamInfoMap.set(teamId, teamInfo);
         }
       })
     );
+
+    console.log(teamInfoMap)
 
     const matchesWithDetails: MatchWithDetails[] = matches.map((m) => {
       const challengerTeam = teamInfoMap.get(m.challengerTeamId);
@@ -350,7 +368,8 @@ export async function getUserMatches(userId: string): Promise<{
       const winnerTeam = m.winnerTeamId
         ? teamInfoMap.get(m.winnerTeamId)
         : null;
-
+      console.log("challenger:", challengerTeam)
+      console.log("defender:",defenderTeam)
       if (!challengerTeam || !defenderTeam) {
         throw new Error(`Missing team data for match ${m.id}`);
       }
@@ -377,7 +396,7 @@ export async function getUserMatches(userId: string): Promise<{
     const matchHistory = matchesWithDetails.filter(
       (m) => m.status !== "pending"
     );
-
+    console.log({ pendingMatches, matchHistory })
     return { pendingMatches, matchHistory };
   } catch (error) {
     console.error("Error fetching user matches:", error);
@@ -425,7 +444,7 @@ export async function acceptMatch(
       })
       .where(eq(match.id, matchId));
 
-    revalidatePath("/matches");
+    revalidatePath("/mis-retas");
     return {
       success: true,
       message: "Desafío aceptado. ¡Prepárate para el combate!",
@@ -478,7 +497,7 @@ export async function rejectMatch(
       })
       .where(eq(match.id, matchId));
 
-    revalidatePath("/matches");
+    revalidatePath("/mis-retas");
     return {
       success: true,
       message: "Desafío rechazado.",
@@ -771,9 +790,7 @@ export async function completeMatch(
       }
     });
 
-    revalidatePath("/admin/matches");
-    revalidatePath("/pyramid");
-    revalidatePath("/matches");
+    revalidatePath("/retas");
 
     return {
       success: true,

@@ -1,7 +1,17 @@
-import postgres from "postgres"
-import { drizzle } from "drizzle-orm/postgres-js"
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 
-const connectionString = process.env.CONNECTION_STRING!
-const pool = postgres(connectionString, { max: 100 })
+declare global {
+  var dbClient: postgres.Sql | undefined;
+}
 
-export const db = drizzle(pool)
+const connectionString = process.env.CONNECTION_STRING!;
+
+const pool = global.dbClient || postgres(connectionString, { max: 10 });
+
+// In development, we attach the client to the global object
+if (process.env.NODE_ENV !== "production") {
+  global.dbClient = pool;
+}
+
+export const db = drizzle(pool);

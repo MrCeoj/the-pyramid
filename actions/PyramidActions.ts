@@ -28,7 +28,8 @@ export async function createPyramid(data: CreatePyramidData) {
       active: data.active,
     });
 
-    revalidatePath("/pyramids");
+    revalidatePath("/pyramides");
+    revalidatePath("/")
     return { success: true };
   } catch (error) {
     console.error("Error creating pyramid:", error);
@@ -49,7 +50,8 @@ export async function updatePyramid(id: number, data: UpdatePyramidData) {
       })
       .where(eq(pyramid.id, id));
 
-    revalidatePath("/pyramids");
+    revalidatePath("/piramied");
+    revalidatePath("/")
     return { success: true };
   } catch (error) {
     console.error("Error updating pyramid:", error);

@@ -236,7 +236,6 @@ export async function updateProfile(data: UpdateProfileData) {
 
     // Revalidate pages that might show profile data
     revalidatePath("/");
-    revalidatePath("/profile");
 
     return { success: true, error: null };
   } catch (error) {
@@ -352,10 +351,10 @@ export async function searchUsersBySurname(
 }
 
 // Validation helpers
-export function validateMexicanName(
+export async function validateMexicanName(
   paternalSurname: string,
   maternalSurname: string
-): string | null {
+) {
   if (!paternalSurname || paternalSurname.trim().length < 2) {
     return "El apellido paterno debe tener al menos 2 caracteres.";
   }
@@ -378,7 +377,7 @@ export function validateMexicanName(
   return null;
 }
 
-export function validateNickname(nickname: string): string | null {
+export async function validateNickname(nickname: string) {
   if (nickname && nickname.length > 0) {
     if (nickname.length < 2) {
       return "El apodo debe tener al menos 2 caracteres.";

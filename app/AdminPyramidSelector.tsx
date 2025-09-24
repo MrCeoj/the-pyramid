@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getPyramidData } from "@/actions/IndexActions";
 import { Pyramid } from "lucide-react";
 
-const AdminPyramidSelector: React.FC = () => {
+const AdminPyramidSelector = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const {
     pyramids,

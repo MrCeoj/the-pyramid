@@ -9,6 +9,7 @@ export default async function PyramidView({
 }) {
   const param = await params;
   const pyramidData = await getPyramidData(param.id);
+  
   if (pyramidData) {
     return (
       <div className="h-screen overflow-scroll no-scrollbar pt-16">

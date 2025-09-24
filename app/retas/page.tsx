@@ -163,7 +163,7 @@ const AdminMatchesPage = () => {
 
               {/* Team Info */}
               <h4 className="font-bold text-lg text-white mb-2">
-                {match.challengerTeam.name}
+                {match.challengerTeam.displayName}
               </h4>
 
               <div className="space-y-2 text-sm">
@@ -234,7 +234,7 @@ const AdminMatchesPage = () => {
 
               {/* Team Info */}
               <h4 className="font-bold text-lg text-white mb-2">
-                {match.defenderTeam.name}
+                {match.defenderTeam.displayName}
               </h4>
 
               <div className="space-y-2 text-sm">
@@ -270,8 +270,8 @@ const AdminMatchesPage = () => {
                 Ganador seleccionado:{" "}
                 <strong className="text-yellow-300">
                   {winner === match.challengerTeam.id
-                    ? match.challengerTeam.name
-                    : match.defenderTeam.name}
+                    ? match.challengerTeam.displayName
+                    : match.defenderTeam.displayName}
                 </strong>
               </span>
             </div>

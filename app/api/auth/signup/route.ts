@@ -14,7 +14,8 @@ const userSchema = z.object({
     .string()
     .min(8, { message: "La contraseña debe tener al menos 8 caracteres." })
     .optional(),
-  name: z.string().optional(),
+  paternalSurname: z.string(),
+  maternalSurname: z.string(),
   role: z.string().optional(),
 });
 
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email, password, name, role } = validation.data;
+    const { email, password, paternalSurname, maternalSurname, role } = validation.data;
     const lowercasedEmail = email.toLowerCase().trim();
     const lowercasedRole = role?.toLocaleLowerCase().trim();
 
@@ -61,9 +62,11 @@ export async function POST(req: Request) {
     const newUserResult = await db
       .insert(users)
       .values({
+        paternalSurname: paternalSurname.trim(),
+        maternalSurname: maternalSurname.trim(),
+        name: paternalSurname.trim() + " " + maternalSurname.trim(),
         email: lowercasedEmail,
         passwordHash: passwordHash,
-        name: name,
         role: lowercasedRole === "admin" ? "admin" : "player",
       })
       .returning({

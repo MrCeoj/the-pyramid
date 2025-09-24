@@ -75,7 +75,7 @@ export async function getApplicableTeams(
       .where(eq(pyramidCategory.pyramidId, pyramidId));
 
     const categoryIds = categories.map(({ id }) => id);
-
+    
     if (categoryIds.length === 0) {
       return [];
     }
@@ -99,10 +99,10 @@ export async function getApplicableTeams(
       .innerJoin(users, eq(team.player1Id, users.id))
       .leftJoin(profile, eq(users.id, profile.userId));
 
-    // Get player2 data for each team and build complete team objects
+
+
     const teams: TeamWithPlayers[] = await Promise.all(
       teamsData.map(async (teamData) => {
-        // Get player2 data
         const player2Data = await db
           .select({
             paternalSurname: users.paternalSurname,
@@ -110,19 +110,19 @@ export async function getApplicableTeams(
             nickname: profile.nickname,
           })
           .from(users)
-          .where(eq(users.id, teamData.player2Id))
+          .where(eq(users.id, teamData.player2Id!)) // <-- non-null assertion
           .leftJoin(profile, eq(users.id, profile.userId))
           .limit(1);
 
         const player1 = {
-          id: teamData.player1Id,
+          id: teamData.player1Id!,
           paternalSurname: teamData.player1PaternalSurname,
           maternalSurname: teamData.player1MaternalSurname,
           nickname: teamData.player1Nickname,
         };
 
         const player2 = {
-          id: teamData.player2Id,
+          id: teamData.player2Id!,
           paternalSurname: player2Data[0]?.paternalSurname || "",
           maternalSurname: player2Data[0]?.maternalSurname || "",
           nickname: player2Data[0]?.nickname,
@@ -243,15 +243,15 @@ export async function setTeamInPosition(
     }
 
     // Revalidate the page to reflect changes
-    revalidatePath(`/pyramid/${pyramidId}/positions`);
-    revalidatePath(`/pyramid/${pyramidId}`);
+    revalidatePath(`/piramides/${pyramidId}/posiciones`);
+    revalidatePath(`/piramides/${pyramidId}`);
 
     return { success: true };
   } catch (error) {
-    console.error("Error setting team in position:", error);
+    console.error("Error posicionando equipo:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
+      error: error instanceof Error ? error.message : "Ocurrió un error desconocido",
     };
   }
 }
@@ -301,8 +301,8 @@ export async function moveTeamPosition(
     }
 
     // Revalidate the page to reflect changes
-    revalidatePath(`/pyramid/${pyramidId}/positions`);
-    revalidatePath(`/pyramid/${pyramidId}`);
+    revalidatePath(`/piramides/${pyramidId}/posiciones`);
+    revalidatePath(`/piramides/${pyramidId}`);
 
     return { success: true };
   } catch (error) {
@@ -330,8 +330,8 @@ export async function removeTeamFromPosition(
 
     // Revalidate the page to reflect changes
     if (pyramidId) {
-      revalidatePath(`/pyramid/${pyramidId}/positions`);
-      revalidatePath(`/pyramid/${pyramidId}`);
+      revalidatePath(`/piramides/${pyramidId}/posiciones`);
+      revalidatePath(`/piramides/${pyramidId}`);
     }
 
     return { success: true };
@@ -358,8 +358,8 @@ export async function removeTeamFromPyramid(pyramidId: number, teamId: number) {
     }
 
     // Revalidate the page to reflect changes
-    revalidatePath(`/pyramid/${pyramidId}/positions`);
-    revalidatePath(`/pyramid/${pyramidId}`);
+    revalidatePath(`/piramides/${pyramidId}/posiciones`);
+    revalidatePath(`/piramides/${pyramidId}`);
 
     return { success: true };
   } catch (error) {

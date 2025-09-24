@@ -182,14 +182,14 @@ export default function EditProfileModal({
           <div className="space-y-4">
             <div>
               <label className="block text-gray-300 text-sm mb-2">
-                Nombre completo
+                Primer apellido
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 className="w-full px-3 py-2 bg-indor-black border border-indor-brown-light rounded text-white placeholder-gray-400 focus:border-indor-brown-light focus:outline-none"
-                placeholder="Nombre"
+                placeholder="Primer apellido"
               />
             </div>
 

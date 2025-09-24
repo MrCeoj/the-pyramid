@@ -1,20 +1,13 @@
 import TeamCardWithDelete from "@/components/ui/TeamCardWithDelete";
 import EmptySlot from "@/components/ui/EmptySlotEdit";
 import { useCenteredScroll } from "@/hooks/useCenteredScroll";
-interface Team {
-  id: number;
-  categoryId: number | null;
-  name: string | null;
-  status: "idle" | "winner" | "looser" | "risky" | null;
-  wins: number | null;
-  losses: number | null;
-}
+import { TeamWithPlayers } from "@/actions/PositionActions";
 
 interface Position {
   id: number;
   row: number;
   col: number;
-  team: Team | null;
+  team: TeamWithPlayers | null;
 }
 
 const PyramidRow = ({
@@ -28,7 +21,7 @@ const PyramidRow = ({
   handleSetTeam: (pos: Position) => void;
   pyramidId: number;
   positions: Position[];
-  onTeamClick: (team: Team) => void;
+  onTeamClick: (team: TeamWithPlayers) => void;
   isFirst?: boolean;
   isLast?: boolean;
 }) => {
