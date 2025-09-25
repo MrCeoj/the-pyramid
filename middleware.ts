@@ -10,7 +10,7 @@ export default auth((req: NextRequest & { auth: any }) => {
   const hasPassword = req.auth?.user?.hasPassword;
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/login", "/error", "/api/auth"];
+  const publicRoutes = ["/login", "/error", "/api/auth", "/api/mail"];
 
   // Check if current path is public
   const isPublicRoute = publicRoutes.some((route) =>

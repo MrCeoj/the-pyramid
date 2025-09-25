@@ -69,17 +69,25 @@ export default function ChallengeModal({
 
   const handleConfirm = async () => {
     if (!session?.user?.id) {
-      toast.error("Hubo un error al procesar tu solicitud, intentalo de nuevo.");
+      toast.error(
+        "Hubo un error al procesar tu solicitud, intentalo de nuevo."
+      );
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await createMatch({
-        pyramidId,
-        challengerTeamId: attacker.id,
-        defenderTeamId: defender.id,
-        userId: session?.user.id,
+      await fetch("/api/mail", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          attacker,
+          defender,
+          pyramidId,
+          defenderEmail: "ortizludwin68@outlook.com", // Adjust based on your data structure
+        }),
       });
 
       refreshPyramidData();
@@ -135,7 +143,7 @@ export default function ChallengeModal({
 
       <div className="text-center mt-4">
         <h3 className="font-bold text-xl mb-2 text-white/95 leading-tight">
-        {team.displayName}
+          {team.displayName}
         </h3>
 
         <div className="mb-4">

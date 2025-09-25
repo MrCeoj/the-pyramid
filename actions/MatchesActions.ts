@@ -393,10 +393,8 @@ export async function getUserMatches(userId: string): Promise<{
       (m) => m.status === "pending" && userTeamIds.includes(m.defenderTeam.id)
     );
 
-    const matchHistory = matchesWithDetails.filter(
-      (m) => m.status !== "pending"
-    );
-    console.log({ pendingMatches, matchHistory })
+    const matchHistory = matchesWithDetails
+    
     return { pendingMatches, matchHistory };
   } catch (error) {
     console.error("Error fetching user matches:", error);

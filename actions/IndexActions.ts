@@ -123,8 +123,6 @@ export async function getPlayerPyramid(
       .leftJoin(profile, eq(users.id, profile.userId));
 
     // Get player2 data for each team
-    console.log(positionsWithTeams);
-
     const positions: Position[] = await Promise.all(
       positionsWithTeams.map(async (pos) => {
         // Get player2 data
@@ -176,8 +174,6 @@ export async function getPlayerPyramid(
         };
       })
     );
-
-    console.log("player positions:", positions);
 
     return {
       positions,

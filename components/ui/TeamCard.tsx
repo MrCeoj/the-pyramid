@@ -122,7 +122,7 @@ const TeamCard = ({
           onClick={challengable ? handleChallenge : undefined}
           className={`relative group ${
             isTop ? specialColors.champion : statusColors[data.team.status!]
-          } border-2 rounded-lg transition-all duration-300 p-3 min-w-[140px] max-w-[140px] backdrop-blur-sm snap-center ${getCardAnimation()} ${
+          } border-2 rounded-lg transition-all duration-300 p-3 min-w-[160px] max-w-[160px] backdrop-blur-sm snap-center ${getCardAnimation()} ${
             challengable ? "cursor-pointer border-dashed" : ""
           }`}
         >

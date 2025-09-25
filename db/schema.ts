@@ -366,11 +366,11 @@ export function getTeamDisplayName(
   }
 
   if (player1?.nickname && player2?.nickname)
-    return `${player1.nickname} & ${player2.nickname}`;
+    return `"${player1.nickname}" & "${player2.nickname}"`;
   if (player1?.nickname && player2)
-    return `${player1.nickname} & ${player2.paternalSurname}`;
+    return `"${player1.nickname}" & ${player2.paternalSurname}`;
   if (player1 && player2?.nickname)
-    return `${player1.paternalSurname} & ${player2.nickname}`;
+    return `${player1.paternalSurname} & "${player2.nickname}"`;
   if (player1 && player2)
     return `${player1.paternalSurname} & ${player2.paternalSurname}`;
   if (player1 && !player2)

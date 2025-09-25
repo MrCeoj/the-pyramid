@@ -43,7 +43,6 @@ export default function UserDropdownMenu() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    console.log(status)
     if (status === "unauthenticated") update();
   }, [status, update]);
 
