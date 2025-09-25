@@ -113,7 +113,7 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="firstName" className=" font-medium">
-                Primer apellido*
+                Nombre*
               </Label>
               <Input
                 id="firstName"
@@ -121,14 +121,14 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
                 value={formData.firstName}
                 onChange={handleInputChange}
                 className="mt-1 bg-white text-black"
-                placeholder="Tu primer apellido"
+                placeholder="Tu nombre"
                 required
                 disabled={isPending}
               />
             </div>
             <div>
               <Label htmlFor="lastName" className=" font-medium">
-                Segundo apellido
+                Primer Apellido
               </Label>
               <Input
                 id="lastName"
@@ -136,7 +136,7 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
                 value={formData.lastName}
                 onChange={handleInputChange}
                 className="mt-1 bg-white text-black"
-                placeholder="Tu segundo apellido"
+                placeholder="Tu primer apellido"
                 disabled={isPending}
               />
             </div>

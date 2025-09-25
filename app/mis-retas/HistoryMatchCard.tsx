@@ -1,5 +1,12 @@
 "use client";
-import { Trophy, CheckCircle, XCircle, AlertCircle, Clock, Crown } from "lucide-react";
+import {
+  Trophy,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Clock,
+  Crown,
+} from "lucide-react";
 import { MatchWithDetails } from "@/actions/MatchesActions";
 
 interface HistoryMatchCardData {
@@ -57,7 +64,7 @@ const HistoryMatchCard = ({
       default:
         return {
           icon: <Clock className="text-orange-400" size={16} />,
-          label: "Pendiente",
+          label: "Pendiente de respuesta",
           card: "from-orange-900/30 to-orange-700/20 border-orange-500/40",
           labelColor: "text-orange-400",
         };
@@ -69,27 +76,27 @@ const HistoryMatchCard = ({
 
   const getTeamStyles = (teamId: number) => {
     const isWinnerTeam = hasWinner && match.winnerTeam?.id === teamId;
-    
+
     if (!hasWinner) {
       return {
         container: "flex-1 text-center",
         content: "text-white",
         name: "font-semibold",
-        category: "text-sm text-slate-300"
+        category: "text-sm text-slate-300",
       };
     }
 
     return {
       container: `flex-1 text-center relative ${isWinnerTeam ? "z-10" : ""}`,
-      content: isWinnerTeam 
+      content: isWinnerTeam
         ? "bg-gradient-to-br from-yellow-500/20 via-amber-500/10 to-yellow-600/20 border border-yellow-500/30 rounded-xl p-4 backdrop-blur-sm shadow-lg shadow-yellow-500/10 transform scale-105 transition-all duration-300"
         : "text-white opacity-75",
-      name: isWinnerTeam 
+      name: isWinnerTeam
         ? "font-bold text-yellow-300 drop-shadow-lg text-lg"
         : "font-semibold",
-      category: isWinnerTeam 
+      category: isWinnerTeam
         ? "text-sm text-yellow-200/80"
-        : "text-sm text-slate-300"
+        : "text-sm text-slate-300",
     };
   };
 

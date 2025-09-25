@@ -4,7 +4,7 @@ import TeamCard from "@/components/ui/TeamCard";
 import EmptySlot from "@/components/ui/EmptySlot";
 import { useCenteredScroll } from "@/hooks/useCenteredScroll";
 import { useSessionStore } from "@/stores/sessionStore";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import ChallengeModal from "@/components/ui/ChallengeModal";
 import { TeamWithPlayers } from "@/actions/PositionActions";
 
@@ -31,6 +31,7 @@ const PyramidRow = ({
   pyramidId,
   unresolvedMatches = [],
   className,
+  onRefreshNeeded, // Add this prop to trigger parent refresh
 }: {
   positions: PyramidPosition[];
   onTeamClick: (team: TeamWithPlayers) => void;
@@ -40,6 +41,7 @@ const PyramidRow = ({
   pyramidId: number;
   unresolvedMatches?: UnresolvedMatch[];
   className?: string;
+  onRefreshNeeded?: () => void; // Optional callback to refresh parent data
 }) => {
   const scrollContainerRef = useCenteredScroll<HTMLDivElement>();
   const { session } = useSessionStore();
@@ -48,7 +50,10 @@ const PyramidRow = ({
     defenderTeam: TeamWithPlayers | null;
   }>({ isOpen: false, defenderTeam: null });
 
-  const hasUnresolvedWith = (targetTeamId: number | null) => {
+  // Add a local refresh trigger state
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const hasUnresolvedWith = useCallback((targetTeamId: number | null) => {
     if (!userTeamId || !targetTeamId) return false;
     return unresolvedMatches.some(
       (m) =>
@@ -56,7 +61,7 @@ const PyramidRow = ({
         m.defenderTeamId === targetTeamId &&
         (m.status === "pending" || m.status === "accepted")
     );
-  };
+  }, [userTeamId, unresolvedMatches]);
 
   const handleChallenge = (defenderTeam: TeamWithPlayers) => {
     if (hasUnresolvedWith(defenderTeam.id)) {
@@ -69,14 +74,29 @@ const PyramidRow = ({
     });
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setChallengeModal({
       isOpen: false,
       defenderTeam: null,
     });
-  };
+    
+    // Option 1: Trigger local refresh
+    setRefreshTrigger(prev => prev + 1);
+    
+    // Option 2: Trigger parent refresh if callback provided
+    if (onRefreshNeeded) {
+      onRefreshNeeded();
+    }
+    
+    // Option 3: Force re-render by updating a timestamp (if needed)
+    // This ensures all memoized calculations are re-executed
+    setTimeout(() => {
+      // Small delay to ensure any server updates are complete
+      setRefreshTrigger(prev => prev + 1);
+    }, 100);
+  }, [onRefreshNeeded]);
 
-  const isChallengable = (targetPos: PyramidPosition): boolean => {
+  const isChallengable = useCallback((targetPos: PyramidPosition): boolean => {
     // Admins cannot challenge
     if (session?.user.role === "admin") return false;
 
@@ -121,7 +141,7 @@ const PyramidRow = ({
 
     // No other challenges allowed
     return false;
-  };
+  }, [session?.user.role, userTeamId, allPositions, hasUnresolvedWith]);
 
   return (
     <div
@@ -132,7 +152,7 @@ const PyramidRow = ({
         {positions.map((pos) =>
           pos.team ? (
             <TeamCard
-              key={pos.id}
+              key={`${pos.id}-${refreshTrigger}`} // Force re-render when refresh trigger changes
               data={pos}
               challengable={isChallengable(pos)}
               isPlayer={pos.team.id === userTeamId}

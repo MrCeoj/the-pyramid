@@ -12,28 +12,8 @@ import {
 } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { getTeamDisplayName } from "@/db/schema";
-
-// Updated types for new schema
-export type TeamInfo = {
-  id: number;
-  displayName: string;
-  categoryId: number | null;
-  wins: number;
-  losses: number;
-  status: "winner" | "looser" | "idle" | "risky";
-  player1: {
-    id: string;
-    paternalSurname: string;
-    maternalSurname: string;
-    nickname: string | null;
-  };
-  player2: {
-    id: string;
-    paternalSurname: string;
-    maternalSurname: string;
-    nickname: string | null;
-  };
-};
+import { TeamWithPlayers } from "./PositionActions";
+import { sendChallengeMail } from "./MailActions";
 
 export type MatchWithDetails = {
   id: number;
@@ -42,9 +22,9 @@ export type MatchWithDetails = {
   updatedAt: Date;
   pyramidId: number;
   pyramidName: string;
-  challengerTeam: TeamInfo;
-  defenderTeam: TeamInfo;
-  winnerTeam?: TeamInfo | null;
+  challengerTeam: TeamWithPlayers;
+  defenderTeam: TeamWithPlayers;
+  winnerTeam?: TeamWithPlayers | null;
   evidenceUrl?: string | null;
 };
 
@@ -61,11 +41,11 @@ export type AcceptedMatchWithDetails = {
   id: number;
   pyramidId: number;
   pyramidName: string;
-  challengerTeam: TeamInfo & {
+  challengerTeam: TeamWithPlayers & {
     currentRow: number;
     currentCol: number;
   };
-  defenderTeam: TeamInfo & {
+  defenderTeam: TeamWithPlayers & {
     currentRow: number;
     currentCol: number;
   };
@@ -82,8 +62,8 @@ export type MatchCompletionResult = {
   message: string;
 };
 
-// Helper function to get team info with players
-async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
+// Updated helper function to get team info with players INCLUDING EMAIL
+async function getTeamInfo(teamId: number): Promise<TeamWithPlayers | null> {
   const teamData = await db
     .select({
       id: team.id,
@@ -101,39 +81,43 @@ async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
   if (!teamData.length) return null;
 
   const teamRecord = teamData[0];
-  
+
   // Create queries only for non-null player IDs
   const playerQueries = [];
-  
+
   if (teamRecord.player1Id) {
     playerQueries.push(
-      db.select({
-        id: users.id,
-        paternalSurname: users.paternalSurname,
-        maternalSurname: users.maternalSurname,
-        nickname: profile.nickname,
-      })
-      .from(users)
-      .where(eq(users.id, teamRecord.player1Id))
-      .leftJoin(profile, eq(users.id, profile.userId))
-      .limit(1)
-      .then(result => ({ playerIndex: 1, data: result }))
+      db
+        .select({
+          id: users.id,
+          paternalSurname: users.paternalSurname,
+          maternalSurname: users.maternalSurname,
+          email: users.email,
+          nickname: profile.nickname,
+        })
+        .from(users)
+        .where(eq(users.id, teamRecord.player1Id))
+        .leftJoin(profile, eq(users.id, profile.userId))
+        .limit(1)
+        .then((result) => ({ playerIndex: 1, data: result })),
     );
   }
-  
+
   if (teamRecord.player2Id) {
     playerQueries.push(
-      db.select({
-        id: users.id,
-        paternalSurname: users.paternalSurname,
-        maternalSurname: users.maternalSurname,
-        nickname: profile.nickname,
-      })
-      .from(users)
-      .where(eq(users.id, teamRecord.player2Id))
-      .leftJoin(profile, eq(users.id, profile.userId))
-      .limit(1)
-      .then(result => ({ playerIndex: 2, data: result }))
+      db
+        .select({
+          id: users.id,
+          paternalSurname: users.paternalSurname,
+          maternalSurname: users.maternalSurname,
+          email: users.email, // ADD EMAIL HERE
+          nickname: profile.nickname,
+        })
+        .from(users)
+        .where(eq(users.id, teamRecord.player2Id))
+        .leftJoin(profile, eq(users.id, profile.userId))
+        .limit(1)
+        .then((result) => ({ playerIndex: 2, data: result })),
     );
   }
 
@@ -141,11 +125,11 @@ async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
   if (playerQueries.length === 0) return null;
 
   const playersResults = await Promise.all(playerQueries);
-  
+
   // Initialize players as null
   let player1 = null;
   let player2 = null;
-  
+
   // Process results and assign to correct player slots
   for (const result of playersResults) {
     if (result.data.length > 0) {
@@ -153,9 +137,10 @@ async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
         id: result.data[0].id,
         paternalSurname: result.data[0].paternalSurname,
         maternalSurname: result.data[0].maternalSurname,
+        email: result.data[0].email, // ADD EMAIL HERE
         nickname: result.data[0].nickname,
       };
-      
+
       if (result.playerIndex === 1) {
         player1 = playerData;
       } else {
@@ -164,16 +149,27 @@ async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
     }
   }
 
-  if (!player1){
-    player1 = {id: "", maternalSurname: "", paternalSurname: "", nickname: ""}
+  // Handle empty players with proper typing
+  if (!player1) {
+    player1 = {
+      id: "",
+      maternalSurname: "",
+      paternalSurname: "",
+      nickname: "",
+      email: null,
+    };
   }
-  
-  if (!player2){
-    player2 = {id: "", maternalSurname: "", paternalSurname: "", nickname: ""}
-  }
-  
 
-  // If we have at least one valid player, create the team
+  if (!player2) {
+    player2 = {
+      id: "",
+      maternalSurname: "",
+      paternalSurname: "",
+      nickname: "",
+      email: null,
+    };
+  }
+
   if (player1 || player2) {
     return {
       id: teamRecord.id,
@@ -229,8 +225,8 @@ export async function createMatch({
         .where(
           and(
             eq(position.teamId, challengerTeamId),
-            eq(position.pyramidId, pyramidId)
-          )
+            eq(position.pyramidId, pyramidId),
+          ),
         )
         .limit(1),
       db
@@ -239,8 +235,8 @@ export async function createMatch({
         .where(
           and(
             eq(position.teamId, defenderTeamId),
-            eq(position.pyramidId, pyramidId)
-          )
+            eq(position.pyramidId, pyramidId),
+          ),
         )
         .limit(1),
     ]);
@@ -262,15 +258,15 @@ export async function createMatch({
           or(
             and(
               eq(match.challengerTeamId, challengerTeamId),
-              eq(match.defenderTeamId, defenderTeamId)
+              eq(match.defenderTeamId, defenderTeamId),
             ),
             and(
               eq(match.challengerTeamId, defenderTeamId),
-              eq(match.defenderTeamId, challengerTeamId)
-            )
+              eq(match.defenderTeamId, challengerTeamId),
+            ),
           ),
-          or(eq(match.status, "pending"), eq(match.status, "accepted"))
-        )
+          or(eq(match.status, "pending"), eq(match.status, "accepted")),
+        ),
       )
       .limit(1);
 
@@ -281,6 +277,20 @@ export async function createMatch({
       };
     }
 
+    // Get team information before creating the match
+    const [challengerTeamInfo, defenderTeamInfo] = await Promise.all([
+      getTeamInfo(challengerTeamId),
+      getTeamInfo(defenderTeamId),
+    ]);
+
+    if (!challengerTeamInfo || !defenderTeamInfo) {
+      return {
+        success: false,
+        error: "No se pudo obtener información de los equipos",
+      };
+    }
+
+    // Create the match
     const [newMatch] = await db
       .insert(match)
       .values({
@@ -291,8 +301,35 @@ export async function createMatch({
       })
       .returning();
 
+    // Send challenge email to defender team
+    try {
+      const emailResult = await sendChallengeMail(
+        challengerTeamInfo,
+        defenderTeamInfo,
+        pyramidId,
+      );
+
+      if (emailResult.error) {
+        console.warn("Failed to send challenge email:", emailResult.error);
+        // Don't fail the match creation if email fails
+      } else {
+        console.log(
+          `Challenge email sent successfully. Emails sent: ${emailResult.emailsSent}`,
+        );
+      }
+    } catch (emailError) {
+      console.error("Error sending challenge email:", emailError);
+      // Continue without failing the match creation
+    }
+
     revalidatePath("/mis-retas");
-    return { success: true, match: newMatch };
+    revalidatePath("/");
+
+    return {
+      success: true,
+      match: newMatch,
+      emailSent: true, // You could track email status if needed
+    };
   } catch (err) {
     console.error("Error creating match:", err);
     return { success: false, error: "No se pudo establecer la reta" };
@@ -332,10 +369,10 @@ export async function getUserMatches(userId: string): Promise<{
           ...userTeamIds.map((teamId) =>
             or(
               eq(match.challengerTeamId, teamId),
-              eq(match.defenderTeamId, teamId)
-            )
-          )
-        )
+              eq(match.defenderTeamId, teamId),
+            ),
+          ),
+        ),
       )
       .orderBy(desc(match.createdAt));
 
@@ -347,20 +384,20 @@ export async function getUserMatches(userId: string): Promise<{
       if (m.winnerTeamId) teamIds.add(m.winnerTeamId);
     });
 
-    console.log(Array.from(teamIds))
+    console.log(Array.from(teamIds));
 
-    const teamInfoMap = new Map<number, TeamInfo>();
+    const teamInfoMap = new Map<number, TeamWithPlayers>();
     await Promise.all(
       Array.from(teamIds).map(async (teamId) => {
         const teamInfo = await getTeamInfo(teamId);
-        console.log(teamInfo)
+        console.log(teamInfo);
         if (teamInfo) {
           teamInfoMap.set(teamId, teamInfo);
         }
-      })
+      }),
     );
 
-    console.log(teamInfoMap)
+    console.log(teamInfoMap);
 
     const matchesWithDetails: MatchWithDetails[] = matches.map((m) => {
       const challengerTeam = teamInfoMap.get(m.challengerTeamId);
@@ -368,8 +405,8 @@ export async function getUserMatches(userId: string): Promise<{
       const winnerTeam = m.winnerTeamId
         ? teamInfoMap.get(m.winnerTeamId)
         : null;
-      console.log("challenger:", challengerTeam)
-      console.log("defender:",defenderTeam)
+      console.log("challenger:", challengerTeam);
+      console.log("defender:", defenderTeam);
       if (!challengerTeam || !defenderTeam) {
         throw new Error(`Missing team data for match ${m.id}`);
       }
@@ -390,11 +427,13 @@ export async function getUserMatches(userId: string): Promise<{
 
     // Separate pending matches (where user is defender) from history
     const pendingMatches = matchesWithDetails.filter(
-      (m) => m.status === "pending" && userTeamIds.includes(m.defenderTeam.id)
+      (m) => m.status === "pending" && userTeamIds.includes(m.defenderTeam.id),
     );
 
-    const matchHistory = matchesWithDetails
-    
+    const matchHistory = matchesWithDetails.filter(
+      (m) => !pendingMatches.includes(m),
+    );
+
     return { pendingMatches, matchHistory };
   } catch (error) {
     console.error("Error fetching user matches:", error);
@@ -404,7 +443,7 @@ export async function getUserMatches(userId: string): Promise<{
 
 export async function acceptMatch(
   matchId: number,
-  userId: string
+  userId: string,
 ): Promise<MatchResult> {
   try {
     // Get match info to verify user can accept it
@@ -458,7 +497,7 @@ export async function acceptMatch(
 
 export async function rejectMatch(
   matchId: number,
-  userId: string
+  userId: string,
 ): Promise<MatchResult> {
   try {
     // Similar validation as acceptMatch
@@ -539,8 +578,8 @@ export async function getAcceptedMatches(): Promise<
               .where(
                 and(
                   eq(position.teamId, m.challengerTeamId),
-                  eq(position.pyramidId, m.pyramidId)
-                )
+                  eq(position.pyramidId, m.pyramidId),
+                ),
               )
               .limit(1),
             db
@@ -549,8 +588,8 @@ export async function getAcceptedMatches(): Promise<
               .where(
                 and(
                   eq(position.teamId, m.defenderTeamId),
-                  eq(position.pyramidId, m.pyramidId)
-                )
+                  eq(position.pyramidId, m.pyramidId),
+                ),
               )
               .limit(1),
           ]);
@@ -580,7 +619,7 @@ export async function getAcceptedMatches(): Promise<
           },
           createdAt: m.createdAt!,
         };
-      })
+      }),
     );
 
     return matchesWithDetails;
@@ -592,7 +631,7 @@ export async function getAcceptedMatches(): Promise<
 
 export async function completeMatch(
   matchId: number,
-  winnerTeamId: number
+  winnerTeamId: number,
 ): Promise<MatchCompletionResult> {
   try {
     const matchData = await db
@@ -628,8 +667,8 @@ export async function completeMatch(
         .where(
           and(
             eq(position.teamId, challengerTeamId),
-            eq(position.pyramidId, pyramidId)
-          )
+            eq(position.pyramidId, pyramidId),
+          ),
         )
         .limit(1),
       db
@@ -638,8 +677,8 @@ export async function completeMatch(
         .where(
           and(
             eq(position.teamId, defenderTeamId),
-            eq(position.pyramidId, pyramidId)
-          )
+            eq(position.pyramidId, pyramidId),
+          ),
         )
         .limit(1),
     ]);
@@ -706,8 +745,8 @@ export async function completeMatch(
           .where(
             and(
               eq(position.teamId, challengerTeamId),
-              eq(position.pyramidId, pyramidId)
-            )
+              eq(position.pyramidId, pyramidId),
+            ),
           );
 
         await tx
@@ -720,8 +759,8 @@ export async function completeMatch(
           .where(
             and(
               eq(position.teamId, defenderTeamId),
-              eq(position.pyramidId, pyramidId)
-            )
+              eq(position.pyramidId, pyramidId),
+            ),
           );
 
         await tx
@@ -734,8 +773,8 @@ export async function completeMatch(
           .where(
             and(
               eq(position.teamId, challengerTeamId),
-              eq(position.pyramidId, pyramidId)
-            )
+              eq(position.pyramidId, pyramidId),
+            ),
           );
 
         // Record position history
@@ -806,7 +845,7 @@ export async function completeMatch(
 }
 
 export async function getUnresolvedMatchesForTeam(
-  teamId: number
+  teamId: number,
 ): Promise<UnresolvedMatch[]> {
   try {
     const rows = await db
@@ -823,10 +862,10 @@ export async function getUnresolvedMatchesForTeam(
         and(
           or(
             eq(match.challengerTeamId, teamId),
-            eq(match.defenderTeamId, teamId)
+            eq(match.defenderTeamId, teamId),
           ),
-          or(eq(match.status, "pending"), eq(match.status, "accepted"))
-        )
+          or(eq(match.status, "pending"), eq(match.status, "accepted")),
+        ),
       );
 
     return rows.map((r) => ({

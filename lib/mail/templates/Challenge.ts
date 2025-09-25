@@ -1,15 +1,8 @@
-// lib/emailTemplates.ts
-interface TeamData {
-  id: number;
-  displayName: string;
-  categoryId: number;
-  wins: number;
-  losses: number;
-}
+import { TeamWithPlayers } from "@/actions/PositionActions";
 
 interface ChallengeEmailData {
-  attacker: TeamData;
-  defender: TeamData;
+  attacker: TeamWithPlayers;
+  defender: TeamWithPlayers;
   pyramidId: number;
   handicapPoints: number;
 }
@@ -229,7 +222,7 @@ export function generateChallengeEmailTemplate(
                                     <tr>
                                         <td style="text-align: center;">
                                             <a href="${
-                                              process.env.NEXT_PUBLIC_APP_URL
+                                              process.env.NEXT_PUBLIC_URL
                                             }/mis-retas" 
                                                style="display: inline-block; padding: 16px 32px; background-color: #ea580c; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.4);">
                                                 ⚔️ VER DESAFÍO
@@ -250,7 +243,7 @@ export function generateChallengeEmailTemplate(
                                 </p>
                                 <p style="margin: 0;">
                                     <a href="${
-                                      process.env.NEXT_PUBLIC_APP_URL
+                                      process.env.NEXT_PUBLIC_URL
                                     }" style="color: #ea580c; text-decoration: none; font-weight: 600;">
                                         Ir a la aplicación
                                     </a>

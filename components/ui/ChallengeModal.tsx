@@ -77,17 +77,11 @@ export default function ChallengeModal({
 
     setIsSubmitting(true);
     try {
-      await fetch("/api/mail", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          attacker,
-          defender,
-          pyramidId,
-          defenderEmail: "ortizludwin68@outlook.com", // Adjust based on your data structure
-        }),
+      await createMatch({
+        pyramidId,
+        challengerTeamId: attacker.id,
+        defenderTeamId: defender.id,
+        userId: session?.user.id,
       });
 
       refreshPyramidData();

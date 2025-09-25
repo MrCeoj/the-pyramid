@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { Plus, Edit, Users, Trash2 } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Plus, Edit, Users, Trash2, Search, X } from "lucide-react";
 import {
   getTeams,
   getCategories,
@@ -16,6 +16,7 @@ import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import Modal from "./EquipoModal";
 import EditTeamForm from "./EditTeamForm";
 import CreateTeamForm from "./CreateTeamForm";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Category = { id: number; name: string };
 type Player = {
@@ -34,6 +35,54 @@ const TeamManagement = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const isMobile = useIsMobile();
+
+  // Filter teams based on search term
+  const filteredTeams = useMemo(() => {
+    if (!searchTerm.trim()) return teams;
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    
+    return teams.filter((teamData) => {
+      // Check display name
+      if (teamData.displayName.toLowerCase().includes(searchLower)) {
+        return true;
+      }
+
+      // Check player 1 details
+      if (teamData.player1) {
+        const player1Name = teamData.player1.user.name?.toLowerCase() || "";
+        const player1Email = teamData.player1.user.email?.toLowerCase() || "";
+        const player1Nickname = teamData.player1.profile?.nickname?.toLowerCase() || "";
+        
+        if (
+          player1Name.includes(searchLower) ||
+          player1Email.includes(searchLower) ||
+          player1Nickname.includes(searchLower)
+        ) {
+          return true;
+        }
+      }
+
+      // Check player 2 details
+      if (teamData.player2) {
+        const player2Name = teamData.player2.user.name?.toLowerCase() || "";
+        const player2Email = teamData.player2.user.email?.toLowerCase() || "";
+        const player2Nickname = teamData.player2.profile?.nickname?.toLowerCase() || "";
+        
+        if (
+          player2Name.includes(searchLower) ||
+          player2Email.includes(searchLower) ||
+          player2Nickname.includes(searchLower)
+        ) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  }, [teams, searchTerm]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -65,7 +114,7 @@ const TeamManagement = () => {
   useEffect(() => {
     if (error) {
       toast.error(error);
-      setError(null); // Reset error after showing
+      setError(null);
     }
   }, [error]);
 
@@ -81,7 +130,7 @@ const TeamManagement = () => {
 
       setTeams(teamsData);
       setCategories(categoriesData);
-      setAllPlayers(playersData as Player[]); // Store all players
+      setAllPlayers(playersData as Player[]);
     } catch (err) {
       if (err instanceof Error) {
         console.error("Error loading data:", err);
@@ -112,7 +161,6 @@ const TeamManagement = () => {
     }
   };
 
-  // NEW: Combined handler for updating all aspects of a team
   const handleUpdateTeam = async (
     teamId: number,
     originalData: TeamWithPlayers,
@@ -125,7 +173,6 @@ const TeamManagement = () => {
   ) => {
     const promises = [];
 
-    // Check if category or status changed
     if (
       originalData.team.categoryId !== updatedData.categoryId ||
       originalData.team.status !== updatedData.status
@@ -138,7 +185,6 @@ const TeamManagement = () => {
       );
     }
 
-    // Check if players changed
     if (
       originalData.team.player1Id !== updatedData.player1Id ||
       originalData.team.player2Id !== updatedData.player2Id
@@ -152,7 +198,7 @@ const TeamManagement = () => {
     }
 
     if (promises.length === 0) {
-      setEditingTeam(null); // Nothing changed, just close the form
+      setEditingTeam(null);
       return;
     }
 
@@ -169,7 +215,6 @@ const TeamManagement = () => {
     }
   };
 
-  // NEW: Handler for deleting a team
   const handleDeleteTeam = async (teamId: number, teamName: string) => {
     if (
       window.confirm(
@@ -187,6 +232,10 @@ const TeamManagement = () => {
         }
       }
     }
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
   };
 
   const statusColors: { [key: string]: string } = {
@@ -215,12 +264,51 @@ const TeamManagement = () => {
         <>
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold">Gestión de equipos</h1>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="flex items-center gap-2 px-4 py-2 text-white transition-colors duration-75 rounded-md bg-indor-orange/80 hover:bg-indor-orange"
-            >
-              <Plus size={20} /> Crear equipo
-            </button>
+            {isMobile ? (
+              <button 
+                onClick={() => setShowCreateForm(true)}
+                className="fixed bottom-7 right-5 flex items-center gap-2 p-2 text-white transition-colors duration-75 rounded-full bg-indor-orange/80 hover:bg-indor-orange"
+              >
+                <Plus size={26} strokeWidth={3} />
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="flex items-center gap-2 px-4 py-2 text-white transition-colors duration-75 rounded-md bg-indor-orange/80 hover:bg-indor-orange"
+              >
+                <Plus size={20} /> Crear equipo
+              </button>
+            )}
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <div className="relative">
+              <Search 
+                size={20} 
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
+              />
+              <input
+                type="text"
+                placeholder="Buscar por nombre de equipo, jugadores o email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-10 py-3 bg-indor-black border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indor-orange/80 focus:ring-1 focus:ring-indor-orange/80"
+              />
+              {searchTerm && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              )}
+            </div>
+            {searchTerm && (
+              <div className="mt-2 text-sm text-gray-400">
+                Mostrando {filteredTeams.length} de {teams.length} equipos
+              </div>
+            )}
           </div>
 
           <Modal
@@ -238,8 +326,7 @@ const TeamManagement = () => {
           </Modal>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {teams.map((teamData) => {
-              // NEW: Calculate available players for THIS specific team edit form
+            {filteredTeams.map((teamData) => {
               const assignedPlayerIds = teams
                 .flatMap((t) => [t.team.player1Id, t.team.player2Id])
                 .filter(Boolean);
@@ -316,6 +403,17 @@ const TeamManagement = () => {
                 </div>
               );
             })}
+
+            {!loading && filteredTeams.length === 0 && searchTerm && (
+              <div className="col-span-full py-12 text-center rounded-lg bg-indor-black">
+                <h3 className="mb-2 text-lg font-medium text-white">
+                  No se encontraron equipos
+                </h3>
+                <p className="mb-4 text-gray-400">
+                  No hay equipos que coincidan con &quot;{searchTerm}&quot;
+                </p>
+              </div>
+            )}
 
             {!loading && teams.length === 0 && (
               <div className="col-span-full py-12 text-center rounded-lg bg-indor-black">

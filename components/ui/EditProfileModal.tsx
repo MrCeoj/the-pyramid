@@ -199,7 +199,7 @@ export default function EditProfileModal({
             <div className="flex justify-between gap-2">
               <div className="w-1/2">
                 <label className="block text-gray-300 text-sm mb-2">
-                  Primer apellido
+                  Nombre*
                 </label>
                 <input
                   type="text"
@@ -211,7 +211,7 @@ export default function EditProfileModal({
               </div>
               <div className="w-1/2">
                 <label className="block text-gray-300 text-sm mb-2">
-                  Segundo apellido
+                  Primer*
                 </label>
                 <input
                   type="text"

@@ -175,6 +175,7 @@ const MatchesPage = () => {
                   <PendingMatchCard
                     key={match.id}
                     match={match}
+                    userTeamId={userTeamId!}
                     handleAcceptMatch={handleAcceptMatch}
                     handleRejectMatch={handleRejectMatch}
                     formatDate={formatDate}

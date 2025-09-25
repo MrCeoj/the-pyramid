@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import PyramidRow from "./PyramidRow";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -30,18 +30,30 @@ export default function PyramidDisplay({
   const [unresolvedMatches, setUnresolvedMatches] = useState<UnresolvedMatch[]>(
     []
   );
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchUnresolvedMatches = useCallback(async () => {
+    if (!userTeamId) return;
+    
+    setIsRefreshing(true);
+    try {
+      const data = await getUnresolvedMatchesForTeam(userTeamId);
+      setUnresolvedMatches(data || []);
+    } catch (err) {
+      console.error("Error fetching unresolved matches:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [userTeamId]);
 
   useEffect(() => {
-    if (!userTeamId) return;
-    (async () => {
-      try {
-        const data = await getUnresolvedMatchesForTeam(userTeamId);
-        setUnresolvedMatches(data || []);
-      } catch (err) {
-        console.error(err);
-      }
-    })();
-  }, [userTeamId]);
+    fetchUnresolvedMatches();
+  }, [fetchUnresolvedMatches]);
+
+  // Refresh callback to pass to PyramidRow
+  const handleRefreshNeeded = useCallback(() => {
+    fetchUnresolvedMatches();
+  }, [fetchUnresolvedMatches]);
 
   const isMobile = useIsMobile();
 
@@ -124,13 +136,21 @@ export default function PyramidDisplay({
                 unresolvedMatches={unresolvedMatches}
                 userTeamId={userTeamId}
                 pyramidId={data.pyramid_id!}
+                onRefreshNeeded={handleRefreshNeeded}
                 className={`flex gap-4 p-4 justify-start min-w-max overflow-x-scroll scroll-smooth no-scrollbar items-center snap-x rounded-t-2xl border-2 border-slate-400/40 border-dashed bg-indor-black/80 ${
                   isLast ? "border-b-2 rounded-b-2xl" : "border-b-0"
-                }`}
+                } ${isRefreshing ? "opacity-75" : ""}`}
               />
             );
           })}
       </div>
+      
+      {/* Optional: Show refresh indicator */}
+      {isRefreshing && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white px-4 py-2 rounded-lg">
+          Actualizando...
+        </div>
+      )}
     </div>
   );
 }

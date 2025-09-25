@@ -10,37 +10,7 @@ import {
 import { db } from "@/lib/drizzle";
 import { eq, and, inArray, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-
-// Helper function to generate team display name
-function getTeamDisplayName(
-  player1: {
-    paternalSurname: string;
-    maternalSurname: string;
-    nickname?: string | null;
-  },
-  player2: {
-    paternalSurname: string;
-    maternalSurname: string;
-    nickname?: string | null;
-  }
-): string {
-  // If both players have nicknames, use those
-  if (player1.nickname && player2.nickname) {
-    return `${player1.nickname} / ${player2.nickname}`;
-  }
-
-  // If only one has nickname, use nickname + surname
-  if (player1.nickname && !player2.nickname) {
-    return `${player1.nickname} / ${player2.paternalSurname}`;
-  }
-
-  if (!player1.nickname && player2.nickname) {
-    return `${player1.paternalSurname} / ${player2.nickname}`;
-  }
-
-  // Default: use both paternal surnames
-  return `${player1.paternalSurname} / ${player2.paternalSurname}`;
-}
+import { getTeamDisplayName } from "@/db/schema";
 
 export type TeamWithPlayers = {
   id: number;
@@ -54,14 +24,17 @@ export type TeamWithPlayers = {
     paternalSurname: string;
     maternalSurname: string;
     nickname?: string | null;
+    email?: string | null;
   };
   player2: {
     id: string;
     paternalSurname: string;
     maternalSurname: string;
     nickname?: string | null;
+    email?: string | null;
   };
 };
+
 
 export async function getApplicableTeams(
   pyramidId: number
