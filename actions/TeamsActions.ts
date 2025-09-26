@@ -1,15 +1,20 @@
 "use server";
 
 import { db } from "@/lib/drizzle"; // Assuming your db instance is here
+import { sendRiskyWarningMail } from "@/actions/MailActions";
+import { getTeamWithPlayers } from "@/actions/matches/TeamService";
+import { eq, aliasedTable, and, gte, or, inArray } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import {
   team,
   users,
   profile,
   category,
   getTeamDisplayName,
-} from "@/db/schema"; // Assuming your schema is here
-import { eq, aliasedTable } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+  position,
+  pyramid,
+  match,
+} from "@/db/schema";
 
 export type TeamWithPlayers = {
   team: typeof team.$inferSelect;
@@ -137,7 +142,6 @@ export async function getPlayers() {
       })
       .from(profile)
       .leftJoin(users, eq(users.id, profile.userId));
-
   } catch (error) {
     console.error("Failed to get players:", error);
     throw new Error("Could not fetch players.");
@@ -219,7 +223,11 @@ export async function updateTeamPlayers(
   }
 
   try {
-    const updateData: { player1Id?: string | null; player2Id?: string | null; updatedAt: Date } = {
+    const updateData: {
+      player1Id?: string | null;
+      player2Id?: string | null;
+      updatedAt: Date;
+    } = {
       updatedAt: new Date(),
     };
 
@@ -241,7 +249,10 @@ export async function updateTeamPlayers(
     return updatedTeam[0];
   } catch (error) {
     console.error("Failed to update team players:", error);
-    if (error instanceof Error && error.message.includes("unique_team_players")) {
+    if (
+      error instanceof Error &&
+      error.message.includes("unique_team_players")
+    ) {
       throw new Error("Ya existe un equipo con estos jugadores.");
     }
     throw new Error("No se pudieron actualizar los jugadores del equipo.");
@@ -260,4 +271,196 @@ export async function deleteTeam(teamId: number) {
     console.error("Failed to delete team:", error);
     throw new Error("Could not delete the team.");
   }
+}
+
+export interface RiskyCheckResult {
+  success: boolean;
+  message: string;
+  teamsMarkedRisky: number;
+  emailsSent: number;
+  emailsFailed: number;
+  details?: {
+    riskyTeams: string[];
+    emailResults: unknown[];
+  };
+}
+
+export async function checkAndMarkRiskyTeams(
+  pyramidId: number,
+  daysBack: number = 4 // Check for matches in the last 7 days
+): Promise<RiskyCheckResult> {
+  try {
+    const pyramidRowsTotal = await db
+      .select({row_amount: pyramid.row_amount})
+      .from(pyramid)
+      .where(eq(pyramid.id, pyramidId));
+
+    if (!pyramidRowsTotal) throw new Error("Not a viable amount of rows detected")
+
+    const dateThreshold = new Date();
+    dateThreshold.setDate(dateThreshold.getDate() - daysBack);
+
+    const teamsInPyramid = await db
+      .select({
+        teamId: position.teamId,
+        row: position.row,
+        col: position.col,
+      })
+      .from(position)
+      .where(eq(position.pyramidId, pyramidId));
+
+    if (teamsInPyramid.length === 0) {
+      return {
+        success: false,
+        message: "No se encontraron equipos en la pirámide",
+        teamsMarkedRisky: 0,
+        emailsSent: 0,
+        emailsFailed: 0,
+      };
+    }
+
+    const filteredTeams = teamsInPyramid.filter(
+      (t) => t.row !== pyramidRowsTotal[0].row_amount
+    );
+
+    const allTeamIds = filteredTeams.map((t) => t.teamId);
+    console.log("filtered")
+    const recentlyActiveTeams = await db
+      .selectDistinct({
+        challengerTeamId: match.challengerTeamId,
+        defenderTeamId: match.defenderTeamId,
+      })
+      .from(match)
+      .where(
+        and(
+          eq(match.pyramidId, pyramidId),
+          eq(match.status, "played"),
+          gte(match.updatedAt, dateThreshold),
+          or(
+            inArray(match.challengerTeamId, allTeamIds),
+            inArray(match.defenderTeamId, allTeamIds)
+          )
+        )
+      );
+
+    // Extract unique team IDs that have been active
+    const activeTeamIds = new Set<number>();
+    recentlyActiveTeams.forEach((match) => {
+      activeTeamIds.add(match.challengerTeamId);
+      activeTeamIds.add(match.defenderTeamId);
+    });
+
+    // Step 3: Find inactive teams (teams that haven't played)
+    const inactiveTeamIds = allTeamIds.filter(
+      (teamId) => !activeTeamIds.has(teamId)
+    );
+
+    if (inactiveTeamIds.length === 0) {
+      return {
+        success: true,
+        message: "Todos los equipos han sido activos esta semana. ¡Excelente!",
+        teamsMarkedRisky: 0,
+        emailsSent: 0,
+        emailsFailed: 0,
+      };
+    }
+
+    // Step 4: Mark inactive teams as "risky"
+    await db
+      .update(team)
+      .set({
+        status: "risky",
+        updatedAt: new Date(),
+      })
+      .where(inArray(team.id, inactiveTeamIds));
+
+    console.log("Marked")
+
+    // Step 5: Get full team data and send warning emails
+    const emailResults = [];
+    let emailsSent = 0;
+    let emailsFailed = 0;
+    const riskyTeamNames = [];
+
+    for (const teamId of inactiveTeamIds) {
+      try {
+        const teamData = await getTeamWithPlayers(teamId);
+        if (!teamData) {
+          console.warn(`Could not fetch data for team ID: ${teamId}`);
+          continue;
+        }
+
+        riskyTeamNames.push(teamData.displayName);
+
+        // Get team position for email context
+        const teamPosition = teamsInPyramid.find((t) => t.teamId === teamId);
+        const currentPosition = teamPosition
+          ? calculatePosition(teamPosition.row, teamPosition.col)
+          : undefined;
+
+        // Calculate next row position (rough estimate)
+        const nextRowPosition = teamPosition
+          ? calculatePosition(teamPosition.row + 1, 1)
+          : undefined;
+
+        // Send warning email
+        const emailResult = await sendRiskyWarningMail(
+          teamData,
+          pyramidId,
+          currentPosition,
+          nextRowPosition
+        );
+
+        emailResults.push({
+          teamName: teamData.displayName,
+          result: emailResult,
+        });
+
+        if (emailResult.success) {
+          emailsSent += emailResult.emailsSent || 0;
+          emailsFailed += emailResult.emailsFailed || 0;
+          console.log("email sent")
+        } else {
+          emailsFailed += 2;
+          console.log("email fialed")
+        }
+      } catch (error) {
+        console.error(`Error processing team ${teamId}:`, error);
+        emailsFailed += 2;
+      }
+    }
+
+    revalidatePath("/admin");
+    revalidatePath("/piramide");
+    console.log("Finished")
+
+    return {
+      success: true,
+      message: `Se marcaron ${inactiveTeamIds.length} equipos como "en riesgo" y se enviaron ${emailsSent} emails de advertencia.`,
+      teamsMarkedRisky: inactiveTeamIds.length,
+      emailsSent,
+      emailsFailed,
+      details: {
+        riskyTeams: riskyTeamNames,
+        emailResults,
+      },
+    };
+  } catch (error) {
+    console.error("Error checking risky teams:", error);
+    return {
+      success: false,
+      message: "Error al verificar equipos inactivos. Intenta de nuevo.",
+      teamsMarkedRisky: 0,
+      emailsSent: 0,
+      emailsFailed: 0,
+    };
+  }
+}
+
+function calculatePosition(row: number, col: number): number {
+  let position = 0;
+  for (let r = 1; r < row; r++) {
+    position += r;
+  }
+  return position + col;
 }

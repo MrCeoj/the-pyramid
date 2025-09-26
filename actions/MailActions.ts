@@ -1,6 +1,12 @@
 import { transporter } from "@/lib/mail";
 import { TeamWithPlayers } from "./PositionActions";
-import { generateChallengeEmailTemplate } from "@/lib/mail/templates/Challenge";
+import {
+  generateChallengeEmailTemplate,
+  generateAcceptEmailTemplate,
+  generateCancelEmailTemplate,
+  generateRejectEmailTemplate,
+  generateRiskyWarningEmailTemplate,
+} from "@/lib/mail/templates";
 
 export async function sendChallengeMail(
   attacker: TeamWithPlayers,
@@ -37,44 +43,277 @@ export async function sendChallengeMail(
     }
 
     if (defenderEmails.length === 0) {
-      return { error: "No se encontraron correos válidos para notificar a los oponentes" };
+      return {
+        error:
+          "No se encontraron correos válidos para notificar a los oponentes",
+      };
     }
 
-    // Send email to all defender players
-    const emailPromises = defenderEmails.map((email) => {
-      const mailOptions = {
-        from: process.env.FROM_RETAS!,
-        to: email,
-        subject: `🏆 ¡${attacker.displayName} te ha desafiado!`,
-        html: htmlContent,
-      };
-      return transporter.sendMail(mailOptions);
-    });
+    const mailOptions = {
+      from: process.env.FROM_RETAS!,
+      to: defenderEmails,
+      subject: `🏆 ¡${attacker.displayName} te ha desafiado!`,
+      html: htmlContent,
+    };
 
-    // Send all emails concurrently
-    const results = await Promise.allSettled(emailPromises);
+    const response = transporter.sendMail(mailOptions);
+    const result = await response;
+
+    return {
+      success: true,
+      emailsSent: result.accepted.length,
+      emailsFailed: result.rejected.length,
+      totalEmails: defenderEmails.length,
+      results: result.response,
+    };
+  } catch (error) {
+    console.error("Error sending challenge email:", error);
+    return { error: error };
+  }
+}
+
+export async function sendRejectMail(
+  attacker: TeamWithPlayers,
+  defender: TeamWithPlayers,
+  pyramidId: number
+) {
+  try {
+    if (!attacker || !defender || !pyramidId) {
+      return { error: "Missing required fields" };
+    }
+
+    const emailData = {
+      attacker,
+      defender,
+      pyramidId,
+    };
+
+    const htmlContent = generateRejectEmailTemplate(emailData);
+
+    // Collect attacker emails (notify the challengers)
+    const attackerEmails: string[] = [];
+
+    if (attacker.player1?.email) {
+      attackerEmails.push(attacker.player1.email);
+    }
+
+    if (attacker.player2?.email) {
+      attackerEmails.push(attacker.player2.email);
+    }
+
+    if (attackerEmails.length === 0) {
+      return {
+        error:
+          "No se encontraron correos válidos para notificar a los retadores",
+      };
+    }
+
+    // Send email to all attacker players
+    const mailOptions = {
+      from: process.env.FROM_RETAS!,
+      to: attackerEmails,
+      subject: `❌ ${defender.displayName} ha rechazado tu desafío`,
+      html: htmlContent,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+
+    return {
+      success: true,
+      results: [result.response],
+    };
+  } catch (error) {
+    console.error("Error sending reject email:", error);
+    return { error: error };
+  }
+}
+
+// Accept a match challenge
+export async function sendAcceptMail(
+  attacker: TeamWithPlayers,
+  defender: TeamWithPlayers,
+  pyramidId: number
+) {
+  try {
+    if (!attacker || !defender || !pyramidId) {
+      return { error: "Missing required fields" };
+    }
+
+    const categoryDiff =
+      (defender.categoryId ?? 0) - (attacker.categoryId ?? 0);
+    const handicapPoints = Math.abs(categoryDiff) * 15;
+
+    const emailData = {
+      attacker,
+      defender,
+      pyramidId,
+      handicapPoints,
+    };
+
+    const htmlContent = generateAcceptEmailTemplate(emailData);
+
+    // Collect all player emails (both teams should be notified)
+    const allEmails: string[] = [];
+
+    if (attacker.player1?.email) {
+      allEmails.push(attacker.player1.email);
+    }
+    if (attacker.player2?.email) {
+      allEmails.push(attacker.player2.email);
+    }
+    if (defender.player1?.email) {
+      allEmails.push(defender.player1.email);
+    }
+    if (defender.player2?.email) {
+      allEmails.push(defender.player2.email);
+    }
+
+    if (allEmails.length === 0) {
+      return {
+        error:
+          "No se encontraron correos válidos para notificar a los jugadores",
+      };
+    }
+
+    const mailOptions = {
+      from: process.env.FROM_RETAS!,
+      to: allEmails,
+      subject: `✅ ¡Desafío aceptado! ${attacker.displayName} vs ${defender.displayName}`,
+      html: htmlContent,
+    };
+    const result = await transporter.sendMail(mailOptions);
+
+    return {
+      success: true,
+      results: [result.response],
+    };
+  } catch (error) {
+    console.error("Error sending accept email:", error);
+    return { error: error };
+  }
+}
+
+// Cancel a match
+export async function sendCancelMail(
+  attacker: TeamWithPlayers,
+  defender: TeamWithPlayers,
+  pyramidId: number,
+  reason?: string
+) {
+  try {
+    if (!attacker || !defender || !pyramidId) {
+      return { error: "Missing required fields" };
+    }
+
+    const emailData = {
+      attacker,
+      defender,
+      pyramidId,
+      reason,
+    };
+
+    const htmlContent = generateCancelEmailTemplate(emailData);
+
+    // Collect all player emails (both teams should be notified)
+    const allEmails: string[] = [];
+
+    if (attacker.player1?.email) {
+      allEmails.push(attacker.player1.email);
+    }
+    if (attacker.player2?.email) {
+      allEmails.push(attacker.player2.email);
+    }
+    if (defender.player1?.email) {
+      allEmails.push(defender.player1.email);
+    }
+    if (defender.player2?.email) {
+      allEmails.push(defender.player2.email);
+    }
+
+    if (allEmails.length === 0) {
+      return {
+        error:
+          "No se encontraron correos válidos para notificar a los jugadores",
+      };
+    }
+
+    const mailOptions = {
+      from: process.env.FROM_RETAS!,
+      to: allEmails,
+      subject: `🚫 Reta cancelada. ${attacker.displayName} vs ${defender.displayName}`,
+      html: htmlContent,
+    };
+    return await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending cancel email:", error);
+    return { error: error };
+  }
+}
+
+// Companion function to send risky warning emails
+export async function sendRiskyWarningMail(
+  team: TeamWithPlayers,
+  pyramidId: number,
+  currentPosition?: number,
+  nextRowPosition?: number
+) {
+  try {
+    if (!team || !pyramidId) {
+      return { error: "Missing required fields" };
+    }
+
+    const emailData = {
+      team,
+      pyramidId,
+      currentPosition,
+      nextRowPosition,
+    };
+
+    const htmlContent = generateRiskyWarningEmailTemplate(emailData);
+
+    // Collect team player emails
+    const teamEmails: string[] = [];
+
+    if (team.player1?.email) {
+      teamEmails.push(team.player1.email);
+    }
+    if (team.player2?.email) {
+      teamEmails.push(team.player2.email);
+    }
+
+    if (teamEmails.length === 0) {
+      return {
+        error: "No se encontraron correos válidos para el equipo",
+      };
+    }
+
+    const mailOptions = {
+      from: process.env.FROM_RETAS!,
+      to: teamEmails,
+      subject: `⚠️ URGENTE: ${team.displayName} en riesgo de reposicionamiento`,
+      html: htmlContent,
+    };
+
+    const results = await transporter.sendMail(mailOptions);
 
     // Check results
-    const successful = results.filter(
-      (result) => result.status === "fulfilled"
-    );
-    const failed = results.filter((result) => result.status === "rejected");
+    const successful = results.accepted.length;
+    const failed = results.rejected.length;
 
-    if (failed.length > 0) {
-      console.error("Some emails failed to send:", failed);
+    if (failed > 0) {
+      console.error("Some risky warning emails failed to send:", failed);
     }
 
     return {
       success: true,
-      emailsSent: successful.length,
-      emailsFailed: failed.length,
-      totalEmails: defenderEmails.length,
-      results: successful.map((result) =>
-        result.status === "fulfilled" ? result.value.response : null
-      ),
+      emailsSent: successful,
+      emailsFailed: failed,
+      totalEmails: teamEmails.length,
+      teamName: team.displayName,
+      results: results.response,
     };
   } catch (error) {
-    console.error("Error sending challenge email:", error);
+    console.error("Error sending risky warning email:", error);
     return { error: error };
   }
 }

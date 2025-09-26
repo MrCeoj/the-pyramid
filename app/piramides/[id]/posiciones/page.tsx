@@ -3,6 +3,7 @@ import PyramidDisplay from "./PyramidPositionsEdit";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
+
 export default async function PositionsPage({
   params,
 }: {

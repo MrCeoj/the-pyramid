@@ -196,7 +196,7 @@ export async function setTeamInPosition(
         .returning();
 
       if (result.length === 0) {
-        throw new Error("Failed to update position");
+        throw new Error("Error al actualizar posiciones");
       }
     } else {
       // Create new position
@@ -211,11 +211,10 @@ export async function setTeamInPosition(
         .returning();
 
       if (result.length === 0) {
-        throw new Error("Failed to create position");
+        throw new Error("Error al posicionar.");
       }
     }
 
-    // Revalidate the page to reflect changes
     revalidatePath(`/piramides/${pyramidId}/posiciones`);
     revalidatePath(`/piramides/${pyramidId}`);
 
@@ -273,7 +272,6 @@ export async function moveTeamPosition(
       return { success: false, error: "Team position not found" };
     }
 
-    // Revalidate the page to reflect changes
     revalidatePath(`/piramides/${pyramidId}/posiciones`);
     revalidatePath(`/piramides/${pyramidId}`);
 
@@ -301,7 +299,6 @@ export async function removeTeamFromPosition(
       return { success: false, error: "Position not found" };
     }
 
-    // Revalidate the page to reflect changes
     if (pyramidId) {
       revalidatePath(`/piramides/${pyramidId}/posiciones`);
       revalidatePath(`/piramides/${pyramidId}`);

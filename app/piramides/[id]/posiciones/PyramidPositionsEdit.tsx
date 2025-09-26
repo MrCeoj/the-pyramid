@@ -13,7 +13,7 @@ import toast from "react-hot-toast";
 import SetTeamModal from "./SetTeamModal";
 import { PyramidData } from "@/actions/IndexActions";
 
-// Rename to avoid conflict with imported Position type
+
 interface PyramidPosition {
   id: number;
   row: number;
@@ -67,16 +67,16 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
 
   const isMobile = useIsMobile();
 
-  // Data processing logic - transform imported Position to PyramidPosition
+
   const rows: { [key: number]: PyramidPosition[] } = {};
   data.positions.forEach((pos) => {
     if (!rows[pos.row]) rows[pos.row] = [];
-    // Transform the position to match our expected type
+  
     const pyramidPos: PyramidPosition = {
       id: pos.id,
       row: pos.row,
       col: pos.col,
-      team: pos.team as TeamWithPlayers | null, // Type assertion - ensure this is safe
+      team: pos.team as TeamWithPlayers | null,
     };
     rows[pos.row].push(pyramidPos);
   });
@@ -136,9 +136,8 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
 
   return (
     <div className="flex flex-col items-center relative mb-5 no-scrollbar">
-      {/* Logo Display */}
-
       <Toaster position={isMobile ? "top-center" : "top-right"} />
+      
       {isMobile ? (
         <Image
           src={"/piramide_logo_title_naranja.svg"}
@@ -158,7 +157,7 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
           />
         </div>
       )}
-      {/* Pyramid Structure */}
+      
       <div className="flex flex-col items-center mb-5">
         {Object.keys(filledRows)
           .sort((a, b) => Number(a) - Number(b))

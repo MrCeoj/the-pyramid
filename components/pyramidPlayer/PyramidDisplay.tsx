@@ -4,11 +4,8 @@ import PyramidRow from "./PyramidRow";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Toaster } from "react-hot-toast";
-import {
-  UnresolvedMatch,
-  getUnresolvedMatchesForTeam,
-} from "@/actions/MatchesActions";
-
+import { getUnresolvedMatchesForTeam } from "@/actions/matches/";
+import { UnresolvedMatch } from "@/actions/matches/types";
 import { PyramidData } from "@/actions/IndexActions";
 import { TeamWithPlayers } from "@/actions/PositionActions";
 
@@ -34,7 +31,7 @@ export default function PyramidDisplay({
 
   const fetchUnresolvedMatches = useCallback(async () => {
     if (!userTeamId) return;
-    
+
     setIsRefreshing(true);
     try {
       const data = await getUnresolvedMatchesForTeam(userTeamId);
@@ -113,7 +110,7 @@ export default function PyramidDisplay({
             priority
             alt="Logo"
             fill
-            style={{objectFit:"cover"}}
+            style={{ objectFit: "cover" }}
             className="drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
           />
         </div>
@@ -144,7 +141,7 @@ export default function PyramidDisplay({
             );
           })}
       </div>
-      
+
       {/* Optional: Show refresh indicator */}
       {isRefreshing && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white px-4 py-2 rounded-lg">

@@ -7,7 +7,7 @@ import {
   Clock,
   Crown,
 } from "lucide-react";
-import { MatchWithDetails } from "@/actions/MatchesActions";
+import { MatchWithDetails } from "@/actions/matches/types";
 
 interface HistoryMatchCardData {
   match: MatchWithDetails;

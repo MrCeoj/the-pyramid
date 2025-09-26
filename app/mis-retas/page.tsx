@@ -6,8 +6,8 @@ import {
   getUserMatches,
   acceptMatch,
   rejectMatch,
-  MatchWithDetails,
-} from "@/actions/MatchesActions";
+} from "@/actions/matches";
+import { MatchWithDetails } from "@/actions/matches/types"
 import toast from "react-hot-toast";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import { useSession } from "next-auth/react";

@@ -2,7 +2,7 @@
 import { useState, useTransition, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { login, validateMailExistance } from "../../actions/LoginActions";
+import { login, validateMailExistance } from "@/actions/LoginActions";
 import toast, { Toaster } from "react-hot-toast";
 import { ProfileSetupForm } from "./ProfileSetupForm";
 import { PasswordSetupForm } from "./PasswordSetupForm";
@@ -29,8 +29,8 @@ export default function LoginForm() {
   const [user, setUser] = useState<UserData | null>(null);
 
   useEffect(() => {
-    if(error) toast.error(error)
-  }, [error])
+    if (error) toast.error(error);
+  }, [error]);
 
   // This function remains the same
   const handleLogin = async (formData: FormData) => {
@@ -48,7 +48,6 @@ export default function LoginForm() {
     });
   };
 
-  // --- UPDATED EMAIL SUBMIT HANDLER ---
   const handleEmailSubmit = async (formData: FormData) => {
     setError(undefined);
     const email = formData.get("email") as string;
@@ -60,21 +59,17 @@ export default function LoginForm() {
         setError(result.error);
       } else if (result?.user) {
         emailRef.current = result.user.email;
-        setUser(result.user as UserData); // Cast to the updated type
+        setUser(result.user as UserData);
 
-        // ✅ NEW, SIMPLIFIED LOGIC
-        // We now rely on the single `needsProfileSetup` flag from the backend.
-        if (result.user.needsProfileSetup) {
+        if (result.user.needsProfileSetup || result.user.needAdminSetup) {
           // If the backend says setup is needed, switch to the setup state.
           setFormState("setup");
         } else {
-          // Otherwise, the user is ready to enter their password.
           setFormState("password-only");
         }
       }
     });
   };
-
 
   // The JSX and rendering logic remains the same, as it's correctly driven by `formState`.
   return (
@@ -94,6 +89,7 @@ export default function LoginForm() {
               <div className="relative lg:w-[400px] lg:h-[200px] md:w-[350px] md:h-[175px]">
                 <Image
                   src="/indor_norte_logo.svg"
+                  priority
                   alt="Logo"
                   fill
                   objectFit="contain"

@@ -1,15 +1,15 @@
-import { Suspense } from 'react';
-import { PyramidList } from './PyramidList';
-import { CreatePyramidButton } from './CreatePyramidButton';
-import { PyramidListSkeleton } from './PyramidListSkeleton';
-import UserDropdownMenu from '@/components/ui/UserDropdownMenu';
-import { auth } from '@/lib/auth';
-import { redirect } from 'next/navigation';
+import { Suspense } from "react";
+import { PyramidList } from "./PyramidList";
+import { CreatePyramidButton } from "@/app/piramides/CreatePyramidButton";
+import { PyramidListSkeleton } from "@/app/piramides/PyramidListSkeleton";
+import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function PyramidsPage() {
-  const sesh = await auth()
-  if (sesh?.user.role !== "admin"){
-    redirect("/")
+  const sesh = await auth();
+  if (sesh?.user.role !== "admin") {
+    redirect("/");
   }
   return (
     <div className="flex flex-col h-screen bg-indor-black/60">

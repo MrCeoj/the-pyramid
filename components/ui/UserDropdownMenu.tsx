@@ -9,9 +9,10 @@ import {
   ChevronDown,
   ChevronUp,
   House,
+  BellDotIcon,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useSessionStore } from "@/stores/sessionStore";
 import EditProfileModal from "@/components/ui/EditProfileModal";
 import {
@@ -19,6 +20,7 @@ import {
   updateProfile,
   UpdateProfileData,
 } from "@/actions/ProfileDataActions";
+import { getUserPendingMatchesCount } from "@/actions/IndexActions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -30,6 +32,7 @@ export default function UserDropdownMenu() {
   const [profileData, setProfileData] = useState<any>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [notifsCount, setNotifsCount] = useState(0);
 
   // Use both NextAuth session and your session store
   const { data: nextAuthSession, status, update } = useSession();
@@ -42,9 +45,29 @@ export default function UserDropdownMenu() {
   const isAdmin = session?.user?.role === "admin";
   const isMobile = useIsMobile();
 
+  // memoize function to avoid re-renders
+  const loadCount = useCallback(async () => {
+    if (!session) {
+      return;
+    }
+    if (!session.user) return;
+    const result = await getUserPendingMatchesCount(session.user.id);
+    setNotifsCount(result ? result : 0);
+  }, [session]);
+
+
   useEffect(() => {
-    if (status === "unauthenticated") update();
+    if (status === "unauthenticated") {
+      update();
+      return;
+    }
   }, [status, update]);
+
+
+  useEffect(() => {
+    loadCount();
+  }, [loadCount, session]);
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -60,7 +83,8 @@ export default function UserDropdownMenu() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const loadProfileData = async () => {
+
+  const loadProfileData = useCallback(async () => {
     if (!session?.user?.id) return;
 
     setIsLoadingProfile(true);
@@ -72,9 +96,9 @@ export default function UserDropdownMenu() {
     } finally {
       setIsLoadingProfile(false);
     }
-  };
+  }, [session]);
 
-  const handleProfileSave = async (formData: UpdateProfileData) => {
+  const handleProfileSave = useCallback(async (formData: UpdateProfileData) => {
     try {
       const response = await updateProfile(formData);
 
@@ -84,7 +108,7 @@ export default function UserDropdownMenu() {
     } catch (error) {
       throw error;
     }
-  };
+  }, [loadProfileData])
 
   const handleMenuClick = async (action: string) => {
     setIsOpen(false);
@@ -141,6 +165,11 @@ export default function UserDropdownMenu() {
           className="p-3 rounded-full ring-2 ring-indor-brown-light bg-indor-black/80 hover:cursor-pointer flex items-center gap-2 hover:bg-indor-black hover:scale-105 transition-all duration-100"
           onClick={() => setIsOpen(!isOpen)}
         >
+          {notifsCount > 0 && (
+            <span className="absolute bg-red-500 -top-2 -left-2 rounded-full text-white p-1 z-50 animate-pulse">
+              <BellDotIcon size={16} />
+            </span>
+          )}
           <User color="white" strokeWidth={2} size={20} />
           {isMobile ? (
             <ChevronDown
@@ -204,7 +233,12 @@ export default function UserDropdownMenu() {
                 className="w-full px-4 py-2 text-left text-white hover:bg-indor-brown-light/20 flex items-center gap-3 transition-colors"
               >
                 <Swords size={16} />
-                <span>{isAdmin ? "Gestionar Retas" : "Mis Retas"}</span>
+                <span>{isAdmin ? "Gestionar Retas" : "Mis Retas"}</span>{" "}
+                {notifsCount > 0 && (
+                  <span className="text-xs w-2.5 h-2.5 flex items-center justify-center bg-red-500/80 font-bold p-2.5 rounded-full animate-pulse">
+                    {notifsCount}
+                  </span>
+                )}
               </button>
 
               {isAdmin && (

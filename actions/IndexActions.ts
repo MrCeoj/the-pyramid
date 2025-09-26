@@ -1,6 +1,6 @@
 "use server";
 import { db } from "@/lib/drizzle";
-import { eq, and, or, isNull } from "drizzle-orm";
+import { eq, and, or, isNull, count } from "drizzle-orm";
 import {
   position,
   team,
@@ -8,6 +8,7 @@ import {
   profile,
   users,
   getTeamDisplayName,
+  match,
 } from "@/db/schema";
 
 export type Team = {
@@ -475,5 +476,39 @@ export async function isUserInTeam(
   } catch (error) {
     console.error("Error checking if user is in team:", error);
     return false;
+  }
+}
+
+export async function getUserPendingMatchesCount(userId: string) {
+  try {
+    const userTeamId = await getUserTeamId(userId);
+
+    if ("error" in userTeamId) {
+      throw new Error(
+        "Error al conseguir id del equipo buscando matches pendientes"
+      );
+    }
+
+    if (!userTeamId.teamId) {
+      throw new Error("No hay equipo");
+    }
+
+    const pendingMatchesCount = await db
+      .select({ count: count() })
+      .from(match)
+      .where(
+        and(
+          eq(match.defenderTeamId, userTeamId.teamId),
+          eq(match.status, "pending")
+        )
+      );
+
+    return pendingMatchesCount[0].count;
+  } catch (error) {
+    console.error(
+      "Error al conseguir las partidas pendientes de respuesta:",
+      error
+    );
+    return null;
   }
 }

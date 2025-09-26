@@ -6,7 +6,7 @@ import { Button } from "@/components/lightswind/button";
 import { Card } from "@/components/lightswind/card";
 import { Input } from "@/components/lightswind/input";
 import { Label } from "@/components/lightswind/label";
-import { createAdminPassword, login } from "../../actions/LoginActions"; // <- new action you’ll create
+import { createAdminPassword, login } from "@/actions/LoginActions"
 import toast from "react-hot-toast";
 
 interface User {
@@ -72,6 +72,7 @@ export function PasswordSetupForm({ user }: PasswordSetupFormProps) {
         <div className="relative w-60 h-32">
           <Image
             src="/indor_norte_logo.svg"
+            priority
             alt="La pirAMide"
             layout="fill"
             objectFit="contain"

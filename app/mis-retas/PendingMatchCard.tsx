@@ -7,7 +7,7 @@ import {
   AlertTriangle,
   TrendingUp,
 } from "lucide-react";
-import { MatchWithDetails } from "@/actions/MatchesActions";
+import { MatchWithDetails } from "@/actions/matches/types";
 
 interface PendingMatchCardData {
   match: MatchWithDetails;
@@ -70,7 +70,7 @@ const PendingMatchCard = ({
   const handicapInfo = getHandicapInfo();
 
   return (
-    <div className="bg-gradient-to-r from-orange-900/20 via-red-900/10 to-slate-900/20 backdrop-blur-md border-2 border-orange-500/30 rounded-xl p-6 shadow-lg hover:shadow-orange-500/20 transition-all duration-300">
+    <div className="bg-gradient-to-r from-orange-900/20 via-red-900/10 to-gray-900/20 backdrop-blur-md border-2 border-orange-500/30 rounded-xl p-6 shadow-lg hover:shadow-orange-500/20 transition-all duration-300">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Sword className="text-orange-400" size={20} />
@@ -99,7 +99,7 @@ const PendingMatchCard = ({
       </div>
 
       <div className="flex items-center gap-4 mb-6">
-        <div className="flex-1 text-center bg-slate-800/50 p-3 rounded-lg">
+        <div className="flex-1 text-center bg-slate-800/50 border border-gray-600/40 p-3 rounded-lg">
           <h4 className="font-semibold text-white">
             {match.challengerTeam.displayName}
           </h4>

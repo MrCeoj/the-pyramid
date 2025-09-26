@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Edit, Eye, ChartNoAxesColumn } from "lucide-react";
 import { EditPyramidModal } from "./EditPyramidModal";
 import { useRouter } from "next/navigation";
+import { RiskyTeamsChecker } from "./RiskyTeamChecker";
 
 interface Pyramid {
   id: number;
@@ -28,12 +29,13 @@ export function PyramidCard({ pyramid }: PyramidCardProps) {
   };
 
   const handlePositions = () => {
-    router.push(`/piramides/${pyramid.id}/posiciones`)
-  }
+    router.push(`/piramides/${pyramid.id}/posiciones`);
+  };
 
   return (
     <>
       <div className="bg-indor-black/80 rounded-lg shadow-md border border-black p-6 hover:shadow-lg flex flex-col justify-between 1transition-shadow">
+        <RiskyTeamsChecker pyramidId={pyramid.id} />
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
             <h3 className="text-xl font-semibold text-white mb-2">

@@ -50,9 +50,13 @@ export async function validateMailExistance(email: string) {
     const needsProfileSetup =
       foundUser.role === "player" && !foundUser.password;
 
+    const needAdminSetup =
+      foundUser.role === "admin" && !foundUser.password;
+
     const userWithSetupStatus = {
       ...foundUser,
       needsProfileSetup: needsProfileSetup,
+      needAdminSetup: needAdminSetup,
     };
 
     return { user: userWithSetupStatus };

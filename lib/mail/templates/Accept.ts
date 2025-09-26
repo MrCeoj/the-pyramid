@@ -1,23 +1,20 @@
 import { TeamWithPlayers } from "@/actions/PositionActions";
 
-interface ChallengeEmailData {
+interface MailData {
   attacker: TeamWithPlayers;
   defender: TeamWithPlayers;
   pyramidId: number;
   handicapPoints: number;
 }
 
-export default function generateChallengeEmailTemplate(
-  data: ChallengeEmailData
-): string {
-  const { attacker, defender, handicapPoints } = data;
+export default function generateAcceptEmailTemplate(mailData: MailData): string {
+  const { attacker, defender, handicapPoints } = mailData;
   const categoryDiff = (defender.categoryId ?? 0) - (attacker.categoryId ?? 0);
 
   const getHandicapMessage = () => {
     if (categoryDiff === 0) {
       return {
-        message:
-          "Ambos equipos están en la misma categoría. ¡Que gane el mejor!",
+        message: "Ambos equipos están en la misma categoría. ¡Que comience la batalla!",
         color: "#3b82f6",
         bgColor: "#dbeafe",
         textColor: "#1e40af",
@@ -47,7 +44,7 @@ export default function generateChallengeEmailTemplate(
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>¡Nuevo Desafío en la Pirámide!</title>
+        <title>¡Desafío Aceptado!</title>
     </head>
     <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         
@@ -55,21 +52,47 @@ export default function generateChallengeEmailTemplate(
         <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #0f172a; padding: 20px 0;">
             <tr>
                 <td align="center">
-                    <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; background-color:  #1e293b;border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-                border: 1px solid rgba(148, 163, 184, 0.2); overflow: hidden;">
+                    <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; background-color: #1e293b; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border: 1px solid rgba(148, 163, 184, 0.2); overflow: hidden;">
                         
                         <!-- Header -->
                         <tr>
-                            <td style="background-color: #ea580c; background-color: #ea580c; padding: 40px 30px; text-align: center;">
-                                <div style="font-size: 48px; margin-bottom: 15px;">⚔️</div>
-                                <h1 style="margin: 0 0 10px 0; font-size: 32px; font-weight: 800; color: #ffffff; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);">¡Nuevo Desafío!</h1>
-                                <p style="margin: 0; font-size: 18px; color: #fed7aa; font-weight: 500;">Un equipo quiere subir en la pirámide</p>
+                            <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+                                <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
+                                <h1 style="margin: 0 0 10px 0; font-size: 32px; font-weight: 800; color: #ffffff; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);">¡Desafío Aceptado!</h1>
+                                <p style="margin: 0; font-size: 18px; color: #a7f3d0; font-weight: 500;">El combate está confirmado</p>
+                            </td>
+                        </tr>
+                        
+                        <!-- Confirmation Message -->
+                        <tr>
+                            <td style="padding: 30px 30px 20px 30px;">
+                                <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #dcfce7; border: 2px solid #22c55e; border-radius: 16px; padding: 20px; margin-bottom: 30px;">
+                                    <tr>
+                                        <td>
+                                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                                <tr>
+                                                    <td width="30" style="vertical-align: top; padding-top: 2px;">
+                                                        <div style="font-size: 20px;">🎯</div>
+                                                    </td>
+                                                    <td style="vertical-align: top;">
+                                                        <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700; color: #15803d;">
+                                                            Batalla Confirmada
+                                                        </h4>
+                                                        <p style="margin: 0; font-size: 14px; color: #166534; line-height: 1.5;">
+                                                            <strong>${defender.displayName}</strong> ha aceptado el desafío de <strong>${attacker.displayName}</strong>. ¡Es hora de demostrar quién merece estar más arriba en la pirámide!
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
                             </td>
                         </tr>
                         
                         <!-- Teams Battle Section -->
                         <tr>
-                            <td style="padding: 40px 30px;">
+                            <td style="padding: 0 30px 20px 30px;">
                                 
                                 <!-- Teams Container -->
                                 <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 30px;">
@@ -82,33 +105,23 @@ export default function generateChallengeEmailTemplate(
                                                         <div style="background-color: #fee2e2; color: #991b1b; padding: 6px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; margin-bottom: 15px; border: 1px solid #fecaca;">
                                                             ATACANTE
                                                         </div>
-                                                        <h3 style="margin: 0 0 15px 0; font-size: 20px; font-weight: 700; color: #1e293b; text-align: center;">${
-                                                          attacker.displayName
-                                                        }</h3>
+                                                        <h3 style="margin: 0 0 15px 0; font-size: 20px; font-weight: 700; color: #1e293b; text-align: center;">${attacker.displayName}</h3>
                                                         <div style="text-align: center; margin-bottom: 20px;">
                                                             <span style="display: inline-block; padding: 8px 16px; background-color: #ede9fe; border: 1px solid #c4b5fd; border-radius: 20px; color: #6b21a8; font-size: 14px; font-weight: 600;">
-                                                                Categoría ${
-                                                                  attacker.categoryId
-                                                                }
+                                                                Categoría ${attacker.categoryId}
                                                             </span>
                                                         </div>
                                                         <table cellpadding="0" cellspacing="0" border="0" width="100%">
                                                             <tr>
                                                                 <td width="45%" style="text-align: center;">
-                                                                    <div style="font-size: 24px; font-weight: 700; color: #10b981; line-height: 1; margin-bottom: 4px;">${
-                                                                      attacker.wins ||
-                                                                      0
-                                                                    }</div>
+                                                                    <div style="font-size: 24px; font-weight: 700; color: #10b981; line-height: 1; margin-bottom: 4px;">${attacker.wins || 0}</div>
                                                                     <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">VICTORIAS</div>
                                                                 </td>
                                                                 <td width="10%" style="text-align: center;">
                                                                     <div style="width: 1px; height: 30px; background-color: #cbd5e1; margin: 0 auto;"></div>
                                                                 </td>
                                                                 <td width="45%" style="text-align: center;">
-                                                                    <div style="font-size: 24px; font-weight: 700; color: #ef4444; line-height: 1; margin-bottom: 4px;">${
-                                                                      attacker.losses ||
-                                                                      0
-                                                                    }</div>
+                                                                    <div style="font-size: 24px; font-weight: 700; color: #ef4444; line-height: 1; margin-bottom: 4px;">${attacker.losses || 0}</div>
                                                                     <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">DERROTAS</div>
                                                                 </td>
                                                             </tr>
@@ -120,44 +133,34 @@ export default function generateChallengeEmailTemplate(
                                         
                                         <!-- VS Section -->
                                         <td width="10%" style="text-align: center; vertical-align: middle;">
-                                            <div style="font-size: 36px; font-weight: 800; color: #ea580c; text-shadow: 2px 2px 4px rgba(234, 88, 12, 0.3);">VS</div>
+                                            <div style="font-size: 36px; font-weight: 800; color: #10b981; text-shadow: 2px 2px 4px rgba(16, 185, 129, 0.3);">VS</div>
                                         </td>
                                         
                                         <!-- Defender Team -->
                                         <td width="45%" style="vertical-align: top;">
-                                            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 20px;">
+                                            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f0f9ff; border: 2px solid #38bdf8; border-radius: 16px; padding: 20px;">
                                                 <tr>
                                                     <td>
-                                                        <div style="background-color: #f1f5f9; color: #475569; padding: 6px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+                                                        <div style="background-color: #e0f2fe; color: #0c4a6e; padding: 6px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; margin-bottom: 15px; border: 1px solid #7dd3fc;">
                                                             DEFENSOR
                                                         </div>
-                                                        <h3 style="margin: 0 0 15px 0; font-size: 20px; font-weight: 700; color: #1e293b; text-align: center;">${
-                                                          defender.displayName
-                                                        }</h3>
+                                                        <h3 style="margin: 0 0 15px 0; font-size: 20px; font-weight: 700; color: #1e293b; text-align: center;">${defender.displayName}</h3>
                                                         <div style="text-align: center; margin-bottom: 20px;">
                                                             <span style="display: inline-block; padding: 8px 16px; background-color: #ede9fe; border: 1px solid #c4b5fd; border-radius: 20px; color: #6b21a8; font-size: 14px; font-weight: 600;">
-                                                                Categoría ${
-                                                                  defender.categoryId
-                                                                }
+                                                                Categoría ${defender.categoryId}
                                                             </span>
                                                         </div>
                                                         <table cellpadding="0" cellspacing="0" border="0" width="100%">
                                                             <tr>
                                                                 <td width="45%" style="text-align: center;">
-                                                                    <div style="font-size: 24px; font-weight: 700; color: #10b981; line-height: 1; margin-bottom: 4px;">${
-                                                                      defender.wins ||
-                                                                      0
-                                                                    }</div>
+                                                                    <div style="font-size: 24px; font-weight: 700; color: #10b981; line-height: 1; margin-bottom: 4px;">${defender.wins || 0}</div>
                                                                     <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">VICTORIAS</div>
                                                                 </td>
                                                                 <td width="10%" style="text-align: center;">
                                                                     <div style="width: 1px; height: 30px; background-color: #cbd5e1; margin: 0 auto;"></div>
                                                                 </td>
                                                                 <td width="45%" style="text-align: center;">
-                                                                    <div style="font-size: 24px; font-weight: 700; color: #ef4444; line-height: 1; margin-bottom: 4px;">${
-                                                                      defender.losses ||
-                                                                      0
-                                                                    }</div>
+                                                                    <div style="font-size: 24px; font-weight: 700; color: #ef4444; line-height: 1; margin-bottom: 4px;">${defender.losses || 0}</div>
                                                                     <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">DERROTAS</div>
                                                                 </td>
                                                             </tr>
@@ -170,44 +173,22 @@ export default function generateChallengeEmailTemplate(
                                 </table>
                                 
                                 <!-- Handicap Information -->
-                                <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${
-                                  handicapInfo.bgColor
-                                }; border: 2px solid ${
-    handicapInfo.color
-  }; border-radius: 16px; padding: 20px; margin-bottom: 30px;">
+                                <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${handicapInfo.bgColor}; border: 2px solid ${handicapInfo.color}; border-radius: 16px; padding: 20px; margin-bottom: 30px;">
                                     <tr>
                                         <td>
                                             <table cellpadding="0" cellspacing="0" border="0" width="100%">
                                                 <tr>
                                                     <td width="30" style="vertical-align: top; padding-top: 2px;">
                                                         <div style="font-size: 20px;">
-                                                            ${
-                                                              categoryDiff === 0
-                                                                ? "⚡"
-                                                                : categoryDiff <
-                                                                  0
-                                                                ? "⚠️"
-                                                                : "📈"
-                                                            }
+                                                            ${categoryDiff === 0 ? "⚡" : categoryDiff < 0 ? "⚠️" : "📈"}
                                                         </div>
                                                     </td>
                                                     <td style="vertical-align: top;">
-                                                        <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700; color: ${
-                                                          handicapInfo.textColor
-                                                        };">
-                                                            ${
-                                                              categoryDiff === 0
-                                                                ? "Combate Equilibrado"
-                                                                : categoryDiff <
-                                                                  0
-                                                                ? "Desafío Arriesgado"
-                                                                : "Ventaja Táctica"
-                                                            }
+                                                        <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700; color: ${handicapInfo.textColor};">
+                                                            Reglas del Combate
                                                         </h4>
                                                         <p style="margin: 0; font-size: 14px; color: #64748b; line-height: 1.5;">
-                                                            ${
-                                                              handicapInfo.message
-                                                            }
+                                                            ${handicapInfo.message}
                                                         </p>
                                                     </td>
                                                 </tr>
@@ -216,16 +197,43 @@ export default function generateChallengeEmailTemplate(
                                     </tr>
                                 </table>
                                 
-                                <!-- Action Button -->
+                                <!-- Next Steps -->
+                                <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 30px;">
+                                    <tr>
+                                        <td>
+                                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                                                <tr>
+                                                    <td width="30" style="vertical-align: top; padding-top: 2px;">
+                                                        <div style="font-size: 20px;">📋</div>
+                                                    </td>
+                                                    <td style="vertical-align: top;">
+                                                        <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700; color: #1e293b;">
+                                                            Próximos Pasos
+                                                        </h4>
+                                                        <p style="margin: 0; font-size: 14px; color: #64748b; line-height: 1.5;">
+                                                            Los equipos deben coordinar fecha y hora para el encuentro. Una vez jugado el partido, no olviden reportar su resultado.
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                                
+                                <!-- Action Buttons -->
                                 <table cellpadding="0" cellspacing="0" border="0" width="100%">
                                     <tr>
                                         <td style="text-align: center;">
-                                            <a href="${
-                                              process.env.NEXT_PUBLIC_URL
-                                            }/mis-retas" 
-                                               style="display: inline-block; padding: 16px 32px; background-color: #ea580c; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.4);">
-                                                ⚔️ VER DESAFÍO
-                                            </a>
+                                            <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+                                                <tr>
+                                                    <td style="padding-right: 10px;">
+                                                        <a href="${process.env.NEXT_PUBLIC_URL}/mis-retas" 
+                                                           style="display: inline-block; padding: 16px 24px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
+                                                            📱 VER PARTIDOS
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </table>
                                         </td>
                                     </tr>
                                 </table>
@@ -233,17 +241,14 @@ export default function generateChallengeEmailTemplate(
                             </td>
                         </tr>
                         
-                              
                         <!-- Footer -->
                         <tr>
-                            <td style="background-color: rgba(15, 23, 42, 0.5); padding: 20px 30px; text-align: center; ">
+                            <td style="background-color: rgba(15, 23, 42, 0.5); padding: 20px 30px; text-align: center;">
                                 <p style="margin: 0 0 8px 0; color: #64748b; font-size: 14px;">
-                                    Has recibido este email porque tu equipo ha sido desafiado en la pirámide.
+                                    Has recibido este email porque tu equipo participará en un partido de la pirámide.
                                 </p>
                                 <p style="margin: 0;">
-                                    <a href="${
-                                      process.env.NEXT_PUBLIC_URL
-                                    }" style="color: #ea580c; text-decoration: none; font-weight: 600;">
+                                    <a href="${process.env.NEXT_PUBLIC_URL}" style="color: #10b981; text-decoration: none; font-weight: 600;">
                                         Ir a la web
                                     </a>
                                 </p>

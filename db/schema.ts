@@ -366,16 +366,16 @@ export function getTeamDisplayName(
   }
 
   if (player1?.nickname && player2?.nickname)
-    return `"${player1.nickname}" & "${player2.nickname}"`;
+    return `${player1.nickname} & ${player2.nickname}`;
   if (player1?.nickname && player2)
-    return `"${player1.nickname}" & ${player2.paternalSurname}`;
+    return `${player1.nickname} & ${player2.paternalSurname}`;
   if (player1 && player2?.nickname)
-    return `${player1.paternalSurname} & "${player2.nickname}"`;
+    return `${player1.paternalSurname} & ${player2.nickname}`;
   if (player1 && player2)
     return `${player1.paternalSurname} & ${player2.paternalSurname}`;
   if (player1 && !player2)
-    return player1.paternalSurname + " " + player1.maternalSurname;
+    return `${player1.paternalSurname} ${player1.maternalSurname}`;
   if (player2 && !player1)
-    return player2.paternalSurname + " " + player2.maternalSurname;
+    return `${player2.paternalSurname} ${player2.maternalSurname}`;
   return "Equipo vacío";
 }

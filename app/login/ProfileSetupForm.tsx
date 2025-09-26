@@ -6,7 +6,7 @@ import { Button } from "@/components/lightswind/button";
 import { Card } from "@/components/lightswind/card";
 import { Input } from "@/components/lightswind/input";
 import { Label } from "@/components/lightswind/label";
-import { updateProfile, login } from "@/actions/LoginActions";// Assuming actions are in the same folder
+import { updateProfile, login } from "@/actions/LoginActions"; // Assuming actions are in the same folder
 import toast from "react-hot-toast";
 
 interface User {
@@ -26,8 +26,8 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
   const router = useRouter();
 
   useEffect(() => {
-    if(error !== null && error !== "") toast.error(error)
-  }, [error])
+    if (error !== null && error !== "") toast.error(error);
+  }, [error]);
 
   const nameParts = user.name?.split(" ") || [];
   const [formData, setFormData] = useState({
@@ -35,6 +35,7 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
     lastName: nameParts.slice(1).join(" ") || "",
     nickname: "",
     password: "",
+    confirmPassword: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,10 +54,14 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
       return;
     }
 
+    if (formData.password.trim() !== formData.confirmPassword.trim()) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
     startTransition(async () => {
       const password = formData.password.replaceAll(" ", "");
       try {
-        
         // 1. Create the profile and set the password
         const createResult = await updateProfile({
           userId: user.id,
@@ -73,11 +78,10 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
         }
 
         toast.success("¡Perfil completado! Iniciando sesión...");
-        
       } catch (err) {
-        if (err instanceof Error){
-          console.log(err)
-          setError(err.message)
+        if (err instanceof Error) {
+          console.log(err);
+          setError(err.message);
         }
       } finally {
         const loginResult = await login({
@@ -93,21 +97,32 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
     });
   };
 
+  const handleNicknameChange = (value: string) => {
+    const sanitizedValue = sanitizeNickname(value);
+    setFormData((prev) => ({
+      ...prev,
+      nickname: sanitizedValue,
+    }));
+  };
+
+  const sanitizeNickname = (value: string): string => {
+    return value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10);
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen p-4 bg-gray-900 text-white">
-      <Card className="flex flex-col items-center w-full max-w-md bg-indor-black shadow-2xl rounded-2xl p-8 backdrop-blur-md border border-gray-700">
-        <div className="relative w-60 h-32">
+      <Card className="flex flex-col items-center w-full max-w-md max-h-[95%] overflow-auto bg-indor-black shadow-2xl rounded-2xl p-8 backdrop-blur-md border border-gray-700">
+        <div className="relative w-60 h-32 aspect-[15/8]">
           <Image
             src="/indor_norte_logo.svg"
             alt="Logo Indor Norte"
-            layout="fill"
-            objectFit="contain"
+            fill
+            className="object-contain"
+            priority
           />
         </div>
 
-        <h1 className=" font-bold text-xl my-4">
-          ¡Completa tu perfil!
-        </h1>
+        <h1 className=" font-bold text-xl my-4">¡Completa tu perfil!</h1>
 
         <form onSubmit={handleSubmit} className="w-full space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -128,7 +143,7 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
             </div>
             <div>
               <Label htmlFor="lastName" className=" font-medium">
-                Primer Apellido
+                Primer Apellido*
               </Label>
               <Input
                 id="lastName"
@@ -142,19 +157,22 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
             </div>
           </div>
 
-          <div>
+          <div className="border-b pb-4 border-b-gray-200/40">
             <Label htmlFor="nickname" className="te font-medium">
               Apodo (opcional)
             </Label>
-            <Input
-              id="nickname"
+            <input
               type="text"
               value={formData.nickname}
-              onChange={handleInputChange}
-              className="mt-1 bg-white text-black"
-              placeholder="¿Cómo te gusta que te llamen?"
+              onChange={(e) => handleNicknameChange(e.target.value)}
+              className="w-full px-3 py-2 bg-white rounded text-black"
+              placeholder="¿Cómo te gustaria que te llamen?"
+              maxLength={10}
               disabled={isPending}
             />
+            <div className="text-xs text-gray-400 mt-1">
+              {formData.nickname.length}/10 caracteres
+            </div>
           </div>
 
           <div>
@@ -168,6 +186,26 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
               onChange={handleInputChange}
               className="mt-1 bg-white text-black"
               placeholder="Contraseña segura"
+              required
+              disabled={isPending}
+              onKeyDown={(e) => {
+                if (e.key === " ") {
+                  e.preventDefault();
+                }
+              }}
+            />
+          </div>
+          <div>
+            <Label htmlFor="confirmPassword" className=" font-medium">
+              Confirma tu contraseña*
+            </Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              className="mt-1 bg-white text-black"
+              placeholder="Confirma tu contraseña"
               required
               disabled={isPending}
               onKeyDown={(e) => {
@@ -193,7 +231,7 @@ export function ProfileSetupForm({ user }: ProfileSetupFormProps) {
             )}
           </Button>
         </form>
-        
+
         <p className="text-gray-500 text-xs text-center mt-6">
           * Campos obligatorios
         </p>
