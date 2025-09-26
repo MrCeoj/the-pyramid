@@ -81,25 +81,25 @@ export default function UserFormModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label className="block text-gray-300 text-sm mb-2">Primer apellido*</label>
+            <label className="block text-gray-300 text-sm mb-2">Nombre*</label>
             <input
               type="text"
               value={formData.paternalSurname}
               onChange={(e) => handleChange("paternalSurname", e.target.value)}
               className="w-full px-3 py-2 bg-indor-black border border-indor-brown-light rounded text-white placeholder-gray-400 focus:border-indor-brown-light focus:outline-none"
-              placeholder="Primer apellido"
+              placeholder="Tu nombre"
               required
             />
           </div>
 
           <div>
-            <label className="block text-gray-300 text-sm mb-2">Segundo apellido*</label>
+            <label className="block text-gray-300 text-sm mb-2">Primer apellido*</label>
             <input
               type="text"
               value={formData.maternalSurname}
               onChange={(e) => handleChange("maternalSurname", e.target.value)}
               className="w-full px-3 py-2 bg-indor-black border border-indor-brown-light rounded text-white placeholder-gray-400 focus:border-indor-brown-light focus:outline-none"
-              placeholder="Nombre completo"
+              placeholder="Tu primer apellido"
               required
             />
           </div>

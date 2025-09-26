@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const mailOptions = {
       from: process.env.FROM_RETAS,
-      to: "ortizludwin68@outlook.com",
+      to: "ping@tools.mxtoolbox.com",
       subject: `Ganamos Jefe x4`,
       html: "<h1>Ganamos jefe x4</h1>",
     };

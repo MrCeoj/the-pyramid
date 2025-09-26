@@ -6,9 +6,10 @@ import {
   position,
   users,
   profile,
+  positionHistory
 } from "@/db/schema";
 import { db } from "@/lib/drizzle";
-import { eq, and, inArray, or } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getTeamDisplayName } from "@/db/schema";
 
@@ -184,8 +185,30 @@ export async function setTeamInPosition(
       )
       .limit(1);
 
+    let displacedTeamId: number | null = null;
+
     if (existingPosition.length > 0) {
-      // Update existing position
+      // Store the displaced team info for history
+      displacedTeamId = existingPosition[0].teamId;
+
+      // Record the displacement/removal of the old team
+      await db.insert(positionHistory).values({
+        pyramidId,
+        matchId: null, // Admin action, not match-related
+        teamId: displacedTeamId,
+        affectedTeamId: teamId,
+        oldRow: row,
+        oldCol: col,
+        newRow: null, // Team was removed/displaced
+        newCol: null,
+        affectedOldRow: null, // New team had no previous position
+        affectedOldCol: null,
+        affectedNewRow: row, // New team gets this position
+        affectedNewCol: col,
+        effectiveDate: new Date(),
+      });
+
+      // Update existing position with new team
       const result = await db
         .update(position)
         .set({
@@ -215,9 +238,25 @@ export async function setTeamInPosition(
       }
     }
 
+    // Record the placement of the new team
+    await db.insert(positionHistory).values({
+      pyramidId,
+      matchId: null, // Admin action, not match-related
+      teamId: teamId,
+      affectedTeamId: displacedTeamId,
+      oldRow: null, // New placement - no previous position
+      oldCol: null,
+      newRow: row, // New position
+      newCol: col,
+      affectedOldRow: displacedTeamId ? row : null, // If someone was displaced
+      affectedOldCol: displacedTeamId ? col : null,
+      affectedNewRow: null, // Displaced team has no new position
+      affectedNewCol: null,
+      effectiveDate: new Date(),
+    });
+
     revalidatePath(`/piramides/${pyramidId}/posiciones`);
     revalidatePath(`/piramides/${pyramidId}`);
-
     return { success: true };
   } catch (error) {
     console.error("Error posicionando equipo:", error);
@@ -228,68 +267,31 @@ export async function setTeamInPosition(
   }
 }
 
-export async function moveTeamPosition(
-  pyramidId: number,
-  teamId: number,
-  newRow: number,
-  newCol: number
-) {
-  try {
-    // Check if the new position is already occupied
-    const existingPosition = await db
-      .select()
-      .from(position)
-      .where(
-        and(
-          eq(position.pyramidId, pyramidId),
-          eq(position.row, newRow),
-          eq(position.col, newCol)
-        )
-      )
-      .limit(1);
-
-    if (existingPosition.length > 0 && existingPosition[0].teamId !== teamId) {
-      return {
-        success: false,
-        error: "La posición ya está ocupada por otro equipo",
-      };
-    }
-
-    // Update team's position
-    const result = await db
-      .update(position)
-      .set({
-        row: newRow,
-        col: newCol,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(eq(position.pyramidId, pyramidId), eq(position.teamId, teamId))
-      )
-      .returning();
-
-    if (result.length === 0) {
-      return { success: false, error: "Team position not found" };
-    }
-
-    revalidatePath(`/piramides/${pyramidId}/posiciones`);
-    revalidatePath(`/piramides/${pyramidId}`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error moving team position:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    };
-  }
-}
 
 export async function removeTeamFromPosition(
   positionId: number,
   pyramidId?: number
 ) {
   try {
+    // Get position info before deleting for history
+    const positionInfo = await db
+      .select({
+        teamId: position.teamId,
+        pyramidId: position.pyramidId,
+        row: position.row,
+        col: position.col,
+      })
+      .from(position)
+      .where(eq(position.id, positionId))
+      .limit(1);
+
+    if (positionInfo.length === 0) {
+      return { success: false, error: "Position not found" };
+    }
+
+    const { teamId, pyramidId: positionPyramidId, row, col } = positionInfo[0];
+
+    // Delete the position
     const result = await db
       .delete(position)
       .where(eq(position.id, positionId))
@@ -299,9 +301,29 @@ export async function removeTeamFromPosition(
       return { success: false, error: "Position not found" };
     }
 
+    // Record the removal in history
+    await db.insert(positionHistory).values({
+      pyramidId: positionPyramidId,
+      matchId: null, // Admin action, not match-related
+      teamId: teamId,
+      affectedTeamId: null,
+      oldRow: row,
+      oldCol: col,
+      newRow: null, // Team was removed
+      newCol: null,
+      affectedOldRow: null,
+      affectedOldCol: null,
+      affectedNewRow: null,
+      affectedNewCol: null,
+      effectiveDate: new Date(),
+    });
+
     if (pyramidId) {
       revalidatePath(`/piramides/${pyramidId}/posiciones`);
       revalidatePath(`/piramides/${pyramidId}`);
+    } else {
+      revalidatePath(`/piramides/${positionPyramidId}/posiciones`);
+      revalidatePath(`/piramides/${positionPyramidId}`);
     }
 
     return { success: true };
@@ -314,56 +336,6 @@ export async function removeTeamFromPosition(
   }
 }
 
-export async function removeTeamFromPyramid(pyramidId: number, teamId: number) {
-  try {
-    const result = await db
-      .delete(position)
-      .where(
-        and(eq(position.pyramidId, pyramidId), eq(position.teamId, teamId))
-      )
-      .returning();
-
-    if (result.length === 0) {
-      return { success: false, error: "Team not found in pyramid" };
-    }
-
-    // Revalidate the page to reflect changes
-    revalidatePath(`/piramides/${pyramidId}/posiciones`);
-    revalidatePath(`/piramides/${pyramidId}`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error removing team from pyramid:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    };
-  }
-}
-
-// Utility function to check if a user can manage a specific team
-export async function canUserManageTeam(
-  userId: string,
-  teamId: number
-): Promise<boolean> {
-  try {
-    const result = await db
-      .select({ id: team.id })
-      .from(team)
-      .where(
-        and(
-          eq(team.id, teamId),
-          or(eq(team.player1Id, userId), eq(team.player2Id, userId))
-        )
-      )
-      .limit(1);
-
-    return result.length > 0;
-  } catch (error) {
-    console.error("Error checking team management permissions:", error);
-    return false;
-  }
-}
 
 // Get team position in a specific pyramid
 export async function getTeamPosition(pyramidId: number, teamId: number) {

@@ -28,14 +28,13 @@ export const teamStatus = pgEnum("team_status", [
   "risky",
 ]);
 
-// Updated users table to handle Mexican naming convention
 export const users = pgTable("users", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
-  paternalSurname: text("paternal_surname").notNull(), // Apellido paterno
-  maternalSurname: text("maternal_surname").notNull(), // Apellido materno
+  paternalSurname: text("paternal_surname").notNull(),
+  maternalSurname: text("maternal_surname").notNull(),
   email: text("email").unique(),
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
@@ -154,7 +153,7 @@ export const pyramidCategory = pgTable(
   })
 );
 
-// 4. Updated Team table - no more team names, computed from players
+// 4. Team table
 export const team = pgTable(
   "team",
   {
@@ -184,16 +183,15 @@ export const team = pgTable(
   })
 );
 
-// 5. Updated Profile table
+// 5. Profile table
 export const profile = pgTable("profile", {
   id: serial("id").primaryKey(),
   userId: text("user_id")
     .notNull()
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
-  nickname: text("nickname"), // Optional nickname for team name generation
+  nickname: text("nickname"),
   avatarUrl: text("avatar_url"),
-  // Removed teamId since users can be in multiple teams
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
@@ -242,57 +240,10 @@ export const match = pgTable("match", {
   winnerTeamId: integer("winner_team_id").references(() => team.id),
   evidenceUrl: text("evidence_url"),
   status: matchStatus("status").notNull().default("pending"),
-
-  // Notification tracking - track when each player has seen the match
-  challengerPlayer1ViewedAt: timestamp("challenger_player1_viewed_at", {
-    withTimezone: true,
-  }),
-  challengerPlayer2ViewedAt: timestamp("challenger_player2_viewed_at", {
-    withTimezone: true,
-  }),
-  defenderPlayer1ViewedAt: timestamp("defender_player1_viewed_at", {
-    withTimezone: true,
-  }),
-  defenderPlayer2ViewedAt: timestamp("defender_player2_viewed_at", {
-    withTimezone: true,
-  }),
-
-  // Track important events for notifications
-  lastStatusChange: timestamp("last_status_change", {
-    withTimezone: true,
-  }).defaultNow(),
-  notificationsSent: boolean("notifications_sent").default(false),
-
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-// Alternative: More scalable notification system
-export const matchNotifications = pgTable(
-  "match_notifications",
-  {
-    id: serial("id").primaryKey(),
-    matchId: integer("match_id")
-      .notNull()
-      .references(() => match.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    notificationType: text("notification_type").notNull(), // 'challenge', 'accepted', 'played', 'result'
-    isRead: boolean("is_read").default(false),
-    readAt: timestamp("read_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  },
-  (t) => ({
-    uniqueMatchUserType: uniqueIndex("unique_match_user_notification").on(
-      t.matchId,
-      t.userId,
-      t.notificationType
-    ),
-  })
-);
-
-// 8. Position history
 export const positionHistory = pgTable("position_history", {
   id: serial("id").primaryKey(),
   pyramidId: integer("pyramid_id")
@@ -301,24 +252,26 @@ export const positionHistory = pgTable("position_history", {
   matchId: integer("match_id").references(() => match.id, {
     onDelete: "set null",
   }),
-  challengerTeamId: integer("challenger_team_id")
+
+  teamId: integer("team_id")
     .notNull()
-    .references(() => team.id),
-  defenderTeamId: integer("defender_team_id")
-    .notNull()
-    .references(() => team.id),
+    .references(() => team.id, { onDelete: "cascade" }),
 
-  challengerOldRow: integer("challenger_old_row"),
-  challengerOldCol: integer("challenger_old_col"),
-  defenderOldRow: integer("defender_old_row"),
-  defenderOldCol: integer("defender_old_col"),
+  affectedTeamId: integer("affected_team_id").references(() => team.id, {
+    onDelete: "set null",
+  }),
 
-  challengerNewRow: integer("challenger_new_row"),
-  challengerNewCol: integer("challenger_new_col"),
-  defenderNewRow: integer("defender_new_row"),
-  defenderNewCol: integer("defender_new_col"),
+  oldRow: integer("old_row"),
+  oldCol: integer("old_col"),
+  newRow: integer("new_row"),
+  newCol: integer("new_col"),
 
-  effectiveDate: timestamp("effectiveDate", {
+  affectedOldRow: integer("affected_old_row"),
+  affectedOldCol: integer("affected_old_col"),
+  affectedNewRow: integer("affected_new_row"),
+  affectedNewCol: integer("affected_new_col"),
+
+  effectiveDate: timestamp("effective_date", {
     withTimezone: true,
   }).defaultNow(),
 

@@ -51,6 +51,7 @@ export default function UserDropdownMenu() {
       return;
     }
     if (!session.user) return;
+    if (session.user.role === "admin") return;
     const result = await getUserPendingMatchesCount(session.user.id);
     setNotifsCount(result ? result : 0);
   }, [session]);

@@ -117,7 +117,7 @@ export function EditPyramidModal({
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  row_amount: parseInt(e.target.value),
+                  row_amount: e.target.value === "" ? 0 : parseInt(e.target.value),
                 })
               }
               className="w-full px-3 py-2 border border-white rounded-lg focus:ring-2 focus:ring-indor-orange focus:border-indor-orange"

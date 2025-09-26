@@ -1,17 +1,6 @@
 import { db } from "@/lib/drizzle"; // Your Drizzle instance
 import { sql } from "drizzle-orm";
-import { getTeamDisplayName } from "./schema"; // Import your helper function
-
-type ParsedDuration = {
-  totalDays: number;
-  totalHours: number;
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-  raw: string;
-  format: string;
-};
+import { getTeamDisplayName } from "@/db/schema"; // Import your helper function
 
 type TopTeamResult = {
   team_id: number;
@@ -26,8 +15,19 @@ type TopTeamResult = {
   player2_nickname: string | null;
 };
 
+type ParsedDuration = {
+  totalDays: number;
+  totalHours: number;
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  raw: string;
+  format: string;
+};
+
 function parsePostgreSQLInterval(intervalString: string): ParsedDuration {
-  if (!intervalString || intervalString.trim() === '') {
+  if (!intervalString || intervalString.trim() === "") {
     return {
       totalDays: 0,
       totalHours: 0,
@@ -36,7 +36,7 @@ function parsePostgreSQLInterval(intervalString: string): ParsedDuration {
       minutes: 0,
       seconds: 0,
       raw: intervalString,
-      format: '0 minutos'
+      format: "0 minutos",
     };
   }
 
@@ -47,7 +47,7 @@ function parsePostgreSQLInterval(intervalString: string): ParsedDuration {
 
   // Handle different PostgreSQL interval formats
   const trimmed = intervalString.trim();
-  
+
   // Check if it contains days
   const dayMatch = trimmed.match(/(\d+)\s+days?/i);
   if (dayMatch) {
@@ -61,7 +61,6 @@ function parsePostgreSQLInterval(intervalString: string): ParsedDuration {
     minutes = parseInt(timeMatch[2], 10);
     seconds = parseInt(timeMatch[3], 10);
   } else {
-    
     const shortTimeMatch = trimmed.match(/(\d{1,2}):(\d{2})/);
     if (shortTimeMatch) {
       hours = parseInt(shortTimeMatch[1], 10);
@@ -82,7 +81,7 @@ function parsePostgreSQLInterval(intervalString: string): ParsedDuration {
     minutes,
     seconds,
     raw: intervalString,
-    format
+    format,
   };
 }
 
@@ -90,19 +89,19 @@ function formatDuration(days: number, hours: number, minutes: number): string {
   const parts: string[] = [];
 
   if (days > 0) {
-    parts.push(days === 1 ? '1 día' : `${days} días`);
+    parts.push(days === 1 ? "1 día" : `${days} días`);
   }
 
   if (hours > 0) {
-    parts.push(hours === 1 ? '1 hora' : `${hours} horas`);
+    parts.push(hours === 1 ? "1 hora" : `${hours} horas`);
   }
 
   if (parts.length === 0 && minutes > 0) {
-    parts.push(minutes === 1 ? '1 minuto' : `${minutes} minutos`);
+    parts.push(minutes === 1 ? "1 minuto" : `${minutes} minutos`);
   }
 
   if (parts.length === 0) {
-    return 'menos de 1 minuto';
+    return "menos de 1 minuto";
   }
 
   // Join with "y"
@@ -112,40 +111,67 @@ function formatDuration(days: number, hours: number, minutes: number): string {
     return `${parts[0]} y ${parts[1]}`;
   } else {
     // ultra edge case
-    return parts.slice(0, -1).join(', ') + ` y ${parts[parts.length - 1]}`;
+    return parts.slice(0, -1).join(", ") + ` y ${parts[parts.length - 1]}`;
   }
 }
 
 export async function getLongestReigningTeam(pyramidId: number) {
   const query = sql`
-    WITH ReignStarts AS (
+    WITH AllTopSpotEvents AS (
+      -- Step 1: Identify all events where a team either ENTERED or LEFT the top spot.
+      -- This is the key change to handle removals.
+      
+      -- Event type: A team MOVES INTO the top spot
       SELECT
-        "challenger_team_id" AS team_id,
-        "effectiveDate" AS reign_start
+        "team_id",
+        "effective_date",
+        'reign_start' AS event_type
       FROM "position_history"
-      WHERE
-        "pyramid_id" = ${pyramidId}
-        AND "challenger_new_row" = 1
-        AND "challenger_new_col" = 1
-      ORDER BY "effectiveDate" ASC
+      WHERE "pyramid_id" = ${pyramidId} AND "new_row" = 1 AND "new_col" = 1
+
+      UNION ALL
+
+      -- Event type: A team MOVES OUT of the top spot
+      SELECT
+        "team_id",
+        "effective_date",
+        'reign_end' AS event_type
+      FROM "position_history"
+      WHERE "pyramid_id" = ${pyramidId} AND "old_row" = 1 AND "old_col" = 1
     ),
-    ReignDurations AS (
+    RankedEvents AS (
+      -- Step 2: Order all top-spot events chronologically to establish a timeline.
       SELECT
         team_id,
-        reign_start,
+        effective_date,
+        event_type,
+        -- The next event's date, regardless of type, marks the end of the current state.
+        LEAD(effective_date, 1) OVER (ORDER BY effective_date) AS next_event_date
+      FROM AllTopSpotEvents
+    ),
+    ReignDurations AS (
+      -- Step 3: Filter for 'reign_start' events and calculate their duration using the next event's date.
+      SELECT
+        team_id,
+        effective_date AS reign_start,
         COALESCE(
-          LEAD(reign_start, 1) OVER (ORDER BY reign_start),
-          NOW()
+          next_event_date,
+          NOW() -- If no subsequent event exists, the reign continues to the present.
         ) AS reign_end
-      FROM ReignStarts
+      FROM RankedEvents
+      WHERE event_type = 'reign_start'
     ),
     TotalTimeAtTop AS (
+      -- Step 4: Sum up all reign durations for each team,
+      -- as a team could have multiple non-consecutive reigns. (This logic is unchanged).
       SELECT
         team_id,
         SUM(reign_end - reign_start) AS total_duration
       FROM ReignDurations
       GROUP BY team_id
     )
+    -- Final Step: Select the team with the longest total duration
+    -- and join to get player details. (This logic is unchanged).
     SELECT
       t.id AS team_id,
       tt.total_duration,
@@ -167,7 +193,6 @@ export async function getLongestReigningTeam(pyramidId: number) {
     LIMIT 1;
   `;
 
-  // Execute the raw query
   const result = await db.execute<TopTeamResult>(query);
 
   if (result.length === 0) {
@@ -178,26 +203,32 @@ export async function getLongestReigningTeam(pyramidId: number) {
   const topTeamData = result[0];
 
   const displayName = getTeamDisplayName(
-    {
-      id: topTeamData.player1_id!,
-      paternalSurname: topTeamData.player1_paternal_surname!,
-      maternalSurname: topTeamData.player1_maternal_surname!,
-      nickname: topTeamData.player1_nickname,
-    },
-    {
-      id: topTeamData.player2_id!,
-      paternalSurname: topTeamData.player2_paternal_surname!,
-      maternalSurname: topTeamData.player2_maternal_surname!,
-      nickname: topTeamData.player2_nickname,
-    },
+    topTeamData.player1_id
+      ? {
+          id: topTeamData.player1_id,
+          paternalSurname: topTeamData.player1_paternal_surname!,
+          maternalSurname: topTeamData.player1_maternal_surname!,
+          nickname: topTeamData.player1_nickname,
+        }
+      : null,
+    topTeamData.player2_id
+      ? {
+          id: topTeamData.player2_id,
+          paternalSurname: topTeamData.player2_paternal_surname!,
+          maternalSurname: topTeamData.player2_maternal_surname!,
+          nickname: topTeamData.player2_nickname,
+        }
+      : null
   );
-  
-    console.log(`The longest reigning team is: ${displayName}`);
-    console.log(`Total time at the top:`, topTeamData.total_duration);
-  
+
+  console.log(`The longest reigning team is: ${displayName}`);
+  console.log(`Total time at the top:`, topTeamData.total_duration);
+
+  const parsedDuration = parsePostgreSQLInterval(topTeamData.total_duration);
+
   return {
     teamId: topTeamData.team_id,
     displayName: displayName,
-    totalDuration: topTeamData.total_duration,
+    totalDuration: parsedDuration,
   };
 }

@@ -38,7 +38,27 @@ export function RiskyTeamsChecker({ pyramidId }: { pyramidId: number }) {
   };
 
   return (
-    <div className="flex flex-row-reverse w-full mb-2">
+    <div className="flex flex-row-reverse justify-between w-full mb-2 gap-2">
+      <div className="space-y-4">
+        <Button
+          onClick={handleCheck}
+          disabled={isChecking}
+          variant="outline"
+          className="bg-red-500 hover:bg-red-600 text-white border-red-600"
+        >
+          {isChecking ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Ejecutando...
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Penalizar Inactivos
+            </>
+          )}
+        </Button>
+      </div>
       <div className="space-y-4">
         <Button
           onClick={handleCheck}
@@ -54,7 +74,7 @@ export function RiskyTeamsChecker({ pyramidId }: { pyramidId: number }) {
           ) : (
             <>
               <AlertTriangle className="w-4 h-4 mr-2" />
-              Verificar Equipos Inactivos
+              Verificar Inactivos
             </>
           )}
         </Button>

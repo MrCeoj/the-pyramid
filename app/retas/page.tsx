@@ -44,10 +44,6 @@ const AdminMatchesPage = () => {
     fetchMatches();
   }, []);
 
-  useEffect(() => {
-    console.log(matches);
-  }, [matches]);
-
   const fetchMatches = async () => {
     setLoading(true);
     try {

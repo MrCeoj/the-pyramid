@@ -54,20 +54,15 @@ export async function getUserMatches(userId: string): Promise<{
       if (m.winnerTeamId) teamIds.add(m.winnerTeamId);
     });
 
-    console.log(Array.from(teamIds));
-
     const teamInfoMap = new Map<number, TeamWithPlayers>();
     await Promise.all(
       Array.from(teamIds).map(async (teamId) => {
         const teamInfo = await getTeamInfo(teamId);
-        console.log(teamInfo);
         if (teamInfo) {
           teamInfoMap.set(teamId, teamInfo);
         }
       })
     );
-
-    console.log(teamInfoMap);
 
     const matchesWithDetails: MatchWithDetails[] = matches.map((m) => {
       const challengerTeam = teamInfoMap.get(m.challengerTeamId);
@@ -75,8 +70,6 @@ export async function getUserMatches(userId: string): Promise<{
       const winnerTeam = m.winnerTeamId
         ? teamInfoMap.get(m.winnerTeamId)
         : null;
-      console.log("challenger:", challengerTeam);
-      console.log("defender:", defenderTeam);
       if (!challengerTeam || !defenderTeam) {
         throw new Error(`Missing team data for match ${m.id}`);
       }

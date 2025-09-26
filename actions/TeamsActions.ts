@@ -394,20 +394,14 @@ export async function checkAndMarkRiskyTeams(
 
         // Get team position for email context
         const teamPosition = teamsInPyramid.find((t) => t.teamId === teamId);
-        const currentPosition = teamPosition
-          ? calculatePosition(teamPosition.row, teamPosition.col)
-          : undefined;
 
-        // Calculate next row position (rough estimate)
-        const nextRowPosition = teamPosition
-          ? calculatePosition(teamPosition.row + 1, 1)
-          : undefined;
-
+        const nextRowPosition = teamPosition!.row + 1
+        
         // Send warning email
         const emailResult = await sendRiskyWarningMail(
           teamData,
           pyramidId,
-          currentPosition,
+          teamPosition?.row,
           nextRowPosition
         );
 
@@ -455,12 +449,4 @@ export async function checkAndMarkRiskyTeams(
       emailsFailed: 0,
     };
   }
-}
-
-function calculatePosition(row: number, col: number): number {
-  let position = 0;
-  for (let r = 1; r < row; r++) {
-    position += r;
-  }
-  return position + col;
 }

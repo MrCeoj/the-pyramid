@@ -157,16 +157,16 @@ export async function completeMatch(
         await tx.insert(positionHistory).values({
           pyramidId,
           matchId,
-          challengerTeamId,
-          defenderTeamId,
-          challengerOldRow: challengerOldPos.row,
-          challengerOldCol: challengerOldPos.col,
-          challengerNewRow: defenderOldPos.row,
-          challengerNewCol: defenderOldPos.col,
-          defenderOldRow: defenderOldPos.row,
-          defenderOldCol: defenderOldPos.col,
-          defenderNewRow: challengerOldPos.row,
-          defenderNewCol: challengerOldPos.col,
+          teamId: challengerTeamId,
+          affectedTeamId: defenderTeamId,
+          oldRow: challengerOldPos.row,
+          oldCol: challengerOldPos.col,
+          newRow: defenderOldPos.row,
+          newCol: defenderOldPos.col,
+          affectedOldRow: defenderOldPos.row,
+          affectedOldCol: defenderOldPos.col,
+          affectedNewRow: challengerOldPos.row,
+          affectedNewCol: challengerOldPos.col,
         });
       } else {
         await tx

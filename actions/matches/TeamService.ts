@@ -152,7 +152,7 @@ export async function getTeamWithPlayers(
       return null;
     }
 
-    if (!teamData[0].player1Id || !teamData[0].player2Id) {
+    if (!teamData[0].player1Id && !teamData[0].player2Id) {
       return null;
     }
 
@@ -166,7 +166,7 @@ export async function getTeamWithPlayers(
         })
         .from(users)
         .leftJoin(profile, eq(users.id, profile.userId))
-        .where(eq(users.id, teamData[0].player1Id)),
+        .where(eq(users.id, teamData[0].player1Id!)),
       db
         .select({
           paternalSurname: users.paternalSurname,
@@ -176,31 +176,34 @@ export async function getTeamWithPlayers(
         })
         .from(users)
         .leftJoin(profile, eq(users.id, profile.userId))
-        .where(eq(users.id, teamData[0].player2Id)),
+        .where(eq(users.id, teamData[0].player2Id!)),
     ]);
 
-    if (!player1Data.length || !player2Data.length) {
+    if (!player1Data.length && !player2Data.length) {
       return null;
     }
+    const player1Row = player1Data[0] ?? {};
+    const player2Row = player2Data[0] ?? {};
+
     const player1Id = teamData[0].player1Id;
     const player2Id = teamData[0].player2Id;
 
-    if (!player1Id || !player2Id) return null;
+    if (!player1Id && !player2Id) return null;
 
     const player1 = {
-      id: player1Id,
-      paternalSurname: player1Data[0].paternalSurname,
-      maternalSurname: player1Data[0].maternalSurname,
-      nickname: player1Data[0].nickname,
-      email: player1Data[0].email,
+      id: player1Id ?? "",
+      paternalSurname: player1Row.paternalSurname ?? "",
+      maternalSurname: player1Row.maternalSurname ?? "",
+      nickname: player1Row.nickname ?? "",
+      email: player1Row.email ?? "",
     };
 
     const player2 = {
-      id: player2Id,
-      paternalSurname: player2Data[0].paternalSurname,
-      maternalSurname: player2Data[0].maternalSurname,
-      nickname: player2Data[0].nickname,
-      email: player2Data[0].email,
+      id: player2Id ?? "",
+      paternalSurname: player2Row.paternalSurname ?? "",
+      maternalSurname: player2Row.maternalSurname ?? "",
+      nickname: player2Row.nickname ?? "",
+      email: player2Row.email ?? "",
     };
 
     return {

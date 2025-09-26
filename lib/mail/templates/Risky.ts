@@ -102,7 +102,7 @@ export default function generateRiskyWarningEmailTemplate(
                                                         ${currentPosition ? `
                                                         <div style="text-align: center;">
                                                             <div style="font-size: 14px; color: #64748b; margin-bottom: 4px;">Posición Actual</div>
-                                                            <div style="font-size: 20px; font-weight: 700; color: #3b82f6;">Posición ${currentPosition}</div>
+                                                            <div style="font-size: 20px; font-weight: 700; color: #3b82f6;">Fila ${currentPosition}</div>
                                                         </div>
                                                         ` : ''}
                                                     </td>
@@ -126,7 +126,7 @@ export default function generateRiskyWarningEmailTemplate(
                                                             Consecuencias del Reposicionamiento
                                                         </h4>
                                                         <p style="margin: 0; font-size: 14px; color: #991b1b; line-height: 1.5;">
-                                                            Si haces caso omiso, tu equipo será automáticamente reposicionado a la fila inferior en la última posición disponible.${nextRowPosition ? ` Esto significa que bajarías a la posición ${nextRowPosition}.` : ''} ¡No pierdas tu lugar en la pirámide!
+                                                            Si haces caso omiso, tu equipo será automáticamente reposicionado a la fila inferior en la última posición disponible.${nextRowPosition ? ` Esto significa que bajarías a la fila ${nextRowPosition}.` : ''} ¡No pierdas tu lugar en la pirámide!
                                                         </p>
                                                     </td>
                                                 </tr>
