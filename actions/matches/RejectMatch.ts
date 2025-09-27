@@ -1,6 +1,6 @@
 "use server";
 import { eq } from "drizzle-orm";
-import { match } from "@/db/schema";
+import { match, team } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { revalidatePath } from "next/cache";
 import { MatchResult } from "@/actions/matches/types";
@@ -9,8 +9,12 @@ import {
   getTeamWithPlayers,
   getUserTeamIds,
 } from "@/actions/matches/TeamService";
+import getRejectedAmount from "./GetRejectedAmount";
 
-export async function rejectMatch(matchId: number, userId: string): Promise<MatchResult> {
+export async function rejectMatch(
+  matchId: number,
+  userId: string
+): Promise<MatchResult> {
   try {
     const matchArr = await db
       .select({
@@ -41,6 +45,20 @@ export async function rejectMatch(matchId: number, userId: string): Promise<Matc
       };
     }
 
+    const rejectedMatches = await getRejectedAmount(matchData.defenderTeamId);
+
+    if (typeof rejectedMatches !== "number")
+      return {
+        success: false,
+        message: "No se pudo conseguir la cantidad de retas rechazadas.",
+      };
+
+    if (rejectedMatches >= 2)
+      return {
+        success: false,
+        message: "Ya has rechazado 2 retas, debes aceptar la siguiente",
+      };
+
     const [attacker, defender] = await Promise.all([
       getTeamWithPlayers(matchData.attackerTeamId),
       getTeamWithPlayers(matchData.defenderTeamId),
@@ -52,13 +70,20 @@ export async function rejectMatch(matchId: number, userId: string): Promise<Matc
       });
     }
 
-    await db
-      .update(match)
-      .set({
-        status: "rejected",
-        updatedAt: new Date(),
-      })
-      .where(eq(match.id, matchId));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(match)
+        .set({
+          status: "rejected",
+          updatedAt: new Date(),
+        })
+        .where(eq(match.id, matchId));
+
+      await tx
+        .update(team)
+        .set({ amountRejected: rejectedMatches + 1 })
+        .where(eq(team.id, matchData.defenderTeamId));
+    });
 
     if (attacker && defender) {
       await sendRejectMail(attacker, defender, matchData.pyramidId);

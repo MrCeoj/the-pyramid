@@ -105,7 +105,7 @@ export async function createUserWithProfile(data: CreateUserData) {
     const [newUser] = await tx
       .insert(users)
       .values({
-        name: (data.paternalSurname.trim() + " " + data.maternalSurname.trim()),
+        name: data.paternalSurname.trim() + " " + data.maternalSurname.trim(),
         paternalSurname: data.paternalSurname.trim(),
         maternalSurname: data.maternalSurname.trim(),
         email: data.email.trim().toLowerCase(),
@@ -216,6 +216,13 @@ export async function updateUserWithProfile(
     throw new Error("El correo electrónico es obligatorio");
   }
 
+  const prevEmail = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.email, data.email.trim()));
+
+  if (prevEmail.length > 0) throw new Error("Ese correo ya esta inscrito en otro perfil")
+    
   return await db.transaction(async (tx) => {
     // Update user table
     await tx

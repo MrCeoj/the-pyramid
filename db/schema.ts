@@ -170,6 +170,7 @@ export const team = pgTable(
     }),
     wins: integer("wins").default(0),
     losses: integer("losses").default(0),
+    amountRejected: integer("amount_rejected").default(0),
     status: teamStatus("status").default("idle"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),

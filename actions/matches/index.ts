@@ -6,6 +6,7 @@ import { acceptMatch } from "@/actions/matches/AcceptMatch";
 import { getAcceptedMatches } from "@/actions/matches/GetAcceptedMatches";
 import { completeMatch } from "@/actions/matches/CompleteMatch";
 import { getUnresolvedMatchesForTeam } from "@/actions/matches/GetUnresolvedMatchesForTeam";
+import getRejectedAmount from "./GetRejectedAmount";
 
 export {
   rejectMatch,
@@ -16,4 +17,5 @@ export {
   getAcceptedMatches,
   completeMatch,
   getUnresolvedMatchesForTeam,
+  getRejectedAmount
 };

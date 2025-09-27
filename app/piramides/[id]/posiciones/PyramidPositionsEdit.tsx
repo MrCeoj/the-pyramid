@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import PyramidRow from "./PyramidRowEdit";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Toaster } from "react-hot-toast";
 import {
   setTeamInPosition,
   getApplicableTeams,
@@ -94,13 +93,13 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
       );
 
       if (!result.success) {
-        throw new Error(result.error || "Error al posicionar equipo");
+        throw new Error(result.error || "Error desconocido");
       }
       setIsModalOpen(false);
       setSelectedPosition(null);
       setApplicableTeams([]);
     } catch (error) {
-      if (error instanceof Error) toast.error("Error al posicionar equipo.");
+      if (error instanceof Error) toast.error("Error al posicionar equipo: "+error.message);
     } finally {
       setIsLoading(false);
     }
@@ -136,7 +135,6 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
 
   return (
     <div className="flex flex-col items-center relative mb-5 no-scrollbar">
-      <Toaster position={isMobile ? "top-center" : "top-right"} />
       
       {isMobile ? (
         <Image

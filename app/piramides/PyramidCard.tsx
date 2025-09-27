@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { Edit, Eye, ChartNoAxesColumn } from "lucide-react";
 import { EditPyramidModal } from "./EditPyramidModal";

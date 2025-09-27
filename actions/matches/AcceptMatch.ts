@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { eq } from "drizzle-orm";
-import { match } from "@/db/schema";
+import { match, team } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { sendAcceptMail } from "@/actions/MailActions";
 import { MatchResult } from "@/actions/matches/types";
@@ -67,6 +67,11 @@ export async function acceptMatch(
           "No se pudieron obtener los datos completos de los equipos."
         );
       }
+
+      await tx
+        .update(team)
+        .set({ amountRejected: 0 })
+        .where(eq(team.id, defender.id));
 
       await sendAcceptMail(attacker, defender, currentMatch.pyramidId);
 
