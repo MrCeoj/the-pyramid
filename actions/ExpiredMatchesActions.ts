@@ -1,54 +1,193 @@
 "use server";
-import { processExpiredMatches } from "@/actions/PositionActions";
 import { db } from "@/lib/drizzle";
-import { getTeamDisplayName, team } from "@/db/schema";
+import { match, pyramid, position, positionHistory, team } from "@/db/schema";
+import { and, or, eq, lt, inArray } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
-interface ExpiredMatchesResult {
-  processedCount: number;
-  swapsExecuted: number;
-  affectedTeams: Array<{
-    teamName: string;
-    oldPosition: string;
-    newPosition: string;
-  }>;
+export async function processExpiredMatches(userId: string) {
+  try {
+    return await db.transaction(async (tx) => {
+      const teamSearch = await tx
+        .select({ teamId: team.id })
+        .from(team)
+        .where(or(eq(team.player1Id, userId), eq(team.player2Id, userId)))
+        .limit(1);
+
+      if (teamSearch.length <= 0) {
+        return {
+          success: false,
+          expired: 0,
+          error: "No se pudo conseguir informacion del equipo",
+        };
+      }
+
+      const teamId = teamSearch[0].teamId;
+
+      const expired = await tx
+        .select()
+        .from(match)
+        .where(
+          and(
+            eq(match.status, "pending"),
+            eq(match.defenderTeamId, teamId),
+            lt(match.createdAt, new Date(Date.now() - 48 * 60 * 60 * 1000))
+          )
+        );
+      if (expired.length <= 0) {
+        return { success: true, expired: 0, error: "" };
+      }
+
+      const pyramidInfo = await tx
+        .select({ id: pyramid.id, rowAmount: pyramid.row_amount })
+        .from(position)
+        .leftJoin(pyramid, eq(position.teamId, teamId))
+        .where(eq(pyramid.id, position.pyramidId))
+        .limit(1);
+
+      if (pyramidInfo.length === 0)
+        return {
+          success: false,
+          expired: 0,
+          error: "No se pudo conseguir info de la piramide",
+        };
+
+      const rowAmount = pyramidInfo[0].rowAmount;
+
+      const defenderPosition = await tx
+        .select()
+        .from(position)
+        .where(
+          and(
+            eq(position.pyramidId, pyramidInfo[0].id!),
+            eq(position.teamId, teamId)
+          )
+        )
+        .limit(1);
+
+      if (defenderPosition.length === 0)
+        return {
+          success: false,
+          expired: 0,
+          error: "No se pudo conseguir posición del equipo",
+        };
+
+      const currentPos = {
+        row: defenderPosition[0].row,
+        col: defenderPosition[0].col,
+      };
+
+      const nextPos = getNextPosition(currentPos, rowAmount!);
+
+      if (nextPos) {
+        // Find the team at the next position
+        const nextTeam = await tx
+          .select()
+          .from(position)
+          .where(
+            and(
+              eq(position.pyramidId, pyramidInfo[0].id!),
+              eq(position.row, nextPos.row),
+              eq(position.col, nextPos.col)
+            )
+          )
+          .limit(1);
+
+        if (nextTeam.length > 0) {
+          await tx
+            .update(position)
+            .set({ row: 0, col: 0 })
+            .where(
+              and(
+                eq(position.pyramidId, pyramidInfo[0].id!),
+                eq(position.teamId, teamId)
+              )
+            );
+
+          await tx
+            .update(position)
+            .set({ row: currentPos.row, col: currentPos.col })
+            .where(
+              and(
+                eq(position.pyramidId, pyramidInfo[0].id!),
+                eq(position.teamId, nextTeam[0].teamId)
+              )
+            );
+
+          await tx
+            .update(position)
+            .set({ row: nextPos.row, col: nextPos.col })
+            .where(
+              and(
+                eq(position.pyramidId, pyramidInfo[0].id!),
+                eq(position.teamId, teamId)
+              )
+            );
+
+          await tx.insert(positionHistory).values([
+            {
+              pyramidId: pyramidInfo[0].id!,
+              matchId: null,
+              teamId: teamId,
+              affectedTeamId: nextTeam[0].teamId,
+              oldRow: currentPos.row,
+              oldCol: currentPos.col,
+              newRow: nextPos.row,
+              newCol: nextPos.col,
+              affectedOldRow: nextPos.row,
+              affectedOldCol: nextPos.col,
+              affectedNewRow: currentPos.row,
+              affectedNewCol: currentPos.col,
+            },
+          ]);
+        }
+      } else {
+        return { success: true, expired: 0, error: "" };
+      }
+
+      const expiredIds = expired.map((m) => m.id);
+      await tx
+        .update(match)
+        .set({ status: "cancelled", updatedAt: new Date() })
+        .where(inArray(match.id, expiredIds));
+
+      revalidatePath("/");
+
+      return { success: true, expired: expired.length, error: "" };
+    });
+  } catch (error) {
+    console.error("Error processing expired matches:", error);
+    return {
+      success: false,
+      expired: 0,
+      error: "Error al procesar las partidas expiradas",
+    };
+  }
 }
 
-export async function processExpiredMatchesAction(): Promise<ExpiredMatchesResult | null> {
-  try {
-    await processExpiredMatches();
+/**
+ * Gets the next position in the pyramid hierarchy (the position to swap with)
+ */
+function getNextPosition(
+  currentPos: { row: number; col: number },
+  rowAmount: number
+): { row: number; col: number } | null {
+  const { row, col } = currentPos;
 
-    // You might want to modify your processExpiredMatches function to return
-    // information about what was processed, or query the database here to get
-    // recent position changes to show to the user
-    
-    // For now, returning a simple result - you can enhance this based on
-    // what information you want to show in the modal
-    
-    // Query recent position changes (you might need to adjust this based on your schema)
-    const recentChanges = await db
-      .select({
-        teamId: team.id,
-        teamName: getTeamDisplayName,
-        // Add other fields you need for the modal
-      })
-      .from(team)
-      // Add appropriate where conditions to get recently affected teams
-      .limit(10);
-
-    // Build the result object
-    const result: ExpiredMatchesResult = {
-      processedCount: 0, // You'll need to get this from your function
-      swapsExecuted: 0,  // You'll need to get this from your function
-      affectedTeams: recentChanges.map(team => ({
-        teamName: team.teamName,
-        oldPosition: "Previous position", // Get from position history
-        newPosition: "New position"       // Get from position history
-      }))
-    };
-
-    return result;
-  } catch (error) {
-    console.error("Error in processExpiredMatchesAction:", error);
-    return null;
+  // Check if this is the very last position in the pyramid
+  if (row === rowAmount && col === row) {
+    return null; // No swap for the last position
   }
+
+  // If not in the last column of the row, move to next column
+  if (col < row) {
+    return { row, col: col + 1 };
+  }
+
+  // If in the last column of the row, move to first position of next row
+  if (row < rowAmount) {
+    return { row: row + 1, col: 1 };
+  }
+
+  // This shouldn't happen if the pyramid is properly structured
+  return null;
 }

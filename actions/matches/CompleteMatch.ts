@@ -1,6 +1,6 @@
 "use server";
 import { db } from "@/lib/drizzle";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { match, team, position, positionHistory } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { MatchCompletionResult } from "@/actions/matches/types";
@@ -79,6 +79,13 @@ export async function completeMatch(
           updatedAt: new Date(),
         })
         .where(eq(match.id, matchId));
+
+      await tx
+        .update(team)
+        .set({
+          amountRejected: 0,
+        })
+        .where(inArray(team.id, [challengerTeamId, defenderTeamId]));
 
       // Update team stats and status
       if (challengerWins) {

@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default auth((req: NextRequest & { auth: any }) => {
+  process.env.TZ = "America/Tijuana"
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth?.user;
   const userRole = req.auth?.user?.role;
@@ -32,7 +33,6 @@ export default auth((req: NextRequest & { auth: any }) => {
   // Redirect unauthenticated users to signin
   if (!isLoggedIn) {
     const signInUrl = new URL("/login", req.url);
-    console.log("Redirected Login")
     return NextResponse.redirect(signInUrl);
   }
 

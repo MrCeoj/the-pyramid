@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, authenticators, sessions, pyramid, position, team, positionHistory, match, accounts, profile, matchViews, category, pyramidCategory } from "./schema";
+import { users, authenticators, sessions, pyramid, position, team, positionHistory, match, accounts, profile, category, matchViews, pyramidCategory } from "./schema";
 
 export const authenticatorsRelations = relations(authenticators, ({one}) => ({
 	user: one(users, {
@@ -128,6 +128,11 @@ export const profileRelations = relations(profile, ({one}) => ({
 	}),
 }));
 
+export const categoryRelations = relations(category, ({many}) => ({
+	teams: many(team),
+	pyramidCategories: many(pyramidCategory),
+}));
+
 export const matchViewsRelations = relations(matchViews, ({one}) => ({
 	match: one(match, {
 		fields: [matchViews.matchId],
@@ -137,11 +142,6 @@ export const matchViewsRelations = relations(matchViews, ({one}) => ({
 		fields: [matchViews.userId],
 		references: [users.id]
 	}),
-}));
-
-export const categoryRelations = relations(category, ({many}) => ({
-	teams: many(team),
-	pyramidCategories: many(pyramidCategory),
 }));
 
 export const pyramidCategoryRelations = relations(pyramidCategory, ({one}) => ({

@@ -287,7 +287,7 @@ export interface RiskyCheckResult {
 
 export async function checkAndMarkRiskyTeams(
   pyramidId: number,
-  daysBack: number = 4 // Check for matches in the last 7 days
+  daysBack: number = 4
 ): Promise<RiskyCheckResult> {
   try {
     const pyramidRowsTotal = await db
@@ -324,7 +324,6 @@ export async function checkAndMarkRiskyTeams(
     );
 
     const allTeamIds = filteredTeams.map((t) => t.teamId);
-    console.log("filtered")
     const recentlyActiveTeams = await db
       .selectDistinct({
         challengerTeamId: match.challengerTeamId,
@@ -374,8 +373,6 @@ export async function checkAndMarkRiskyTeams(
       })
       .where(inArray(team.id, inactiveTeamIds));
 
-    console.log("Marked")
-
     // Step 5: Get full team data and send warning emails
     const emailResults = [];
     let emailsSent = 0;
@@ -413,10 +410,8 @@ export async function checkAndMarkRiskyTeams(
         if (emailResult.success) {
           emailsSent += emailResult.emailsSent || 0;
           emailsFailed += emailResult.emailsFailed || 0;
-          console.log("email sent")
         } else {
           emailsFailed += 2;
-          console.log("email fialed")
         }
       } catch (error) {
         console.error(`Error processing team ${teamId}:`, error);
@@ -426,7 +421,6 @@ export async function checkAndMarkRiskyTeams(
 
     revalidatePath("/admin");
     revalidatePath("/piramide");
-    console.log("Finished")
 
     return {
       success: true,

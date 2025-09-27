@@ -213,6 +213,23 @@ export const match = pgTable("match", {
 		}),
 ]);
 
+export const team = pgTable("team", {
+	id: serial().primaryKey().notNull(),
+	name: text().notNull(),
+	categoryId: integer("category_id"),
+	wins: integer().default(0),
+	losses: integer().default(0),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	status: teamStatus().default('idle'),
+}, (table) => [
+	foreignKey({
+			columns: [table.categoryId],
+			foreignColumns: [category.id],
+			name: "team_category_id_category_id_fk"
+		}).onDelete("set null"),
+]);
+
 export const matchViews = pgTable("match_views", {
 	id: serial().primaryKey().notNull(),
 	matchId: integer("match_id").notNull(),
@@ -230,23 +247,6 @@ export const matchViews = pgTable("match_views", {
 			foreignColumns: [users.id],
 			name: "match_views_user_id_users_id_fk"
 		}).onDelete("cascade"),
-]);
-
-export const team = pgTable("team", {
-	id: serial().primaryKey().notNull(),
-	name: text().notNull(),
-	categoryId: integer("category_id"),
-	wins: integer().default(0),
-	losses: integer().default(0),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	status: teamStatus().default('idle'),
-}, (table) => [
-	foreignKey({
-			columns: [table.categoryId],
-			foreignColumns: [category.id],
-			name: "team_category_id_category_id_fk"
-		}).onDelete("set null"),
 ]);
 
 export const pyramidCategory = pgTable("pyramid_category", {

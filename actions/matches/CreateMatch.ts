@@ -111,8 +111,6 @@ export async function createMatch({
       })
       .returning();
 
-    // Send challenge email to defender team
-    console.log("Match created")
     try {
       const emailResult = await sendChallengeMail(
         challengerTeamInfo,
@@ -121,18 +119,16 @@ export async function createMatch({
       );
 
       if (emailResult.error) {
-        console.warn("Failed to send challenge email:", emailResult.error);
-        // Don't fail the match creation if email fails
-      } else {
-        console.log(
-          `Challenge email sent successfully. Emails sent: ${emailResult.emailsSent}`
-        );
+        return {
+          success: true,
+          match: newMatch,
+          emailSent: false,
+          warning: "Reta creada, pero no se pudo notificar a los defensores.",
+        };
       }
     } catch (emailError) {
-      console.error("Error sending challenge email:", emailError);
-      // Continue without failing the match creation
+      throw emailError;
     }
-    console.log("Mails sent")
 
     revalidatePath("/mis-retas");
     revalidatePath("/");
@@ -141,9 +137,10 @@ export async function createMatch({
       success: true,
       match: newMatch,
       emailSent: true, // You could track email status if needed
+      warning: ""
     };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
-    console.error("Error creating match:", err);
     return { success: false, error: "No se pudo establecer la reta" };
   }
 }
