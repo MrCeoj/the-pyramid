@@ -112,6 +112,8 @@ export async function getApplicableTeams(
       })
     );
 
+    console.log(teams)
+
     return teams;
   } catch (error) {
     console.error("Error fetching applicable teams:", error);

@@ -62,7 +62,7 @@ const TeamCard = ({
     looser: "bg-red-500",
     winner: "bg-green-500",
     idle: "bg-slate-400",
-    risky: "bg-orange-500", // more orange than yellow
+    risky: "bg-orange-500",
   };
 
   const specialAccents = {
@@ -163,8 +163,12 @@ const TeamCard = ({
             <div className="flex-shrink-0 ml-2">
               <div
                 className={`${
-                  isTop
+                  data.team.categoryId === 1
                     ? "bg-gradient-to-bl from-yellow-300 via-amber-200 to-yellow-400 text-slate-900"
+                    : data.team.categoryId === 2
+                    ? "bg-gradient-to-bl from-gray-300 via-slate-200 to-gray-400 text-slate-900"
+                    : data.team.categoryId === 3
+                    ? "bg-gradient-to-bl from-amber-700 via-orange-500 to-amber-800 text-white"
                     : "bg-gradient-to-bl from-amber-400 via-amber-300 to-amber-500 text-slate-800"
                 } rounded-full w-6 h-6 flex items-center justify-center font-bold`}
               >

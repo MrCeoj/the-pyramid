@@ -310,12 +310,12 @@ export function getTeamDisplayName(
   if (!player1 && !player2) return "Equipo vacío";
   if (!player1) {
     return player2?.nickname
-      ? `"${player2?.nickname}" ${player2?.paternalSurname}`
+      ? `"${player2?.nickname}" ${player2?.maternalSurname}`
       : `${player2?.paternalSurname} ${player2?.maternalSurname}`;
   }
   if (!player2) {
     return player1?.nickname
-      ? `"${player1?.nickname}" ${player1?.paternalSurname}`
+      ? `"${player1?.nickname}" ${player1?.maternalSurname}`
       : `${player1?.paternalSurname} ${player1?.maternalSurname}`;
   }
 

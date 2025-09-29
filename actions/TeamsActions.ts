@@ -287,7 +287,6 @@ export interface RiskyCheckResult {
 
 export async function checkAndMarkRiskyTeams(
   pyramidId: number,
-  daysBack: number = 4
 ): Promise<RiskyCheckResult> {
   try {
     const pyramidRowsTotal = await db
@@ -295,10 +294,9 @@ export async function checkAndMarkRiskyTeams(
       .from(pyramid)
       .where(eq(pyramid.id, pyramidId));
 
-    if (!pyramidRowsTotal) throw new Error("Not a viable amount of rows detected")
+    if (!pyramidRowsTotal) throw new Error("Error al conseguir la cantidad de filas de la pirámide");
 
-    const dateThreshold = new Date();
-    dateThreshold.setDate(dateThreshold.getDate() - daysBack);
+    const dateThreshold = getMonday();
 
     const teamsInPyramid = await db
       .select({
@@ -443,4 +441,14 @@ export async function checkAndMarkRiskyTeams(
       emailsFailed: 0,
     };
   }
+}
+
+function getMonday(date: Date = new Date()): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+
+  d.setHours(0, 0, 0, 0);
+  d.setDate(diff);
+  return d;
 }

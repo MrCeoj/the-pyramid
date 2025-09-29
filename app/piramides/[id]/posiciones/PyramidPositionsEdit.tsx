@@ -44,6 +44,7 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
         const filteredTeams = teams.filter(
           (team) => !existingInPyramid.includes(team.id)
         );
+        console.log("filtered",filteredTeams)
 
         setApplicableTeams(filteredTeams);
       }
