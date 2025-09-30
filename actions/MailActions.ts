@@ -7,6 +7,9 @@ import {
   generateRejectEmailTemplate,
   generateRiskyWarningEmailTemplate,
 } from "@/lib/mail/templates";
+import { db } from "@/lib/drizzle";
+import { position, users, team } from "@/db/schema";
+import { eq, inArray } from "drizzle-orm";
 
 export async function sendChallengeMail(
   attacker: TeamWithPlayers,
@@ -79,7 +82,7 @@ export async function sendRejectMail(
 ) {
   try {
     if (!attacker || !defender || !pyramidId) {
-      return { error: "Missing required fields" };
+      return { error: "No se pudieron procesar los datos de la reta." };
     }
 
     const emailData = {
@@ -90,29 +93,36 @@ export async function sendRejectMail(
 
     const htmlContent = generateRejectEmailTemplate(emailData);
 
-    // Collect attacker emails (notify the challengers)
-    const attackerEmails: string[] = [];
+    const teamIdsInPyramid = await db
+      .select({ teamId: position.teamId })
+      .from(position)
+      .where(eq(position.pyramidId, pyramidId));
 
-    if (attacker.player1?.email) {
-      attackerEmails.push(attacker.player1.email);
-    }
+    const teamIds = teamIdsInPyramid.map((t) => t.teamId);
 
-    if (attacker.player2?.email) {
-      attackerEmails.push(attacker.player2.email);
-    }
+    const playerIds = await db
+      .select({ player1Id: team.player1Id, player2Id: team.player2Id })
+      .from(team)
+      .where(inArray(team.id, teamIds));
 
-    if (attackerEmails.length === 0) {
-      return {
-        error:
-          "No se encontraron correos válidos para notificar a los retadores",
-      };
-    }
+    const userIds: string[] = [];
+    playerIds.forEach(({ player1Id, player2Id }) => {
+      if (player1Id) userIds.push(player1Id);
+      if (player2Id) userIds.push(player2Id);
+    });
 
-    // Send email to all attacker players
+    const res = await db
+      .select({ mail: users.email })
+      .from(users)
+      .where(inArray(users.id, userIds));
+
+    const mails: string[] = res.map((r) => r.mail!).filter(Boolean);
+
+    // Send email to all players
     const mailOptions = {
       from: process.env.FROM_RETAS!,
-      to: attackerEmails,
-      subject: `❌ ${defender.displayName} ha rechazado tu desafío`,
+      to: mails,
+      subject: `❌🐔 ${defender.displayName} ha rechazado el desafío de ${attacker.displayName}`,
       html: htmlContent,
     };
 
