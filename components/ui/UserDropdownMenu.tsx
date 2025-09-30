@@ -22,12 +22,17 @@ import {
 } from "@/actions/ProfileDataActions";
 import { getUserPendingMatchesCount } from "@/actions/IndexActions";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { toast } from "react-hot-toast";
+import { toast, Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { processExpiredMatches } from "@/actions/ExpiredMatchesActions";
+import ExpiredMatchesModal from "@/components/ui/ExpiredMatchModal";
 
 export default function UserDropdownMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isExpiredMatchesModalOpen, setIsExpiredMatchesModalOpen] =
+    useState(false);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [profileData, setProfileData] = useState<any>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
@@ -39,13 +44,28 @@ export default function UserDropdownMenu() {
   const { session: storeSession } = useSessionStore();
   const router = useRouter();
 
-  // Use NextAuth session as fallback if store session isn't available
   const session = storeSession || nextAuthSession;
 
   const isAdmin = session?.user?.role === "admin";
   const isMobile = useIsMobile();
 
-  // memoize function to avoid re-renders
+  const checkExpiredMatches = useCallback(async () => {
+    if (!session) return;
+    if (!session.user) return;
+    if (session.user.role === "admin") return; // Only for players
+
+    try {
+      const result = await processExpiredMatches(session.user.id);
+      console.log(result)
+      if (result && result.success && result.expired > 0) {
+        setIsExpiredMatchesModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Error processing expired matches:", error);
+      // Don't show error to user since this runs automatically
+    }
+  }, [session]);
+
   const loadCount = useCallback(async () => {
     if (!session) {
       return;
@@ -56,19 +76,21 @@ export default function UserDropdownMenu() {
     setNotifsCount(result ? result : 0);
   }, [session]);
 
-
   useEffect(() => {
     if (status === "unauthenticated") {
       update();
+      checkExpiredMatches();
       return;
     }
-  }, [status, update]);
-
+  }, [checkExpiredMatches, status, update]);
 
   useEffect(() => {
     loadCount();
-  }, [loadCount, session]);
+    // ADD THIS LINE to check expired matches on component mount
+    checkExpiredMatches();
+  }, [loadCount, checkExpiredMatches, session]);
 
+  // ... rest of your existing useEffects and functions remain the same ...
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -84,7 +106,6 @@ export default function UserDropdownMenu() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-
   const loadProfileData = useCallback(async () => {
     if (!session?.user?.id) return;
 
@@ -99,17 +120,20 @@ export default function UserDropdownMenu() {
     }
   }, [session]);
 
-  const handleProfileSave = useCallback(async (formData: UpdateProfileData) => {
-    try {
-      const response = await updateProfile(formData);
+  const handleProfileSave = useCallback(
+    async (formData: UpdateProfileData) => {
+      try {
+        const response = await updateProfile(formData);
 
-      if (response.error) throw new Error(response.error);
-      else if (response.success) toast.success("Perfil actualizado.");
-      await loadProfileData();
-    } catch (error) {
-      throw error;
-    }
-  }, [loadProfileData])
+        if (response.error) throw new Error(response.error);
+        else if (response.success) toast.success("Perfil actualizado.");
+        await loadProfileData();
+      } catch (error) {
+        throw error;
+      }
+    },
+    [loadProfileData]
+  );
 
   const handleMenuClick = async (action: string) => {
     setIsOpen(false);
@@ -158,10 +182,12 @@ export default function UserDropdownMenu() {
 
   return (
     <>
+      <Toaster position={isMobile ? "top-center" : "top-right"} />
       <div
         className="z-40 fixed right-5 top-6 md:top-auto md:bottom-5"
         ref={dropdownRef}
       >
+        {/* Your existing dropdown button and menu JSX remains exactly the same */}
         <button
           className="p-3 rounded-full ring-2 ring-indor-brown-light bg-indor-black/80 hover:cursor-pointer flex items-center gap-2 hover:bg-indor-black hover:scale-105 transition-all duration-100"
           onClick={() => setIsOpen(!isOpen)}
@@ -195,6 +221,7 @@ export default function UserDropdownMenu() {
           )}
         </button>
 
+        {/* Your existing dropdown menu JSX remains the same */}
         {isOpen && (
           <div
             className="absolute right-0 mt-2 md:mb-2 md:mt-0 md:bottom-full w-52 bg-indor-black border border-black
@@ -286,6 +313,12 @@ export default function UserDropdownMenu() {
         onClose={() => setIsProfileModalOpen(false)}
         onSave={handleProfileSave}
         initialData={profileData}
+      />
+
+      {/* ADD THIS - New expired matches modal */}
+      <ExpiredMatchesModal
+        isOpen={isExpiredMatchesModalOpen}
+        onClose={() => setIsExpiredMatchesModalOpen(false)}
       />
     </>
   );

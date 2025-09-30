@@ -6,7 +6,7 @@ import {
   position,
   users,
   profile,
-  positionHistory
+  positionHistory,
 } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { eq, and, inArray } from "drizzle-orm";
@@ -36,7 +36,6 @@ export type TeamWithPlayers = {
   };
 };
 
-
 export async function getApplicableTeams(
   pyramidId: number
 ): Promise<TeamWithPlayers[]> {
@@ -49,7 +48,7 @@ export async function getApplicableTeams(
       .where(eq(pyramidCategory.pyramidId, pyramidId));
 
     const categoryIds = categories.map(({ id }) => id);
-    
+
     if (categoryIds.length === 0) {
       return [];
     }
@@ -72,8 +71,6 @@ export async function getApplicableTeams(
       .where(inArray(team.categoryId, categoryIds))
       .innerJoin(users, eq(team.player1Id, users.id))
       .leftJoin(profile, eq(users.id, profile.userId));
-
-
 
     const teams: TeamWithPlayers[] = await Promise.all(
       teamsData.map(async (teamData) => {
@@ -114,6 +111,8 @@ export async function getApplicableTeams(
         };
       })
     );
+
+    console.log(teams)
 
     return teams;
   } catch (error) {
@@ -219,7 +218,7 @@ export async function setTeamInPosition(
         .returning();
 
       if (result.length === 0) {
-        throw new Error("Error al actualizar posiciones");
+        throw new Error("No se actualizaron las posiciones en los registros");
       }
     } else {
       // Create new position
@@ -234,23 +233,23 @@ export async function setTeamInPosition(
         .returning();
 
       if (result.length === 0) {
-        throw new Error("Error al posicionar.");
+        throw new Error("No se crearon las nuevas posiciones");
       }
     }
 
     // Record the placement of the new team
     await db.insert(positionHistory).values({
       pyramidId,
-      matchId: null, // Admin action, not match-related
+      matchId: null,
       teamId: teamId,
       affectedTeamId: displacedTeamId,
-      oldRow: null, // New placement - no previous position
+      oldRow: null,
       oldCol: null,
-      newRow: row, // New position
+      newRow: row,
       newCol: col,
-      affectedOldRow: displacedTeamId ? row : null, // If someone was displaced
+      affectedOldRow: displacedTeamId ? row : null,
       affectedOldCol: displacedTeamId ? col : null,
-      affectedNewRow: null, // Displaced team has no new position
+      affectedNewRow: null,
       affectedNewCol: null,
       effectiveDate: new Date(),
     });
@@ -262,11 +261,11 @@ export async function setTeamInPosition(
     console.error("Error posicionando equipo:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Ocurrió un error desconocido",
+      error:
+        error instanceof Error ? error.message : "Ocurrió un error desconocido",
     };
   }
 }
-
 
 export async function removeTeamFromPosition(
   positionId: number,
@@ -304,12 +303,12 @@ export async function removeTeamFromPosition(
     // Record the removal in history
     await db.insert(positionHistory).values({
       pyramidId: positionPyramidId,
-      matchId: null, // Admin action, not match-related
+      matchId: null,
       teamId: teamId,
       affectedTeamId: null,
       oldRow: row,
       oldCol: col,
-      newRow: null, // Team was removed
+      newRow: null,
       newCol: null,
       affectedOldRow: null,
       affectedOldCol: null,
@@ -336,25 +335,3 @@ export async function removeTeamFromPosition(
   }
 }
 
-
-// Get team position in a specific pyramid
-export async function getTeamPosition(pyramidId: number, teamId: number) {
-  try {
-    const result = await db
-      .select({
-        id: position.id,
-        row: position.row,
-        col: position.col,
-      })
-      .from(position)
-      .where(
-        and(eq(position.pyramidId, pyramidId), eq(position.teamId, teamId))
-      )
-      .limit(1);
-
-    return result.length > 0 ? result[0] : null;
-  } catch (error) {
-    console.error("Error fetching team position:", error);
-    return null;
-  }
-}

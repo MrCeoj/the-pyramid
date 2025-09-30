@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { users, profile } from "@/db/schema";
-import { eq, sql, desc, or, ilike } from "drizzle-orm";
+import { eq, sql, desc, or, ilike, ne, and } from "drizzle-orm";
 
 // Helper function to generate full name
 function getFullName(paternalSurname: string, maternalSurname: string): string {
@@ -105,7 +105,7 @@ export async function createUserWithProfile(data: CreateUserData) {
     const [newUser] = await tx
       .insert(users)
       .values({
-        name: (data.paternalSurname.trim() + " " + data.maternalSurname.trim()),
+        name: data.paternalSurname.trim() + " " + data.maternalSurname.trim(),
         paternalSurname: data.paternalSurname.trim(),
         maternalSurname: data.maternalSurname.trim(),
         email: data.email.trim().toLowerCase(),
@@ -216,6 +216,14 @@ export async function updateUserWithProfile(
     throw new Error("El correo electrónico es obligatorio");
   }
 
+  const prevEmail = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(and(eq(users.email, data.email.trim()), ne(users.id, userId)));
+
+  if (prevEmail.length > 0)
+    throw new Error("Ese correo ya esta inscrito en otro perfil");
+
   return await db.transaction(async (tx) => {
     // Update user table
     await tx
@@ -258,9 +266,6 @@ export async function updateUserWithProfile(
         });
       }
     } else {
-      // If changing to admin, optionally delete profile
-      // (or keep it in case they change back to player)
-      // Keeping profile for now to preserve data
     }
   });
 }

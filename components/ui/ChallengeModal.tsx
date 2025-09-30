@@ -77,22 +77,34 @@ export default function ChallengeModal({
 
     setIsSubmitting(true);
     try {
-      await createMatch({
+      const result = await createMatch({
         pyramidId,
         challengerTeamId: attacker.id,
         defenderTeamId: defender.id,
         userId: session?.user.id,
       });
 
-      refreshPyramidData();
+      if (!result.success) {
+        toast.error(result.error || "Error al crear el desafío");
+        return;
+      }
 
-      toast.success("¡Has desafiado al equipo! Espera su respuesta.", {
-        duration: 5000,
-      });
+      if (result.success && result.emailSent === false) {
+        toast.success(
+          "¡Reta creada! Pero no se pudo notificar al equipo defensor.",
+          { duration: 5000 }
+        );
+      } else {
+        toast.success("¡Has desafiado al equipo! Espera su respuesta.", {
+          duration: 5000,
+        });
+      }
+
+      refreshPyramidData();
       onClose();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      console.error("Error creating match:", error);
-      toast.error("Error al crear el desafío");
+      toast.error("Error inesperado al crear el desafío");
     } finally {
       setIsSubmitting(false);
     }

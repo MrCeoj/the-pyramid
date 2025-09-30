@@ -44,26 +44,6 @@ export function RiskyTeamsChecker({ pyramidId }: { pyramidId: number }) {
           onClick={handleCheck}
           disabled={isChecking}
           variant="outline"
-          className="bg-red-500 hover:bg-red-600 text-white border-red-600"
-        >
-          {isChecking ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Ejecutando...
-            </>
-          ) : (
-            <>
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              Penalizar Inactivos
-            </>
-          )}
-        </Button>
-      </div>
-      <div className="space-y-4">
-        <Button
-          onClick={handleCheck}
-          disabled={isChecking}
-          variant="outline"
           className="bg-amber-500 hover:bg-amber-600 text-white border-amber-600"
         >
           {isChecking ? (

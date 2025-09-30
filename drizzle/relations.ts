@@ -1,26 +1,24 @@
 import { relations } from "drizzle-orm/relations";
-import { users, authenticators, sessions, pyramid, position, team, positionHistory, match, accounts, profile, matchViews, category, pyramidCategory } from "./schema";
+import { users, accounts, pyramid, position, team, positionHistory, match, category, authenticators, profile, sessions, pyramidCategory } from "./schema";
 
-export const authenticatorsRelations = relations(authenticators, ({one}) => ({
+export const accountsRelations = relations(accounts, ({one}) => ({
 	user: one(users, {
-		fields: [authenticators.userId],
+		fields: [accounts.userId],
 		references: [users.id]
 	}),
 }));
 
 export const usersRelations = relations(users, ({many}) => ({
-	authenticators: many(authenticators),
-	sessions: many(sessions),
 	accounts: many(accounts),
-	profiles: many(profile),
-	matchViews: many(matchViews),
-}));
-
-export const sessionsRelations = relations(sessions, ({one}) => ({
-	user: one(users, {
-		fields: [sessions.userId],
-		references: [users.id]
+	teams_player1Id: many(team, {
+		relationName: "team_player1Id_users_id"
 	}),
+	teams_player2Id: many(team, {
+		relationName: "team_player2Id_users_id"
+	}),
+	authenticators: many(authenticators),
+	profiles: many(profile),
+	sessions: many(sessions),
 }));
 
 export const positionRelations = relations(position, ({one}) => ({
@@ -43,13 +41,12 @@ export const pyramidRelations = relations(pyramid, ({many}) => ({
 
 export const teamRelations = relations(team, ({one, many}) => ({
 	positions: many(position),
-	positionHistories_challengerTeamId: many(positionHistory, {
-		relationName: "positionHistory_challengerTeamId_team_id"
+	positionHistories_teamId: many(positionHistory, {
+		relationName: "positionHistory_teamId_team_id"
 	}),
-	positionHistories_defenderTeamId: many(positionHistory, {
-		relationName: "positionHistory_defenderTeamId_team_id"
+	positionHistories_affectedTeamId: many(positionHistory, {
+		relationName: "positionHistory_affectedTeamId_team_id"
 	}),
-	profiles: many(profile),
 	matches_challengerTeamId: many(match, {
 		relationName: "match_challengerTeamId_team_id"
 	}),
@@ -63,6 +60,16 @@ export const teamRelations = relations(team, ({one, many}) => ({
 		fields: [team.categoryId],
 		references: [category.id]
 	}),
+	user_player1Id: one(users, {
+		fields: [team.player1Id],
+		references: [users.id],
+		relationName: "team_player1Id_users_id"
+	}),
+	user_player2Id: one(users, {
+		fields: [team.player2Id],
+		references: [users.id],
+		relationName: "team_player2Id_users_id"
+	}),
 }));
 
 export const positionHistoryRelations = relations(positionHistory, ({one}) => ({
@@ -74,15 +81,15 @@ export const positionHistoryRelations = relations(positionHistory, ({one}) => ({
 		fields: [positionHistory.matchId],
 		references: [match.id]
 	}),
-	team_challengerTeamId: one(team, {
-		fields: [positionHistory.challengerTeamId],
+	team_teamId: one(team, {
+		fields: [positionHistory.teamId],
 		references: [team.id],
-		relationName: "positionHistory_challengerTeamId_team_id"
+		relationName: "positionHistory_teamId_team_id"
 	}),
-	team_defenderTeamId: one(team, {
-		fields: [positionHistory.defenderTeamId],
+	team_affectedTeamId: one(team, {
+		fields: [positionHistory.affectedTeamId],
 		references: [team.id],
-		relationName: "positionHistory_defenderTeamId_team_id"
+		relationName: "positionHistory_affectedTeamId_team_id"
 	}),
 }));
 
@@ -107,12 +114,16 @@ export const matchRelations = relations(match, ({one, many}) => ({
 		references: [team.id],
 		relationName: "match_winnerTeamId_team_id"
 	}),
-	matchViews: many(matchViews),
 }));
 
-export const accountsRelations = relations(accounts, ({one}) => ({
+export const categoryRelations = relations(category, ({many}) => ({
+	teams: many(team),
+	pyramidCategories: many(pyramidCategory),
+}));
+
+export const authenticatorsRelations = relations(authenticators, ({one}) => ({
 	user: one(users, {
-		fields: [accounts.userId],
+		fields: [authenticators.userId],
 		references: [users.id]
 	}),
 }));
@@ -122,26 +133,13 @@ export const profileRelations = relations(profile, ({one}) => ({
 		fields: [profile.userId],
 		references: [users.id]
 	}),
-	team: one(team, {
-		fields: [profile.teamId],
-		references: [team.id]
-	}),
 }));
 
-export const matchViewsRelations = relations(matchViews, ({one}) => ({
-	match: one(match, {
-		fields: [matchViews.matchId],
-		references: [match.id]
-	}),
+export const sessionsRelations = relations(sessions, ({one}) => ({
 	user: one(users, {
-		fields: [matchViews.userId],
+		fields: [sessions.userId],
 		references: [users.id]
 	}),
-}));
-
-export const categoryRelations = relations(category, ({many}) => ({
-	teams: many(team),
-	pyramidCategories: many(pyramidCategory),
 }));
 
 export const pyramidCategoryRelations = relations(pyramidCategory, ({one}) => ({

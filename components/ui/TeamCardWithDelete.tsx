@@ -38,13 +38,15 @@ const TeamCardWithDelete: React.FC<TeamCardWithDeleteProps> = ({
       const result = await removeTeamFromPosition(data.id, pyramidId);
 
       if (!result.success) {
-        throw new Error(result.error || "Failed to remove team");
+        throw new Error(result.error || "Error desconocido");
       }
 
       toast.success("Equipo quitado exitosamente");
     } catch (error) {
-      console.error("Error removing team:", error);
-      toast.error("Error al remover equipo.");
+      if (error instanceof Error){
+        console.error("Error removing team:", error);
+        toast.error("Error al remover equipo: " + error.message);
+      }
     } finally {
       setIsDeleting(false);
     }

@@ -170,6 +170,7 @@ export const team = pgTable(
     }),
     wins: integer("wins").default(0),
     losses: integer("losses").default(0),
+    amountRejected: integer("amount_rejected").default(0),
     status: teamStatus("status").default("idle"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
@@ -309,12 +310,12 @@ export function getTeamDisplayName(
   if (!player1 && !player2) return "Equipo vacío";
   if (!player1) {
     return player2?.nickname
-      ? `"${player2?.nickname}" ${player2?.paternalSurname}`
+      ? `"${player2?.nickname}" ${player2?.maternalSurname}`
       : `${player2?.paternalSurname} ${player2?.maternalSurname}`;
   }
   if (!player2) {
     return player1?.nickname
-      ? `"${player1?.nickname}" ${player1?.paternalSurname}`
+      ? `"${player1?.nickname}" ${player1?.maternalSurname}`
       : `${player1?.paternalSurname} ${player1?.maternalSurname}`;
   }
 

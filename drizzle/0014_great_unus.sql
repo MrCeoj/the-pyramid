@@ -1,0 +1,1 @@
+ALTER TABLE "team" ADD COLUMN "amount_rejected" integer DEFAULT 0;

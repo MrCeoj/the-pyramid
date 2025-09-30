@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from "react";
 import PyramidRow from "./PyramidRow";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Toaster } from "react-hot-toast";
 import { getUnresolvedMatchesForTeam } from "@/actions/matches/";
 import { UnresolvedMatch } from "@/actions/matches/types";
 import { PyramidData } from "@/actions/IndexActions";
@@ -94,7 +93,6 @@ export default function PyramidDisplay({
   return (
     <div className="flex flex-col items-center relative mb-5 no-scrollbar">
       {/* Logo Display */}
-      <Toaster position={isMobile ? "top-center" : "top-right"} />
       {isMobile ? (
         <Image
           src={"/piramide_logo_title_naranja.svg"}

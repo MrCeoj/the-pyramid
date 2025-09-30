@@ -14,6 +14,7 @@ import { useSession } from "next-auth/react";
 import PendingMatchCard from "./PendingMatchCard";
 import HistoryMatchCard from "./HistoryMatchCard";
 import { getUserTeamId } from "@/actions/IndexActions";
+import { getRejectedAmount } from "@/actions/matches";
 
 const MatchesPage = () => {
   const { data } = useSession();
@@ -24,8 +25,18 @@ const MatchesPage = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
   const [userTeamId, setUserTeamId] = useState<number | null>()
+  const [rejectedAmount, setRejectedAmount] = useState<number>(0)
 
-  // Memoize the fetchMatches function to prevent unnecessary re-renders
+  const fetchRejectedAmount = useCallback(async () => {
+    if (userTeamId=== null || userTeamId === undefined)  return
+
+    const amount = await getRejectedAmount(userTeamId)
+    if (amount === null || amount === undefined) throw new Error("Error al conseguir cantidad de partidas rechazadas. Null")
+    if (typeof amount !== "number") throw new Error("Error al conseguir cantidad de partidas rechazadas. Error")
+
+    setRejectedAmount(amount)
+  }, [userTeamId])
+
   const fetchMatches = useCallback(async () => {
     if (!user?.id) return;
 
@@ -37,13 +48,14 @@ const MatchesPage = () => {
       setMatchHistory(matchHistory);
       if ("error" !in utid) return
       setUserTeamId(utid.teamId)
+      await fetchRejectedAmount()
     } catch (error) {
       console.error("Error fetching matches:", error);
       toast.error("Error al cargar los combates");
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [fetchRejectedAmount, user?.id]);
 
   // Single useEffect for initial data fetching
   useEffect(() => {
@@ -180,6 +192,7 @@ const MatchesPage = () => {
                     handleRejectMatch={handleRejectMatch}
                     formatDate={formatDate}
                     actionLoading={actionLoading!}
+                    rejectedAmount={rejectedAmount}
                   />
                 ))
               ) : (

@@ -145,7 +145,6 @@ export async function updateProfile(data: UpdateProfileData) {
           throw new Error("Las nuevas contraseñas no coinciden.");
         }
 
-        console.log("handling passwords");
 
         // Get current password hash
         const [user] = await tx
@@ -192,8 +191,6 @@ export async function updateProfile(data: UpdateProfileData) {
         await tx.update(users).set(userUpdateData).where(eq(users.id, userId));
       }
 
-      console.log("Updated user table");
-
       // Update or create profile if player
       if (userRole === "player") {
         const profileUpdateData: Partial<typeof profile.$inferInsert> = {};
@@ -239,7 +236,6 @@ export async function updateProfile(data: UpdateProfileData) {
 
     return { success: true, error: null };
   } catch (error) {
-    console.log(error);
     return {
       success: false,
       error:
