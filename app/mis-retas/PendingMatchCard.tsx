@@ -55,7 +55,7 @@ const PendingMatchCard = ({
     } else if (categoryDiff > 0) {
       return {
         type: "warning",
-        message: `Tu equipo enfrentará un desafío mayor. El rival iniciará con ${handicapPoints} puntos de ventaja en su servicio.`,
+        message: `Tu equipo enfrentará un desafío mayor. El rival iniciará con ${handicapPoints} puntos de ventaja en cada servicio.`,
         icon: <AlertTriangle className="text-amber-400" size={20} />,
         bgColor: "from-amber-900/20 to-orange-900/20",
         borderColor: "border-amber-500/30",
@@ -63,7 +63,7 @@ const PendingMatchCard = ({
     } else {
       return {
         type: "advantage",
-        message: `¡Tienes ventaja! Tu equipo recibirá ${handicapPoints} puntos adicionales en su servicio.`,
+        message: `¡Tienes ventaja! Tu equipo iniciará con ${handicapPoints} puntos adicionales en cada servicio.`,
         icon: <TrendingUp className="text-emerald-400" size={20} />,
         bgColor: "from-emerald-900/20 to-green-900/20",
         borderColor: "border-emerald-500/30",

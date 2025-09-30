@@ -24,14 +24,14 @@ export default function generateChallengeEmailTemplate(
       };
     } else if (categoryDiff > 0) {
       return {
-        message: `El equipo defensor iniciará con ${handicapPoints} puntos de ventaja en su servicio.`,
+        message: `El equipo defensor iniciará con ${handicapPoints} puntos de ventaja en cada servicio.`,
         color: "#10b981",
         bgColor: "#d1fae5",
         textColor: "#047857",
       };
     } else {
       return {
-        message: `El equipo atacante recibirá ${handicapPoints} puntos adicionales en su servicio.`,
+        message: `El equipo atacante iniciará con ${handicapPoints} puntos de ventaja en cada servicio.`,
         color: "#f59e0b",
         bgColor: "#fef3c7",
         textColor: "#92400e",
