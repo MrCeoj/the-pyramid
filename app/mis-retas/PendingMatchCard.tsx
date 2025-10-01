@@ -52,7 +52,7 @@ const PendingMatchCard = ({
         bgColor: "from-blue-900/20 to-indigo-900/20",
         borderColor: "border-blue-500/30",
       };
-    } else if (categoryDiff > 0) {
+    } else if (categoryDiff < 0) {
       return {
         type: "warning",
         message: `Tu equipo enfrentará un desafío mayor. El rival iniciará con ${handicapPoints} puntos de ventaja en cada servicio.`,

@@ -1,9 +1,12 @@
 "use server";
 import { db } from "@/lib/drizzle";
-import { eq } from "drizzle-orm";
+import { eq, and, or, inArray } from "drizzle-orm";
 import { match, team } from "@/db/schema";
 import { revalidatePath } from "next/cache";
-import { sendAcceptMail } from "@/actions/MailActions";
+import {
+  sendAcceptMail,
+  sendCancelledBecauseAcceptedMail,
+} from "@/actions/MailActions";
 import { MatchResult } from "@/actions/matches/types";
 import {
   getTeamWithPlayers,
@@ -68,13 +71,44 @@ export async function acceptMatch(
         );
       }
 
+      const affectedMatches = await tx
+        .select({
+          matchId: match.id,
+          attacker: match.challengerTeamId,
+          defender: match.defenderTeamId,
+        })
+        .from(match)
+        .where(
+          and(
+            eq(match.status, "pending"),
+            or(
+              eq(match.defenderTeamId, currentMatch.defenderTeamId),
+              eq(match.challengerTeamId, currentMatch.defenderTeamId)
+            )
+          )
+        );
+
+      const teamsIds = new Set<number>();
+      const matchesIds = new Set<number>();
+      affectedMatches.map((m) => {
+        matchesIds.add(m.matchId);
+        teamsIds.add(m.defender);
+        teamsIds.add(m.attacker);
+      });
+
+      await tx
+        .update(match)
+        .set({ status: "cancelled", updatedAt: new Date() })
+        .where(inArray(match.id, Array.from(matchesIds)));
+
+      
       await tx
         .update(team)
         .set({ amountRejected: 0 })
         .where(eq(team.id, defender.id));
 
       await sendAcceptMail(attacker, defender, currentMatch.pyramidId);
-
+      await sendCancelledBecauseAcceptedMail();
       revalidatePath("/mis-retas");
 
       return {

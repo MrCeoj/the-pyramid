@@ -3,7 +3,7 @@ import { db } from "@/lib/drizzle";
 import { eq, and } from "drizzle-orm";
 import { match, pyramid, position } from "@/db/schema";
 import { AcceptedMatchWithDetails } from "@/actions/matches/types";
-import { getTeamInfo } from "@/actions/matches/TeamService";
+import { getTeamWithPlayers } from "@/actions/matches/TeamService";
 
 export async function getAcceptedMatches(): Promise<
   AcceptedMatchWithDetails[]
@@ -26,8 +26,8 @@ export async function getAcceptedMatches(): Promise<
       acceptedMatches.map(async (m) => {
         const [challengerTeam, defenderTeam, challengerPos, defenderPos] =
           await Promise.all([
-            getTeamInfo(m.challengerTeamId),
-            getTeamInfo(m.defenderTeamId),
+            getTeamWithPlayers(m.challengerTeamId),
+            getTeamWithPlayers(m.defenderTeamId),
             db
               .select({ row: position.row, col: position.col })
               .from(position)

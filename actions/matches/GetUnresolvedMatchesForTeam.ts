@@ -19,6 +19,7 @@ export async function getUnresolvedMatchesForTeam(
       })
       .from(match)
       .where(
+        
         and(
           or(
             eq(match.challengerTeamId, teamId),

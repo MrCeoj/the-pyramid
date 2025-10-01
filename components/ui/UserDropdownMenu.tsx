@@ -79,18 +79,15 @@ export default function UserDropdownMenu() {
   useEffect(() => {
     if (status === "unauthenticated") {
       update();
-      checkExpiredMatches();
+      //checkExpiredMatches();
       return;
     }
   }, [checkExpiredMatches, status, update]);
 
   useEffect(() => {
     loadCount();
-    // ADD THIS LINE to check expired matches on component mount
-    checkExpiredMatches();
+    //checkExpiredMatches();
   }, [loadCount, checkExpiredMatches, session]);
-
-  // ... rest of your existing useEffects and functions remain the same ...
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

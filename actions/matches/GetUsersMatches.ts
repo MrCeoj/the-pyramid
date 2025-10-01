@@ -4,7 +4,7 @@ import { eq, or, desc } from "drizzle-orm";
 import { match, pyramid } from "@/db/schema";
 import { TeamWithPlayers } from "@/actions/PositionActions";
 import { MatchWithDetails } from "@/actions/matches/types";
-import { getTeamInfo, getUserTeamIds } from "@/actions/matches/TeamService";
+import { getTeamWithPlayers, getUserTeamIds } from "@/actions/matches/TeamService";
 
 export async function getUserMatches(userId: string): Promise<{
   pendingMatches: MatchWithDetails[];
@@ -57,7 +57,7 @@ export async function getUserMatches(userId: string): Promise<{
     const teamInfoMap = new Map<number, TeamWithPlayers>();
     await Promise.all(
       Array.from(teamIds).map(async (teamId) => {
-        const teamInfo = await getTeamInfo(teamId);
+        const teamInfo = await getTeamWithPlayers(teamId);
         if (teamInfo) {
           teamInfoMap.set(teamId, teamInfo);
         }

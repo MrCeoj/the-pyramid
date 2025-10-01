@@ -1,4 +1,3 @@
-// PyramidRow.tsx (client)
 "use client";
 import TeamCard from "@/components/ui/TeamCard";
 import EmptySlot from "@/components/ui/EmptySlot";
@@ -80,16 +79,11 @@ const PyramidRow = ({
       defenderTeam: null,
     });
     
-    // Option 1: Trigger local refresh
-    setRefreshTrigger(prev => prev + 1);
-    
     // Option 2: Trigger parent refresh if callback provided
     if (onRefreshNeeded) {
       onRefreshNeeded();
     }
     
-    // Option 3: Force re-render by updating a timestamp (if needed)
-    // This ensures all memoized calculations are re-executed
     setTimeout(() => {
       // Small delay to ensure any server updates are complete
       setRefreshTrigger(prev => prev + 1);
@@ -103,18 +97,18 @@ const PyramidRow = ({
     // Target must have a team
     if (!targetPos.team) return false;
 
-    // Block if user already has an unresolved match vs this target
-    if (hasUnresolvedWith(targetPos.team.id)) return false;
-
+    
     // User must have a team
     if (!userTeamId) return false;
-
+    
     // Find user's current position in the pyramid
     const userTeamPosition = allPositions.find(
       (pos) => pos.team && pos.team.id === userTeamId
     );
-
+    
     if (!userTeamPosition) return false;
+    // Block if user already has an unresolved match vs this target
+    if (hasUnresolvedWith(targetPos.team.id)) return false;
 
     const userRow = userTeamPosition.row;
     const userCol = userTeamPosition.col;

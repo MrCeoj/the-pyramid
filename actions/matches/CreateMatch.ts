@@ -4,7 +4,7 @@ import { eq, or, and } from "drizzle-orm";
 import { match, position } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { sendChallengeMail } from "@/actions/MailActions";
-import { getTeamInfo, getUserTeamIds } from "@/actions/matches/TeamService";
+import { getTeamWithPlayers, getUserTeamIds } from "@/actions/matches/TeamService";
 
 export async function createMatch({
   pyramidId,
@@ -89,8 +89,8 @@ export async function createMatch({
 
     // Get team information before creating the match
     const [challengerTeamInfo, defenderTeamInfo] = await Promise.all([
-      getTeamInfo(challengerTeamId),
-      getTeamInfo(defenderTeamId),
+      getTeamWithPlayers(challengerTeamId),
+      getTeamWithPlayers(defenderTeamId),
     ]);
 
     if (!challengerTeamInfo || !defenderTeamInfo) {
