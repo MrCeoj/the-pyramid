@@ -9,9 +9,11 @@ import {
 } from "@/actions/MailActions";
 import { MatchResult } from "@/actions/matches/types";
 import {
+  getBulkTeamsWithPlayers,
   getTeamWithPlayers,
   getUserTeamIds,
 } from "@/actions/matches/TeamService";
+import { TeamWithPlayers } from "../PositionActions";
 
 export async function acceptMatch(
   matchId: number,
@@ -88,27 +90,46 @@ export async function acceptMatch(
           )
         );
 
-      const teamsIds = new Set<number>();
       const matchesIds = new Set<number>();
-      affectedMatches.map((m) => {
-        matchesIds.add(m.matchId);
-        teamsIds.add(m.defender);
+
+      // Build recipients list
+      const teamsIds = new Set<number>();
+      affectedMatches.forEach((m) => {
         teamsIds.add(m.attacker);
+        teamsIds.add(m.defender);
       });
+
+      teamsIds.delete(currentMatch.attackerTeamId);
+      teamsIds.delete(currentMatch.defenderTeamId);
+
+      const cancelledTeams = await getBulkTeamsWithPlayers(
+        Array.from(teamsIds)
+      );
+
+      const validRecipients = cancelledTeams.filter(
+        Boolean
+      ) as TeamWithPlayers[];
 
       await tx
         .update(match)
         .set({ status: "cancelled", updatedAt: new Date() })
         .where(inArray(match.id, Array.from(matchesIds)));
 
-      
       await tx
         .update(team)
         .set({ amountRejected: 0 })
         .where(eq(team.id, defender.id));
 
       await sendAcceptMail(attacker, defender, currentMatch.pyramidId);
-      await sendCancelledBecauseAcceptedMail();
+      if (validRecipients.length > 0) {
+        await sendCancelledBecauseAcceptedMail(
+          validRecipients,
+          attacker,
+          defender,
+          currentMatch.pyramidId
+        );
+      }
+
       revalidatePath("/mis-retas");
 
       return {
