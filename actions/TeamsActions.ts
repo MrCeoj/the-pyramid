@@ -286,17 +286,18 @@ export interface RiskyCheckResult {
 }
 
 export async function checkAndMarkRiskyTeams(
-  pyramidId: number,
+  pyramidId: number
 ): Promise<RiskyCheckResult> {
   try {
     const pyramidRowsTotal = await db
-      .select({row_amount: pyramid.row_amount})
+      .select({ row_amount: pyramid.row_amount })
       .from(pyramid)
       .where(eq(pyramid.id, pyramidId));
 
-    if (!pyramidRowsTotal) throw new Error("Error al conseguir la cantidad de filas de la pirámide");
+    if (!pyramidRowsTotal)
+      throw new Error("Error al conseguir la cantidad de filas de la pirámide");
 
-    const dateThreshold = getMonday();
+    const dateThreshold = await getPreviousMonday();
 
     const teamsInPyramid = await db
       .select({
@@ -340,8 +341,26 @@ export async function checkAndMarkRiskyTeams(
         )
       );
 
-    // Extract unique team IDs that have been active
-    const activeTeamIds = new Set<number>();
+    const matchCounts = new Map<number, number>();
+
+    recentlyActiveTeams.forEach((m) => {
+      matchCounts.set(
+        m.challengerTeamId,
+        (matchCounts.get(m.challengerTeamId) || 0) + 1
+      );
+      matchCounts.set(
+        m.defenderTeamId,
+        (matchCounts.get(m.defenderTeamId) || 0) + 1
+      );
+    });
+
+    // Teams with at least 2 matches played since last Monday
+    const activeTeamIds = new Set<number>(
+      Array.from(matchCounts.entries())
+        .filter(([_, count]) => count >= 2)
+        .map(([teamId]) => teamId)
+    );
+
     recentlyActiveTeams.forEach((match) => {
       activeTeamIds.add(match.challengerTeamId);
       activeTeamIds.add(match.defenderTeamId);
@@ -390,8 +409,8 @@ export async function checkAndMarkRiskyTeams(
         // Get team position for email context
         const teamPosition = teamsInPyramid.find((t) => t.teamId === teamId);
 
-        const nextRowPosition = teamPosition!.row + 1
-        
+        const nextRowPosition = teamPosition!.row + 1;
+
         // Send warning email
         const emailResult = await sendRiskyWarningMail(
           teamData,
@@ -443,10 +462,10 @@ export async function checkAndMarkRiskyTeams(
   }
 }
 
-function getMonday(date: Date = new Date()): Date {
+export async function getPreviousMonday(date: Date = new Date()): Promise<Date> {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1) - 7; // -7 because one week offset
 
   d.setHours(0, 0, 0, 0);
   d.setDate(diff);

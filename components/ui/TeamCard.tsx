@@ -1,6 +1,6 @@
 "use client";
 import { Fa1, Fa2, Fa3, Fa4, Fa5 } from "react-icons/fa6";
-import { Sword, Crown, Flag } from "lucide-react";
+import { Sword, Crown, Flag, Shield } from "lucide-react";
 import { TeamWithPlayers } from "@/actions/PositionActions";
 
 interface Position {
@@ -15,6 +15,7 @@ interface TeamCardProps {
   challengable?: boolean;
   isTop?: boolean;
   isPlayer?: boolean;
+  defended?: boolean; // Added defended prop
   onChallenge?: (team: TeamWithPlayers) => void;
 }
 
@@ -23,6 +24,7 @@ const TeamCard = ({
   challengable = false,
   isTop = false,
   isPlayer = false,
+  defended = false, // Default defended to false
   onChallenge,
 }: TeamCardProps) => {
   const getIcon = (category: number) => {
@@ -41,7 +43,8 @@ const TeamCard = ({
   };
 
   const handleChallenge = () => {
-    if (data.team && onChallenge) {
+    // Ensure card is not defended before calling onChallenge
+    if (data.team && onChallenge && !defended) {
       onChallenge(data.team);
     }
   };
@@ -50,12 +53,12 @@ const TeamCard = ({
     looser: "bg-red-500/10 border-red-500/40 hover:border-red-500/60",
     winner: "bg-green-500/10 border-green-500/40 hover:border-green-500/60",
     idle: "bg-slate-500/5 border-slate-400/30 hover:border-slate-400/50",
-    risky: "bg-orange-500/10 border-orange-500/40 hover:border-orange-500/60", // shifted toward orange
+    risky: "bg-orange-500/10 border-orange-500/40 hover:border-orange-500/60",
   };
 
   const specialColors = {
     champion:
-      "bg-gradient-to-br from-yellow-300/20 via-yellow-400/15 to-amber-500/25 border-yellow-400/70 hover:border-yellow-400/90 shadow-yellow-300/30 shadow-lg", // brighter gold
+      "bg-gradient-to-br from-yellow-300/20 via-yellow-400/15 to-amber-500/25 border-yellow-400/70 hover:border-yellow-400/90 shadow-yellow-300/30 shadow-lg",
   };
 
   const statusAccents: Record<TeamWithPlayers["status"], string> = {
@@ -73,11 +76,11 @@ const TeamCard = ({
     if (isTop) {
       return (
         <>
-          {!challengable ? (
+          {(!challengable) ? (
             <div className="absolute -top-2 -right-2 bg-gradient-to-br from-yellow-400 to-amber-500 text-slate-800 rounded-full p-1.5 shadow-lg z-10 animate-pulse">
               <Crown size={12} />
             </div>
-          ) : (
+          ) : !defended && (
             <div className="absolute -top-3 -right-3 bg-gradient-to-br from-amber-600 to-yellow-600 via-yellow-400 text-amber-900 rounded-full p-1 shadow-md z-10">
               <Sword size={18} strokeWidth={2} />
             </div>
@@ -94,6 +97,15 @@ const TeamCard = ({
       );
     }
 
+    if (defended) {
+      return (
+        <div className="absolute -top-2 -right-2 bg-gradient-to-br from-green-600 via-green-400 to-green-700 text-white rounded-full p-1 shadow-lg z-10">
+          <Shield size={14} strokeWidth={4} />
+        </div>
+      );
+    }
+
+    // Show sword icon only if challengable AND not defended
     if (challengable) {
       return (
         <div className="absolute -top-3 -right-3 bg-gradient-to-br from-amber-600 to-yellow-600 via-yellow-400 text-amber-900 rounded-full p-1 shadow-md z-10">
@@ -112,18 +124,21 @@ const TeamCard = ({
     if (isPlayer) {
       return "hover:shadow-xl hover:shadow-blue-400/30 hover:scale-[1.03]";
     }
-    return challengable ? "hover:shadow-lg hover:scale-[1.02]" : "";
+    // Card is only animated on hover if it's actually challengable
+    return challengable && !defended ? "hover:shadow-lg hover:scale-[1.02]" : "";
   };
+
+  const isActuallyChallengable = challengable && !defended;
 
   return (
     <>
       {data.team && (
         <div
-          onClick={challengable ? handleChallenge : undefined}
+          onClick={isActuallyChallengable ? handleChallenge : undefined}
           className={`relative group ${
             isTop ? specialColors.champion : statusColors[data.team.status!]
           } border-2 rounded-lg transition-all duration-300 p-3 min-w-[150px] max-w-[150px] backdrop-blur-sm snap-center ${getCardAnimation()} ${
-            challengable ? "cursor-pointer border-dashed" : ""
+            isActuallyChallengable ? "cursor-pointer border-dashed" : ""
           }`}
         >
           {/* Status indicator */}

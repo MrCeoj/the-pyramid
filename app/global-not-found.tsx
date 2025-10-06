@@ -9,8 +9,7 @@ export const metadata: Metadata = {
 
 export default function GlobalNotFound() {
   return (
-    <html lang="es">
-      <body>
+      <div>
         <HellBackground
           color1="#2c2c2c"
           color2="#f48a34"
@@ -32,7 +31,6 @@ export default function GlobalNotFound() {
             <p className="text-xl mt-2 font-semibold">La página que buscas no existe.</p>
           </div>
         </div>
-      </body>
-    </html>
+      </div>
   );
 }

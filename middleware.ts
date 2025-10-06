@@ -4,19 +4,25 @@ import type { NextRequest } from "next/server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default auth((req: NextRequest & { auth: any }) => {
-  process.env.TZ = "America/Tijuana"
+  process.env.TZ = "America/Tijuana";
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth?.user;
   const userRole = req.auth?.user?.role;
   const hasPassword = req.auth?.user?.hasPassword;
 
-  // Public routes that don't require authentication
-  const publicRoutes = ["/login", "/error", "/api/auth", "/api/mail", "/api/topTeam"];
+  const publicRoutes = [
+    "/login",
+    "/error",
+    "/api/auth",
+    "/api/mail",
+    "/api/topTeam",
+  ];
 
-  // Check if current path is public
-  const isPublicRoute = publicRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
+  const isPublicNumericRoute = /^\/\d+$/.test(pathname);
+
+  const isPublicRoute =
+    publicRoutes.some((route) => pathname.startsWith(route)) ||
+    isPublicNumericRoute;
 
   // Allow access to public routes
   if (isPublicRoute) {
@@ -42,7 +48,7 @@ export default auth((req: NextRequest & { auth: any }) => {
       return NextResponse.redirect(new URL("/", req.url));
     }
   }
-  
+
   if (pathname.startsWith("/retas")) {
     if (userRole !== "admin") {
       return NextResponse.redirect(new URL("/", req.url));

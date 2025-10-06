@@ -1,27 +1,16 @@
 "use server";
-import { eq, and, gte } from "drizzle-orm";
+import { eq, and, or, gte, sql } from "drizzle-orm";
 import { match, team } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { revalidatePath } from "next/cache";
 import { MatchResult } from "@/actions/matches/types";
 import { sendRejectMail } from "@/actions/MailActions";
+import { getPreviousMonday } from "@/actions/TeamsActions";
 import {
   getTeamWithPlayers,
   getUserTeamIds,
 } from "@/actions/matches/TeamService";
 import getRejectedAmount from "./GetRejectedAmount";
-
-// Helper to get Monday of the current week
-function getMonday(date: Date = new Date()): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Calculate Monday's date
-
-  d.setHours(0, 0, 0, 0);
-  d.setDate(diff);
-  return d;
-}
-
 
 export async function rejectMatch(
   matchId: number,
@@ -58,31 +47,40 @@ export async function rejectMatch(
     }
 
     // Get Monday of current week
-    const monday = getMonday();
+    const monday = await getPreviousMonday();
 
-    // Check if the team has played any match in this week
-    const playedThisWeek = await db
-      .select({ id: match.id })
+    const matchCountResult = await db
+      .select({ count: sql<number>`count(*)` })
       .from(match)
       .where(
         and(
-          eq(match.defenderTeamId, matchData.defenderTeamId),
+          or(
+            eq(match.defenderTeamId, matchData.defenderTeamId),
+            eq(match.challengerTeamId, matchData.defenderTeamId)
+          ),
           gte(match.updatedAt, monday),
           eq(match.status, "played")
         )
-      )
-      .limit(1);
+      );
+
+    const playedMatchesThisWeek = matchCountResult[0]?.count ?? 0;
 
     let rejectedMatches = 0;
 
     // Only check rejected count if no match played this week
-    if (!playedThisWeek.length) {
+    if (playedMatchesThisWeek < 2) {
       const amount = await getRejectedAmount(matchData.defenderTeamId);
 
-      if (amount === null || amount === undefined) throw new Error("Error al conseguir cantidad de partidas rechazadas. Null")
-      if (typeof amount !== "number") throw new Error("Error al conseguir cantidad de partidas rechazadas. Error")
+      if (amount === null || amount === undefined)
+        throw new Error(
+          "Error al conseguir cantidad de partidas rechazadas. Null"
+        );
+      if (typeof amount !== "number")
+        throw new Error(
+          "Error al conseguir cantidad de partidas rechazadas. Error"
+        );
 
-      rejectedMatches = amount
+      rejectedMatches = amount;
 
       if (rejectedMatches >= 2)
         return {
@@ -114,12 +112,12 @@ export async function rejectMatch(
       await tx
         .update(team)
         .set({
-          amountRejected: playedThisWeek.length ? 0 : rejectedMatches + 1,
+          amountRejected: playedMatchesThisWeek >= 2 ? 0 : rejectedMatches + 1,
         })
         .where(eq(team.id, matchData.defenderTeamId));
     });
 
-    if (attacker && defender) {
+    if (attacker && defender && playedMatchesThisWeek < 2) {
       await sendRejectMail(attacker, defender, matchData.pyramidId);
     }
 

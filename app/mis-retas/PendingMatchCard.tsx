@@ -227,11 +227,11 @@ const PendingMatchCard = ({
 
             <div className="bg-red-950/30 border border-red-600/30 rounded-lg p-3 mb-4">
               <p className="text-sm text-red-200 text-center">
-                Solo puedes rechazar hasta 2 partidos.
+                Solo puedes rechazar hasta 2 partidos si no has participado en la semana.
               </p>
             </div>
 
-            <div className="text-center text-xs text-red-300/80 bg-red-950/20 p-2 rounded border border-red-600/20 mb-4">
+            <div className="text-center text-xs text-red-300/80 mb-4">
               ⚠️ Utiliza tus rechazos con prudencia
             </div>
 

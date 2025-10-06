@@ -1,8 +1,9 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { match, pyramid, position, positionHistory, team } from "@/db/schema";
-import { and, or, eq, lt, inArray } from "drizzle-orm";
+import { and, or, eq, lt, gte, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { getPreviousMonday } from "@/actions/TeamsActions";
 
 export async function processExpiredMatches(userId: string) {
   try {
@@ -33,8 +34,44 @@ export async function processExpiredMatches(userId: string) {
             lt(match.createdAt, new Date(Date.now() - 48 * 60 * 60 * 1000))
           )
         );
+
       if (expired.length <= 0) {
         return { success: true, expired: 0, error: "" };
+      }
+
+      const twoWeeksAgoMonday = await getPreviousMonday();
+
+      const recentMatches = await tx
+        .select({ id: match.id })
+        .from(match)
+        .where(
+          and(
+            eq(match.status, "played"),
+            gte(match.updatedAt, twoWeeksAgoMonday),
+            or(
+              eq(match.challengerTeamId, teamId),
+              eq(match.defenderTeamId, teamId)
+            )
+          )
+        );
+
+      const recentCount = recentMatches.length;
+
+      // 4️⃣ If team has played at least 2 matches → skip demotion
+      if (recentCount >= 2) {
+        const expiredIds = expired.map((m) => m.id);
+
+        await tx
+          .update(match)
+          .set({ status: "cancelled", updatedAt: new Date() })
+          .where(inArray(match.id, expiredIds));
+
+        revalidatePath("/");
+        return {
+          success: true,
+          expired: expired.length,
+          error: "",
+        };
       }
 
       const pyramidInfo = await tx
@@ -164,30 +201,23 @@ export async function processExpiredMatches(userId: string) {
   }
 }
 
-/**
- * Gets the next position in the pyramid hierarchy (the position to swap with)
- */
 function getNextPosition(
   currentPos: { row: number; col: number },
   rowAmount: number
 ): { row: number; col: number } | null {
   const { row, col } = currentPos;
 
-  // Check if this is the very last position in the pyramid
   if (row === rowAmount && col === row) {
-    return null; // No swap for the last position
+    return null;
   }
 
-  // If not in the last column of the row, move to next column
   if (col < row) {
     return { row, col: col + 1 };
   }
 
-  // If in the last column of the row, move to first position of next row
   if (row < rowAmount) {
     return { row: row + 1, col: 1 };
   }
 
-  // This shouldn't happen if the pyramid is properly structured
   return null;
 }

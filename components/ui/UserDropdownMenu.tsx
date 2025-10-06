@@ -52,7 +52,7 @@ export default function UserDropdownMenu() {
   const checkExpiredMatches = useCallback(async () => {
     if (!session) return;
     if (!session.user) return;
-    if (session.user.role === "admin") return; // Only for players
+    if (session.user.role === "admin") return;
 
     try {
       const result = await processExpiredMatches(session.user.id);
@@ -62,7 +62,6 @@ export default function UserDropdownMenu() {
       }
     } catch (error) {
       console.error("Error processing expired matches:", error);
-      // Don't show error to user since this runs automatically
     }
   }, [session]);
 

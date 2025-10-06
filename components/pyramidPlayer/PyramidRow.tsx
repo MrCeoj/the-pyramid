@@ -150,6 +150,7 @@ const PyramidRow = ({
               data={pos}
               challengable={isChallengable(pos)}
               isPlayer={pos.team.id === userTeamId}
+              defended={true}
               isTop={pos.row === 1}
               onChallenge={(team) => handleChallenge(team)}
             />
