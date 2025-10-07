@@ -8,10 +8,10 @@ export default async function PyramidView({
   params: Promise<{ id: number }>;
 }) {
   const param = await params;
-  
-  if (typeof param.id !== "number") notFound();
 
-  const pyramidData = await getPyramidData(param.id);
+  if (typeof param.id !== "string") notFound();
+  const id = Number(param.id)
+  const pyramidData = await getPyramidData(id);
 
   if (pyramidData) {
     return (
