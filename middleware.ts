@@ -15,7 +15,7 @@ export default auth((req: NextRequest & { auth: any }) => {
     "/error",
     "/api/auth",
     "/api/mail",
-    "/api/topTeam",
+    "/api/stats",
   ];
 
   const isPublicNumericRoute = /^\/\d+$/.test(pathname);
