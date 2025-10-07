@@ -33,44 +33,37 @@ export async function completeMatch(
     }
 
     const { pyramidId, challengerTeamId, defenderTeamId } = matchData[0];
-    const challengerWins = winnerTeamId === challengerTeamId;
+    const loserTeamId =
+      winnerTeamId === challengerTeamId ? defenderTeamId : challengerTeamId;
 
-    // Get current positions
-    const [challengerPos, defenderPos] = await Promise.all([
-      db
-        .select({ row: position.row, col: position.col })
-        .from(position)
-        .where(
-          and(
-            eq(position.teamId, challengerTeamId),
-            eq(position.pyramidId, pyramidId)
-          )
+    const positions = await db
+      .select({
+        teamId: position.teamId,
+        row: position.row,
+        col: position.col,
+      })
+      .from(position)
+      .where(
+        and(
+          eq(position.pyramidId, pyramidId),
+          inArray(position.teamId, [challengerTeamId, defenderTeamId])
         )
-        .limit(1),
-      db
-        .select({ row: position.row, col: position.col })
-        .from(position)
-        .where(
-          and(
-            eq(position.teamId, defenderTeamId),
-            eq(position.pyramidId, pyramidId)
-          )
-        )
-        .limit(1),
-    ]);
+      );
 
-    if (!challengerPos.length || !defenderPos.length) {
+    const winnerCurrentPos = positions.find((p) => p.teamId === winnerTeamId);
+    const loserCurrentPos = positions.find((p) => p.teamId === loserTeamId);
+
+    if (!winnerCurrentPos || !loserCurrentPos) {
       return {
         success: false,
         message: "No se encontraron las posiciones de los equipos",
       };
     }
 
-    const challengerOldPos = challengerPos[0];
-    const defenderOldPos = defenderPos[0];
-
+    const shouldSwapPositions = (winnerCurrentPos.row > loserCurrentPos.row || winnerCurrentPos.col > loserCurrentPos.col);
+    
     await db.transaction(async (tx) => {
-      // Update match status
+      // 1. Update match status
       await tx
         .update(match)
         .set({
@@ -80,133 +73,78 @@ export async function completeMatch(
         })
         .where(eq(match.id, matchId));
 
+      // 2. Reset flags for both teams now that the match is over
       await tx
         .update(team)
         .set({
           amountRejected: 0,
+          defendable: false,
         })
-        .where(inArray(team.id, [challengerTeamId, defenderTeamId]));
+        .where(inArray(team.id, [winnerTeamId, loserTeamId]));
 
-      // Update team stats and status
-      if (challengerWins) {
-        await tx
-          .update(team)
-          .set({
-            wins:
-              ((
-                await tx
-                  .select({ wins: team.wins })
-                  .from(team)
-                  .where(eq(team.id, challengerTeamId))
-                  .limit(1)
-              )[0].wins || 0) + 1,
-            status: "winner",
-            updatedAt: new Date(),
-          })
-          .where(eq(team.id, challengerTeamId));
+      // 3. Update wins for the winner
+      const currentWins = (await tx.select({ wins: team.wins }).from(team).where(eq(team.id, winnerTeamId)).limit(1))[0].wins || 0;
+      await tx
+        .update(team)
+        .set({
+          wins: currentWins + 1,
+          status: "winner",
+          updatedAt: new Date(),
+        })
+        .where(eq(team.id, winnerTeamId));
 
-        await tx
-          .update(team)
-          .set({
-            losses:
-              ((
-                await tx
-                  .select({ losses: team.losses })
-                  .from(team)
-                  .where(eq(team.id, defenderTeamId))
-                  .limit(1)
-              )[0].losses || 0) + 1,
-            status: "looser",
-            updatedAt: new Date(),
-          })
-          .where(eq(team.id, defenderTeamId));
+      // 4. Update losses for the loser
+      const currentLosses = (await tx.select({ losses: team.losses }).from(team).where(eq(team.id, loserTeamId)).limit(1))[0].losses || 0;
+      await tx
+        .update(team)
+        .set({
+          losses: currentLosses + 1,
+          status: "looser",
+          updatedAt: new Date(),
+        })
+        .where(eq(team.id, loserTeamId));
 
-        // Swap positions safely
+      // 5. If the winner was lower-ranked, swap their positions
+      if (shouldSwapPositions) {
+        // A -> temp, B -> A, temp -> B swap to avoid unique constraint conflicts
         await tx
           .update(position)
           .set({ row: -1, col: -1 })
-          .where(
-            and(
-              eq(position.teamId, challengerTeamId),
-              eq(position.pyramidId, pyramidId)
-            )
-          );
+          .where(and(eq(position.teamId, winnerTeamId), eq(position.pyramidId, pyramidId)));
 
         await tx
           .update(position)
           .set({
-            row: challengerOldPos.row,
-            col: challengerOldPos.col,
+            row: winnerCurrentPos.row,
+            col: winnerCurrentPos.col,
             updatedAt: new Date(),
           })
-          .where(
-            and(
-              eq(position.teamId, defenderTeamId),
-              eq(position.pyramidId, pyramidId)
-            )
-          );
+          .where(and(eq(position.teamId, loserTeamId), eq(position.pyramidId, pyramidId)));
 
         await tx
           .update(position)
           .set({
-            row: defenderOldPos.row,
-            col: defenderOldPos.col,
+            row: loserCurrentPos.row,
+            col: loserCurrentPos.col,
             updatedAt: new Date(),
           })
-          .where(
-            and(
-              eq(position.teamId, challengerTeamId),
-              eq(position.pyramidId, pyramidId)
-            )
-          );
+          .where(and(eq(position.teamId, winnerTeamId), eq(position.pyramidId, pyramidId)));
 
-        // Record position history
+        // Log the position change
         await tx.insert(positionHistory).values({
           pyramidId,
           matchId,
-          teamId: challengerTeamId,
-          affectedTeamId: defenderTeamId,
-          oldRow: challengerOldPos.row,
-          oldCol: challengerOldPos.col,
-          newRow: defenderOldPos.row,
-          newCol: defenderOldPos.col,
-          affectedOldRow: defenderOldPos.row,
-          affectedOldCol: defenderOldPos.col,
-          affectedNewRow: challengerOldPos.row,
-          affectedNewCol: challengerOldPos.col,
+          teamId: winnerTeamId,
+          affectedTeamId: loserTeamId,
+          oldRow: winnerCurrentPos.row,
+          oldCol: winnerCurrentPos.col,
+          newRow: loserCurrentPos.row,
+          newCol: loserCurrentPos.col,
+          affectedOldRow: loserCurrentPos.row,
+          affectedOldCol: loserCurrentPos.col,
+          affectedNewRow: winnerCurrentPos.row,
+          affectedNewCol: winnerCurrentPos.col,
         });
-      } else {
-        await tx
-          .update(team)
-          .set({
-            wins:
-              ((
-                await tx
-                  .select({ wins: team.wins })
-                  .from(team)
-                  .where(eq(team.id, defenderTeamId))
-                  .limit(1)
-              )[0].wins || 0) + 1,
-            status: "winner",
-            updatedAt: new Date(),
-          })
-          .where(eq(team.id, defenderTeamId));
-
-        await tx
-          .update(team)
-          .set({
-            losses:
-              ((
-                await tx
-                  .select({ losses: team.losses })
-                  .from(team)
-                  .where(eq(team.id, challengerTeamId))
-                  .limit(1)
-              )[0].losses || 0) + 1,
-            status: "looser",
-            updatedAt: new Date(),
-          })
-          .where(eq(team.id, challengerTeamId));
       }
     });
 
@@ -214,7 +152,7 @@ export async function completeMatch(
 
     return {
       success: true,
-      message: challengerWins
+      message: shouldSwapPositions
         ? "Match completado. Las posiciones han sido intercambiadas."
         : "Match completado. Las posiciones permanecen iguales.",
     };

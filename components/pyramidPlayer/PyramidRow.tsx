@@ -97,7 +97,6 @@ const PyramidRow = ({
     // Target must have a team
     if (!targetPos.team) return false;
 
-    
     // User must have a team
     if (!userTeamId) return false;
     
@@ -107,7 +106,9 @@ const PyramidRow = ({
     );
     
     if (!userTeamPosition) return false;
-    // Block if user already has an unresolved match vs this target
+    
+    if (userTeamPosition.team?.defendable) return false;
+
     if (hasUnresolvedWith(targetPos.team.id)) return false;
 
     const userRow = userTeamPosition.row;
@@ -150,7 +151,7 @@ const PyramidRow = ({
               data={pos}
               challengable={isChallengable(pos)}
               isPlayer={pos.team.id === userTeamId}
-              defended={true}
+              defended={pos.team.defendable}
               isTop={pos.row === 1}
               onChallenge={(team) => handleChallenge(team)}
             />

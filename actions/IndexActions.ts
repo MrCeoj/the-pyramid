@@ -18,6 +18,7 @@ export type Team = {
   losses: number;
   status: "winner" | "looser" | "idle" | "risky";
   categoryId: number | null;
+  defendable?: boolean;
   player1: {
     id: string;
     paternalSurname: string;
@@ -116,6 +117,7 @@ export async function getPlayerPyramid(
         player1PaternalSurname: users.paternalSurname,
         player1MaternalSurname: users.maternalSurname,
         player1Nickname: profile.nickname,
+        teamDefendable: team.defendable
       })
       .from(position)
       .where(eq(position.pyramidId, pyramidId))
@@ -163,6 +165,7 @@ export async function getPlayerPyramid(
           losses: pos.teamLosses || 0,
           status: pos.teamStatus || "idle",
           categoryId: pos.teamCategoryId,
+          defendable: pos.teamDefendable!,
           player1,
           player2,
         };

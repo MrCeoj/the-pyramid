@@ -24,7 +24,7 @@ const TeamCard = ({
   challengable = false,
   isTop = false,
   isPlayer = false,
-  defended = false, // Default defended to false
+  defended = false,
   onChallenge,
 }: TeamCardProps) => {
   const getIcon = (category: number) => {
@@ -73,6 +73,24 @@ const TeamCard = ({
   };
 
   const getStatusIcon = () => {
+    
+
+    if (isPlayer) {
+      return (
+        <div className="absolute -top-2 -right-2 bg-gradient-to-br from-yellow-200 to-amber-400 text-black rounded-full p-1.5 shadow-lg z-10">
+          <Flag size={12} />
+        </div>
+      );
+    }
+
+    if (defended) {
+      return (
+        <div className="absolute -top-2 -right-2 bg-gradient-to-br from-green-700 via-green-600 to-green-800 text-white rounded-full p-1.5 shadow-lg z-10">
+          <Shield size={14} strokeWidth={4} />
+        </div>
+      );
+    }
+
     if (isTop) {
       return (
         <>
@@ -89,23 +107,6 @@ const TeamCard = ({
       );
     }
 
-    if (isPlayer) {
-      return (
-        <div className="absolute -top-2 -right-2 bg-gradient-to-br from-yellow-200 to-amber-400 text-black rounded-full p-1.5 shadow-lg z-10">
-          <Flag size={12} />
-        </div>
-      );
-    }
-
-    if (defended) {
-      return (
-        <div className="absolute -top-2 -right-2 bg-gradient-to-br from-green-600 via-green-400 to-green-700 text-white rounded-full p-1 shadow-lg z-10">
-          <Shield size={14} strokeWidth={4} />
-        </div>
-      );
-    }
-
-    // Show sword icon only if challengable AND not defended
     if (challengable) {
       return (
         <div className="absolute -top-3 -right-3 bg-gradient-to-br from-amber-600 to-yellow-600 via-yellow-400 text-amber-900 rounded-full p-1 shadow-md z-10">

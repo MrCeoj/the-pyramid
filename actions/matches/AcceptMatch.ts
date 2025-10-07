@@ -13,14 +13,13 @@ import {
   getTeamWithPlayers,
   getUserTeamIds,
 } from "@/actions/matches/TeamService";
-import { TeamWithPlayers } from "../PositionActions";
+import { TeamWithPlayers } from "@/actions/PositionActions";
 
 export async function acceptMatch(
   matchId: number,
   userId: string
 ): Promise<MatchResult> {
   try {
-    // Wrap the entire logic in a transaction
     return await db.transaction(async (tx) => {
       // 1. Get all necessary match info at once
       const matchArr = await tx
@@ -73,6 +72,17 @@ export async function acceptMatch(
         );
       }
 
+      // Mark both teams as defendable
+      await tx
+        .update(team)
+        .set({ defendable: true })
+        .where(
+          inArray(team.id, [
+            currentMatch.defenderTeamId,
+            currentMatch.attackerTeamId,
+          ])
+        );
+
       const affectedMatches = await tx
         .select({
           matchId: match.id,
@@ -85,7 +95,9 @@ export async function acceptMatch(
             eq(match.status, "pending"),
             or(
               eq(match.defenderTeamId, currentMatch.defenderTeamId),
-              eq(match.challengerTeamId, currentMatch.defenderTeamId)
+              eq(match.defenderTeamId, currentMatch.attackerTeamId),
+              eq(match.challengerTeamId, currentMatch.defenderTeamId),
+              eq(match.challengerTeamId, currentMatch.attackerTeamId)
             )
           )
         );
@@ -95,6 +107,7 @@ export async function acceptMatch(
       // Build recipients list
       const teamsIds = new Set<number>();
       affectedMatches.forEach((m) => {
+        matchesIds.add(m.matchId);
         teamsIds.add(m.attacker);
         teamsIds.add(m.defender);
       });

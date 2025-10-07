@@ -20,6 +20,7 @@ export type TeamWithPlayers = {
   losses: number;
   status: "winner" | "looser" | "idle" | "risky";
   categoryId: number | null;
+  defendable?: boolean;
   player1: {
     id: string;
     paternalSurname: string;

@@ -172,6 +172,7 @@ export const team = pgTable(
     losses: integer("losses").default(0),
     amountRejected: integer("amount_rejected").default(0),
     status: teamStatus("status").default("idle"),
+    defendable: boolean("defendable").default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },

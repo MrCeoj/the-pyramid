@@ -78,14 +78,14 @@ export default function UserDropdownMenu() {
   useEffect(() => {
     if (status === "unauthenticated") {
       update();
-      //checkExpiredMatches();
+      checkExpiredMatches();
       return;
     }
   }, [checkExpiredMatches, status, update]);
 
   useEffect(() => {
     loadCount();
-    //checkExpiredMatches();
+    checkExpiredMatches();
   }, [loadCount, checkExpiredMatches, session]);
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { transporter } from "@/lib/mail";
-import { TeamWithPlayers } from "./PositionActions";
+import { TeamWithPlayers } from "@/actions/PositionActions";
 import {
   generateChallengeEmailTemplate,
   generateAcceptEmailTemplate,
