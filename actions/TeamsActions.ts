@@ -3,7 +3,7 @@
 import { db } from "@/lib/drizzle"; // Assuming your db instance is here
 import { sendRiskyWarningMail } from "@/actions/MailActions";
 import { getTeamWithPlayers } from "@/actions/matches/TeamService";
-import { eq, aliasedTable, and, gte, or, inArray } from "drizzle-orm";
+import { eq, aliasedTable, and, gte, or, inArray, lt, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import {
   team,
@@ -107,7 +107,7 @@ export async function getTeams(): Promise<TeamWithPlayers[]> {
     return uniqueTeams;
   } catch (error) {
     console.error("Failed to get teams:", error);
-    throw new Error("Could not fetch teams.");
+    throw new Error("No se pudo conseguir a los equipos.");
   }
 }
 
@@ -289,7 +289,7 @@ export async function checkAndMarkRiskyTeams(
   pyramidId: number
 ): Promise<RiskyCheckResult> {
   try {
-    const pyramidRowsTotal = await db
+    const [pyramidRowsTotal] = await db
       .select({ row_amount: pyramid.row_amount })
       .from(pyramid)
       .where(eq(pyramid.id, pyramidId));
@@ -297,7 +297,8 @@ export async function checkAndMarkRiskyTeams(
     if (!pyramidRowsTotal)
       throw new Error("Error al conseguir la cantidad de filas de la pirámide");
 
-    const dateThreshold = await getPreviousMonday();
+    const prevMonday = await getPreviousMonday();
+    const currMonday = await getPreviousMonday(false);
 
     const teamsInPyramid = await db
       .select({
@@ -306,7 +307,12 @@ export async function checkAndMarkRiskyTeams(
         col: position.col,
       })
       .from(position)
-      .where(eq(position.pyramidId, pyramidId));
+      .where(
+        and(
+          eq(position.pyramidId, pyramidId),
+          ne(position.row, pyramidRowsTotal.row_amount!)
+        )
+      );
 
     if (teamsInPyramid.length === 0) {
       return {
@@ -318,12 +324,10 @@ export async function checkAndMarkRiskyTeams(
       };
     }
 
-    const filteredTeams = teamsInPyramid.filter(
-      (t) => t.row !== pyramidRowsTotal[0].row_amount
-    );
+    const allTeamIds = teamsInPyramid.map((t) => t.teamId);
 
-    const allTeamIds = filteredTeams.map((t) => t.teamId);
-    const recentlyActiveTeams = await db
+    // Get matches from current week (since currMonday)
+    const currentWeekMatches = await db
       .selectDistinct({
         challengerTeamId: match.challengerTeamId,
         defenderTeamId: match.defenderTeamId,
@@ -333,7 +337,7 @@ export async function checkAndMarkRiskyTeams(
         and(
           eq(match.pyramidId, pyramidId),
           eq(match.status, "played"),
-          gte(match.updatedAt, dateThreshold),
+          gte(match.updatedAt, currMonday), // Current week
           or(
             inArray(match.challengerTeamId, allTeamIds),
             inArray(match.defenderTeamId, allTeamIds)
@@ -341,29 +345,61 @@ export async function checkAndMarkRiskyTeams(
         )
       );
 
-    const matchCounts = new Map<number, number>();
-
-    recentlyActiveTeams.forEach((m) => {
-      matchCounts.set(
-        m.challengerTeamId,
-        (matchCounts.get(m.challengerTeamId) || 0) + 1
+    // Get matches from previous week (between prevMonday and currMonday)
+    const previousWeekMatches = await db
+      .selectDistinct({
+        challengerTeamId: match.challengerTeamId,
+        defenderTeamId: match.defenderTeamId,
+      })
+      .from(match)
+      .where(
+        and(
+          eq(match.pyramidId, pyramidId),
+          eq(match.status, "played"),
+          gte(match.updatedAt, prevMonday),
+          lt(match.updatedAt, currMonday), // Previous week only
+          or(
+            inArray(match.challengerTeamId, allTeamIds),
+            inArray(match.defenderTeamId, allTeamIds)
+          )
+        )
       );
-      matchCounts.set(
+
+    // Count matches per team for current week
+    const currentWeekCounts = new Map<number, number>();
+    currentWeekMatches.forEach((m) => {
+      currentWeekCounts.set(
+        m.challengerTeamId,
+        (currentWeekCounts.get(m.challengerTeamId) || 0) + 1
+      );
+      currentWeekCounts.set(
         m.defenderTeamId,
-        (matchCounts.get(m.defenderTeamId) || 0) + 1
+        (currentWeekCounts.get(m.defenderTeamId) || 0) + 1
       );
     });
 
-    // Teams with at least 2 matches played since last Monday
-    const activeTeamIds = new Set<number>(
-      Array.from(matchCounts.entries())
-        .filter(([_, count]) => count >= 2)
-        .map(([teamId]) => teamId)
-    );
+    // Count matches per team for previous week
+    const previousWeekCounts = new Map<number, number>();
+    previousWeekMatches.forEach((m) => {
+      previousWeekCounts.set(
+        m.challengerTeamId,
+        (previousWeekCounts.get(m.challengerTeamId) || 0) + 1
+      );
+      previousWeekCounts.set(
+        m.defenderTeamId,
+        (previousWeekCounts.get(m.defenderTeamId) || 0) + 1
+      );
+    });
 
-    recentlyActiveTeams.forEach((match) => {
-      activeTeamIds.add(match.challengerTeamId);
-      activeTeamIds.add(match.defenderTeamId);
+    const activeTeamIds = new Set<number>();
+
+    allTeamIds.forEach((teamId) => {
+      const currentWeekMatchCount = currentWeekCounts.get(teamId) || 0;
+      const previousWeekMatchCount = previousWeekCounts.get(teamId) || 0;
+
+      if (currentWeekMatchCount >= 1 || previousWeekMatchCount >= 2) {
+        activeTeamIds.add(teamId);
+      }
     });
 
     // Step 3: Find inactive teams (teams that haven't played)
@@ -462,10 +498,18 @@ export async function checkAndMarkRiskyTeams(
   }
 }
 
-export async function getPreviousMonday(date: Date = new Date()): Promise<Date> {
+export async function getPreviousMonday(
+  previous = true,
+  date: Date = new Date()
+): Promise<Date> {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1) - 7; // -7 because one week offset
+  let diff;
+  if (previous) {
+    diff = d.getDate() - day + (day === 0 ? -6 : 1) - 7; // -7 because one week offset
+  } else {
+    diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  }
 
   d.setHours(0, 0, 0, 0);
   d.setDate(diff);

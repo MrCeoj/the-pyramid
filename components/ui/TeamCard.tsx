@@ -73,7 +73,13 @@ const TeamCard = ({
   };
 
   const getStatusIcon = () => {
-    
+    if (defended) {
+      return (
+        <div className="absolute -top-2 -right-2 bg-gradient-to-br from-green-700 via-green-600 to-green-800 text-white rounded-full p-1.5 shadow-lg z-10">
+          <Shield size={14} strokeWidth={4} />
+        </div>
+      );
+    }
 
     if (isPlayer) {
       return (
@@ -83,34 +89,18 @@ const TeamCard = ({
       );
     }
 
-    if (defended) {
+    if (challengable) {
       return (
-        <div className="absolute -top-2 -right-2 bg-gradient-to-br from-green-700 via-green-600 to-green-800 text-white rounded-full p-1.5 shadow-lg z-10">
-          <Shield size={14} strokeWidth={4} />
+        <div className="absolute -top-3 -right-3 bg-gradient-to-br from-amber-600 to-yellow-600 via-yellow-400 text-amber-900 rounded-full p-1 shadow-md z-10">
+          <Sword size={18} strokeWidth={2} />
         </div>
       );
     }
 
     if (isTop) {
       return (
-        <>
-          {(!challengable) ? (
-            <div className="absolute -top-2 -right-2 bg-gradient-to-br from-yellow-400 to-amber-500 text-slate-800 rounded-full p-1.5 shadow-lg z-10 animate-pulse">
-              <Crown size={12} />
-            </div>
-          ) : !defended && (
-            <div className="absolute -top-3 -right-3 bg-gradient-to-br from-amber-600 to-yellow-600 via-yellow-400 text-amber-900 rounded-full p-1 shadow-md z-10">
-              <Sword size={18} strokeWidth={2} />
-            </div>
-          )}
-        </>
-      );
-    }
-
-    if (challengable) {
-      return (
-        <div className="absolute -top-3 -right-3 bg-gradient-to-br from-amber-600 to-yellow-600 via-yellow-400 text-amber-900 rounded-full p-1 shadow-md z-10">
-          <Sword size={18} strokeWidth={2} />
+        <div className="absolute -top-2 -right-2 bg-gradient-to-br from-yellow-400 to-amber-500 text-slate-800 rounded-full p-1.5 shadow-lg z-10 animate-pulse">
+          <Crown size={12} />
         </div>
       );
     }
@@ -126,7 +116,9 @@ const TeamCard = ({
       return "hover:shadow-xl hover:shadow-blue-400/30 hover:scale-[1.03]";
     }
     // Card is only animated on hover if it's actually challengable
-    return challengable && !defended ? "hover:shadow-lg hover:scale-[1.02]" : "";
+    return challengable && !defended
+      ? "hover:shadow-lg hover:scale-[1.02]"
+      : "";
   };
 
   const isActuallyChallengable = challengable && !defended;
