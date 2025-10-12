@@ -2,6 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 import HellBackground from "@/components/lightswind/hell-background";
 import { SessionProvider } from "next-auth/react";
+import { Jolly_Lodger } from "next/font/google"
+
+const jolly = Jolly_Lodger({
+  subsets: ['latin'],
+  weight: ['400'],  // Jolly Lodger is a display font, usually just regular
+  variable: '--font-jolly-lodger',
+})
 
 export const metadata: Metadata = {
   title: "Pirámide",
@@ -17,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className={`${jolly.variable}`}>
       <SessionProvider>
         <body className="h-screen w-screen bg-[#2c2c2c] overflow-hidden">
           <HellBackground

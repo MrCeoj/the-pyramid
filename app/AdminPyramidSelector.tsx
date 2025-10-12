@@ -22,6 +22,7 @@ const AdminPyramidSelector = () => {
   useEffect(() => {
     const fetchPyramidData = async (id: number) => {
       const pyramidData = await getPyramidData(id);
+      console.log(pyramidData)
       setPyramidData(pyramidData);
     };
     if (selectedPyramidId) {

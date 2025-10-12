@@ -261,6 +261,7 @@ export async function getPyramidData(
         teamLosses: team.losses,
         teamStatus: team.status,
         teamCategoryId: team.categoryId,
+        defendable: team.defendable,
         player1Id: team.player1Id,
         player2Id: team.player2Id,
         player1PaternalSurname: users.paternalSurname,
@@ -313,6 +314,7 @@ export async function getPyramidData(
           losses: pos.teamLosses || 0,
           status: pos.teamStatus || "idle",
           categoryId: pos.teamCategoryId,
+          defendable: pos.defendable || false,
           player1,
           player2,
         };

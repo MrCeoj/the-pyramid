@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import PyramidRow from "./PyramidRow";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -7,8 +7,8 @@ import { getUnresolvedMatchesForTeam } from "@/actions/matches/";
 import { UnresolvedMatch } from "@/actions/matches/types";
 import { PyramidData } from "@/actions/IndexActions";
 import { TeamWithPlayers } from "@/actions/PositionActions";
+import CellarRow from "./CellarRow";
 
-// Rename to avoid conflict with imported Position type
 type PyramidPosition = {
   id: number;
   row: number;
@@ -23,10 +23,16 @@ export default function PyramidDisplay({
   data: PyramidData;
   userTeamId?: number | null;
 }) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [unresolvedMatches, setUnresolvedMatches] = useState<UnresolvedMatch[]>(
     []
   );
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [cellarTeam, setCellarTeam] = useState<PyramidPosition>({
+    id: 123,
+    row: 8,
+    col: 1,
+    team: null,
+  });
 
   const fetchUnresolvedMatches = useCallback(async () => {
     if (!userTeamId) return;
@@ -46,11 +52,6 @@ export default function PyramidDisplay({
     fetchUnresolvedMatches();
   }, [fetchUnresolvedMatches]);
 
-  // Refresh callback to pass to PyramidRow
-  const handleRefreshNeeded = useCallback(() => {
-    fetchUnresolvedMatches();
-  }, [fetchUnresolvedMatches]);
-
   const isMobile = useIsMobile();
 
   // Transform all positions once at the beginning
@@ -58,15 +59,23 @@ export default function PyramidDisplay({
     id: pos.id,
     row: pos.row,
     col: pos.col,
-    team: pos.team as TeamWithPlayers | null, // Type assertion
+    team: pos.team as TeamWithPlayers | null,
   }));
 
-  const rows: { [key: number]: PyramidPosition[] } = {};
-  allPyramidPositions.forEach((pos) => {
-    if (!pos) return;
-    if (!rows[pos.row]) rows[pos.row] = [];
-    rows[pos.row].push(pos);
-  });
+  const rows = useMemo(() => {
+      const rowsMap: { [key: number]: PyramidPosition[] } = {};
+      data.positions.forEach((pos) => {
+        if (!rowsMap[pos.row]) rowsMap[pos.row] = [];
+        const pyramidPos: PyramidPosition = {
+          id: pos.id,
+          row: pos.row,
+          col: pos.col,
+          team: pos.team as TeamWithPlayers | null,
+        };
+        rowsMap[pos.row].push(pyramidPos);
+      });
+      return rowsMap;
+    }, [data.positions]);
 
   const filledRows: { [key: number]: PyramidPosition[] } = {};
   for (let row = 1; row <= data.row_amount; row++) {
@@ -89,6 +98,11 @@ export default function PyramidDisplay({
     }
     filledRows[row] = filled;
   }
+
+  useEffect(() => {
+      if (!rows[8]) setCellarTeam({ id: 123, row: 8, col: 1, team: null });
+      if (rows[8] && rows[8].length > 0) setCellarTeam(rows[8][0]);
+    }, [rows]);
 
   return (
     <div className="flex flex-col items-center relative mb-5 no-scrollbar">
@@ -113,6 +127,7 @@ export default function PyramidDisplay({
           />
         </div>
       )}
+
       {/* Pyramid Structure */}
       <div className="flex flex-col items-center mb-5">
         {Object.keys(filledRows)
@@ -131,13 +146,22 @@ export default function PyramidDisplay({
                 unresolvedMatches={unresolvedMatches}
                 userTeamId={userTeamId}
                 pyramidId={data.pyramid_id!}
-                onRefreshNeeded={handleRefreshNeeded}
                 className={`flex gap-4 p-4 justify-start min-w-max overflow-x-scroll scroll-smooth no-scrollbar items-center snap-x rounded-t-2xl border-2 border-slate-400/40 border-dashed bg-indor-black/80 ${
                   isLast ? "border-b-2 rounded-b-2xl" : "border-b-0"
                 } ${isRefreshing ? "opacity-75" : ""}`}
               />
             );
           })}
+      </div>
+
+      {/* The Cellar */}
+      <div className="mb-5">
+        <CellarRow
+          userTeamId={userTeamId}
+          position={cellarTeam!}
+          isFirst={true}
+          isLast={true}
+        />
       </div>
 
       {/* Optional: Show refresh indicator */}

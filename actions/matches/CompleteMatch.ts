@@ -60,8 +60,16 @@ export async function completeMatch(
       };
     }
 
-    const shouldSwapPositions = (winnerCurrentPos.row > loserCurrentPos.row || winnerCurrentPos.col > loserCurrentPos.col);
-    
+    console.log("W", winnerCurrentPos, "L", loserCurrentPos);
+
+    let shouldSwapPositions = winnerCurrentPos.row > loserCurrentPos.row;
+    console.log(shouldSwapPositions);
+    if (!shouldSwapPositions)
+      shouldSwapPositions =
+        winnerCurrentPos.row === loserCurrentPos.row &&
+        winnerCurrentPos.col >= loserCurrentPos.col;
+    console.log(shouldSwapPositions);
+
     await db.transaction(async (tx) => {
       // 1. Update match status
       await tx
@@ -83,7 +91,14 @@ export async function completeMatch(
         .where(inArray(team.id, [winnerTeamId, loserTeamId]));
 
       // 3. Update wins for the winner
-      const currentWins = (await tx.select({ wins: team.wins }).from(team).where(eq(team.id, winnerTeamId)).limit(1))[0].wins || 0;
+      const currentWins =
+        (
+          await tx
+            .select({ wins: team.wins })
+            .from(team)
+            .where(eq(team.id, winnerTeamId))
+            .limit(1)
+        )[0].wins || 0;
       await tx
         .update(team)
         .set({
@@ -94,7 +109,14 @@ export async function completeMatch(
         .where(eq(team.id, winnerTeamId));
 
       // 4. Update losses for the loser
-      const currentLosses = (await tx.select({ losses: team.losses }).from(team).where(eq(team.id, loserTeamId)).limit(1))[0].losses || 0;
+      const currentLosses =
+        (
+          await tx
+            .select({ losses: team.losses })
+            .from(team)
+            .where(eq(team.id, loserTeamId))
+            .limit(1)
+        )[0].losses || 0;
       await tx
         .update(team)
         .set({
@@ -106,11 +128,15 @@ export async function completeMatch(
 
       // 5. If the winner was lower-ranked, swap their positions
       if (shouldSwapPositions) {
-        // A -> temp, B -> A, temp -> B swap to avoid unique constraint conflicts
         await tx
           .update(position)
           .set({ row: -1, col: -1 })
-          .where(and(eq(position.teamId, winnerTeamId), eq(position.pyramidId, pyramidId)));
+          .where(
+            and(
+              eq(position.teamId, winnerTeamId),
+              eq(position.pyramidId, pyramidId)
+            )
+          );
 
         await tx
           .update(position)
@@ -119,7 +145,12 @@ export async function completeMatch(
             col: winnerCurrentPos.col,
             updatedAt: new Date(),
           })
-          .where(and(eq(position.teamId, loserTeamId), eq(position.pyramidId, pyramidId)));
+          .where(
+            and(
+              eq(position.teamId, loserTeamId),
+              eq(position.pyramidId, pyramidId)
+            )
+          );
 
         await tx
           .update(position)
@@ -128,7 +159,12 @@ export async function completeMatch(
             col: loserCurrentPos.col,
             updatedAt: new Date(),
           })
-          .where(and(eq(position.teamId, winnerTeamId), eq(position.pyramidId, pyramidId)));
+          .where(
+            and(
+              eq(position.teamId, winnerTeamId),
+              eq(position.pyramidId, pyramidId)
+            )
+          );
 
         // Log the position change
         await tx.insert(positionHistory).values({

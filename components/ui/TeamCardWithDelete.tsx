@@ -16,13 +16,11 @@ interface Position {
 
 interface TeamCardWithDeleteProps {
   data: Position;
-  onTeamClick: (team: TeamWithPlayers) => void;
   pyramidId: number;
 }
 
 const TeamCardWithDelete: React.FC<TeamCardWithDeleteProps> = ({
   data,
-  onTeamClick,
   pyramidId,
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -52,11 +50,7 @@ const TeamCardWithDelete: React.FC<TeamCardWithDeleteProps> = ({
     }
   };
 
-  const handleTeamClick = () => {
-    if (data.team && !isDeleting) {
-      onTeamClick(data.team);
-    }
-  };
+
 
   return (
     <div className="relative group">
@@ -77,7 +71,7 @@ const TeamCardWithDelete: React.FC<TeamCardWithDeleteProps> = ({
         )}
       </button>
       {/* Team card */}
-      <div onClick={handleTeamClick} className="cursor-pointer">
+      <div className="cursor-pointer">
         <TeamCard data={data} />
       </div>
       {showConfirm &&

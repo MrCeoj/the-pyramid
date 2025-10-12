@@ -14,14 +14,12 @@ const PyramidRow = ({
   handleSetTeam,
   pyramidId,
   positions,
-  onTeamClick,
   isFirst = false,
   isLast = false,
 }: {
   handleSetTeam: (pos: Position) => void;
   pyramidId: number;
   positions: Position[];
-  onTeamClick: (team: TeamWithPlayers) => void;
   isFirst?: boolean;
   isLast?: boolean;
 }) => {
@@ -51,7 +49,6 @@ const PyramidRow = ({
               <TeamCardWithDelete
                 key={pos.id}
                 data={pos}
-                onTeamClick={onTeamClick}
                 pyramidId={pyramidId}
               />
             ) : (

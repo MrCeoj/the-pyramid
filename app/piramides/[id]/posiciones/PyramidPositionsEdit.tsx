@@ -1,17 +1,17 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PyramidRow from "./PyramidRowEdit";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   setTeamInPosition,
   getApplicableTeams,
-  TeamWithPlayers
+  TeamWithPlayers,
 } from "@/actions/PositionActions";
 import toast from "react-hot-toast";
 import SetTeamModal from "./SetTeamModal";
 import { PyramidData } from "@/actions/IndexActions";
-
+import CellarRow from "./CellarRowEdit";
 
 interface PyramidPosition {
   id: number;
@@ -28,10 +28,18 @@ interface SelectedPosition {
 
 export default function PyramidDisplay({ data }: { data: PyramidData }) {
   const [applicableTeams, setApplicableTeams] = useState<TeamWithPlayers[]>([]);
+  const [cellarTeam, setCellarTeam] = useState<PyramidPosition>({
+    id: 123,
+    row: 8,
+    col: 1,
+    team: null,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] =
     useState<SelectedPosition | null>(null);
+
+  const isMobile = useIsMobile();
 
   const fetchApplicableTeams = async () => {
     setIsLoading(true);
@@ -39,12 +47,12 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
       const teams = await getApplicableTeams(data.pyramid_id!);
       if (teams) {
         if (!data.positions) return;
+
         const existingInPyramid = data.positions.map(({ team }) => team?.id);
 
         const filteredTeams = teams.filter(
           (team) => !existingInPyramid.includes(team.id)
         );
-        console.log("filtered",filteredTeams)
 
         setApplicableTeams(filteredTeams);
       }
@@ -65,21 +73,20 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
     setIsModalOpen(true);
   };
 
-  const isMobile = useIsMobile();
-
-
-  const rows: { [key: number]: PyramidPosition[] } = {};
-  data.positions.forEach((pos) => {
-    if (!rows[pos.row]) rows[pos.row] = [];
-  
-    const pyramidPos: PyramidPosition = {
-      id: pos.id,
-      row: pos.row,
-      col: pos.col,
-      team: pos.team as TeamWithPlayers | null,
-    };
-    rows[pos.row].push(pyramidPos);
-  });
+  const rows = React.useMemo(() => {
+    const rowsMap: { [key: number]: PyramidPosition[] } = {};
+    data.positions.forEach((pos) => {
+      if (!rowsMap[pos.row]) rowsMap[pos.row] = [];
+      const pyramidPos: PyramidPosition = {
+        id: pos.id,
+        row: pos.row,
+        col: pos.col,
+        team: pos.team as TeamWithPlayers | null,
+      };
+      rowsMap[pos.row].push(pyramidPos);
+    });
+    return rowsMap;
+  }, [data.positions]);
 
   const handleTeamSelect = async (team: TeamWithPlayers) => {
     if (!selectedPosition) return;
@@ -100,7 +107,8 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
       setSelectedPosition(null);
       setApplicableTeams([]);
     } catch (error) {
-      if (error instanceof Error) toast.error("Error al posicionar equipo: "+error.message);
+      if (error instanceof Error)
+        toast.error("Error al posicionar equipo: " + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -134,9 +142,13 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
     filledRows[row] = filled;
   }
 
+  useEffect(() => {
+    if (!rows[8]) setCellarTeam({ id: 123, row: 8, col: 1, team: null });
+    if (rows[8] && rows[8].length > 0) setCellarTeam(rows[8][0]);
+  }, [rows]);
+
   return (
     <div className="flex flex-col items-center relative mb-5 no-scrollbar">
-      
       {isMobile ? (
         <Image
           src={"/piramide_logo_title_naranja.svg"}
@@ -156,7 +168,7 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
           />
         </div>
       )}
-      
+
       <div className="flex flex-col items-center mb-5">
         {Object.keys(filledRows)
           .sort((a, b) => Number(a) - Number(b))
@@ -171,12 +183,22 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
                 key={rowKey}
                 handleSetTeam={handleSetTeam}
                 positions={rowPositions}
-                onTeamClick={() => {}}
                 isFirst={isFirst}
                 isLast={isLast}
               />
             );
           })}
+      </div>
+
+      {/* the cellar */}
+      <div>
+        <CellarRow
+          pyramidId={data.pyramid_id}
+          handleSetTeam={handleSetTeam}
+          position={cellarTeam!}
+          isFirst={true}
+          isLast={true}
+        />
       </div>
 
       {/* Modal */}

@@ -1,6 +1,7 @@
 import React from "react";
 import { X, Users, Trophy, AlertCircle } from "lucide-react";
 import { TeamWithPlayers } from "@/actions/PositionActions";
+import toast from "react-hot-toast";
 
 interface SetTeamModalProps {
   isOpen: boolean;
@@ -70,8 +71,7 @@ const SetTeamModal = ({
       await onTeamSelect(team);
       onClose();
     } catch (error) {
-      console.error("Error setting team:", error);
-      // You might want to add toast notification here
+      if (error instanceof Error) toast.error(error.message)
     }
   };
 

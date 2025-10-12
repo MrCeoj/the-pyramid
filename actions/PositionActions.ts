@@ -9,7 +9,7 @@ import {
   positionHistory,
 } from "@/db/schema";
 import { db } from "@/lib/drizzle";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getTeamDisplayName } from "@/db/schema";
 
@@ -70,7 +70,7 @@ export async function getApplicableTeams(
       })
       .from(team)
       .where(inArray(team.categoryId, categoryIds))
-      .innerJoin(users, eq(team.player1Id, users.id))
+      .innerJoin(users, or(eq(team.player1Id, users.id), eq(team.player2Id, users.id)))
       .leftJoin(profile, eq(users.id, profile.userId));
 
     const teams: TeamWithPlayers[] = await Promise.all(
@@ -113,7 +113,6 @@ export async function getApplicableTeams(
       })
     );
 
-    console.log(teams)
 
     return teams;
   } catch (error) {

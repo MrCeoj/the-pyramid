@@ -16,7 +16,7 @@ const EmptySlot = ({
           <p>Añadir equipo</p>
         </div>
         <div className="text-xs text-slate-500 pt-2">
-          Fila {rowNumber} • Posición {posNumber}
+          {rowNumber < 5 ? `Fila ${rowNumber} • Posición ${posNumber}` : "EL SÓTANO"}
         </div>
       </div>
     </div>

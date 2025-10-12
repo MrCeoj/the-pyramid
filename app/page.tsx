@@ -58,7 +58,6 @@ export default async function Home() {
   const userRole = userData[0].role;
 
   if (userRole === "admin") {
-    // Admin flow
     const allPyramids = await getAllPyramidsTotal();
 
     if (allPyramids.length === 0) {
