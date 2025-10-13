@@ -10,11 +10,11 @@ interface HellBackgroundProps {
   color1?: string;
   color2?: string;
   color3?: string;
+  // New performance options
+  quality?: "low" | "medium" | "high";
+  targetFPS?: number;
 }
 
-/**
- * A mapping from simplified blur size names to full Tailwind CSS backdrop-blur classes.
- */
 const blurClassMap: Record<BlurSize, string> = {
   none: "backdrop-blur-none",
   sm: "backdrop-blur-sm",
@@ -32,33 +32,30 @@ const vertexShaderSource = `
   }
 `;
 
+// Optimized fragment shader with reduced iterations and simpler calculations
 const fragmentShaderSource = `
-  precision mediump float;
+  precision lowp float;
 
   uniform vec2 iResolution;
   uniform float iTime;
   uniform vec3 uColor1;
   uniform vec3 uColor2;
   uniform vec3 uColor3;
+  uniform float uQuality;
 
   #define CONTRAST 3.5
   #define LIGTHING 0.4
   #define SPIN_ROTATION -2.0
   #define SPIN_SPEED 7.0
   #define OFFSET vec2(0.0)
-  #define COLOUR_1 vec4(uColor.rgb, 1.0)
-  #define COLOUR_2 vec4(0.0, 0.42, 0.706, 1.0)
-  #define COLOUR_3 vec4(0.086, 0.137, 0.145, 1.0)
-  #define CONTRAST 3.5
-  #define LIGTHING 0.4
   #define SPIN_AMOUNT 0.25
-  #define PIXEL_FILTER 745.0
   #define SPIN_EASE 1.0
   #define PI 3.14159265359
   #define IS_ROTATE false
 
   vec4 effect(vec2 screenSize, vec2 screen_coords) {
-      float pixel_size = length(screenSize.xy) / PIXEL_FILTER;
+      float pixel_filter = mix(300.0, 745.0, uQuality);
+      float pixel_size = length(screenSize.xy) / pixel_filter;
       vec2 uv = (floor(screen_coords.xy*(1./pixel_size))*pixel_size - 0.5*screenSize.xy)/length(screenSize.xy) - OFFSET;
       float uv_len = length(uv);
 
@@ -76,7 +73,10 @@ const fragmentShaderSource = `
       speed = iTime*(SPIN_SPEED);
       vec2 uv2 = vec2(uv.x+uv.y);
 
+      // Reduced iterations based on quality
+      int iterations = int(mix(2.0, 5.0, uQuality));
       for(int i=0; i < 5; i++) {
+          if(i >= iterations) break;
           uv2 += sin(max(uv.x, uv.y)) + uv;
           uv  += 0.5*vec2(cos(5.1123314 + 0.353*uv2.y + speed*0.131121),sin(uv2.x - 0.113*speed));
           uv  -= 1.0*cos(uv.x + uv.y) - 1.0*sin(uv.x*0.711 - uv.y);
@@ -112,15 +112,26 @@ function HellBackground({
   className = "",
   color1 = "#DE443B",
   color2 = "#006BB4",
-  color3 = "#162325"
+  color3 = "#162325",
+  quality = "low", // Default to low for TV
+  targetFPS = 20
 }: HellBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number>(0);
+  const lastFrameTimeRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext("webgl");
+    const gl = canvas.getContext("webgl", {
+      alpha: false,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      powerPreference: "low-power"
+    });
+    
     if (!gl) {
       console.error("WebGL not supported");
       return;
@@ -173,7 +184,7 @@ function HellBackground({
     const uColor1Location = gl.getUniformLocation(program, "uColor1");
     const uColor2Location = gl.getUniformLocation(program, "uColor2");
     const uColor3Location = gl.getUniformLocation(program, "uColor3");
-
+    const uQualityLocation = gl.getUniformLocation(program, "uQuality");
 
     const hexToRgb = (hex: string) => {
       const bigint = parseInt(hex.replace("#", ""), 16);
@@ -184,34 +195,56 @@ function HellBackground({
       };
     };
 
-    const startTime = Date.now();
+    // Set quality uniform (0.0 = low, 0.5 = medium, 1.0 = high)
+    const qualityValue = quality === "low" ? 0.0 : quality === "medium" ? 0.5 : 1.0;
+    gl.uniform1f(uQualityLocation, qualityValue);
 
-    const render = () => {
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
+    // Resolution scale based on quality
+    const resolutionScale = quality === "low" ? 0.5 : quality === "medium" ? 0.75 : 1.0;
+    
+    const startTime = Date.now();
+    const frameInterval = 1000 / targetFPS;
+
+    const render = (currentTime: number) => {
+      // Frame rate limiting
+      if (currentTime - lastFrameTimeRef.current < frameInterval) {
+        animationFrameRef.current = requestAnimationFrame(render);
+        return;
+      }
+      lastFrameTimeRef.current = currentTime;
+
+      // Render at reduced resolution for performance
+      const width = Math.floor(canvas.clientWidth * resolutionScale);
+      const height = Math.floor(canvas.clientHeight * resolutionScale);
       canvas.width = width;
       canvas.height = height;
       gl.viewport(0, 0, width, height);
 
-      const currentTime = (Date.now() - startTime) / 1000;
+      const time = (Date.now() - startTime) / 1000;
       gl.uniform2f(iResolutionLocation, width, height);
-      gl.uniform1f(iTimeLocation, currentTime);
+      gl.uniform1f(iTimeLocation, time);
 
-      const rgb1 = hexToRgb(color1 || "#DE443B"); // default red
+      const rgb1 = hexToRgb(color1 || "#DE443B");
       gl.uniform3f(uColor1Location, rgb1.r, rgb1.g, rgb1.b);
 
-      const rgb2 = hexToRgb(color2 || "#006BB4"); // default blue
+      const rgb2 = hexToRgb(color2 || "#006BB4");
       gl.uniform3f(uColor2Location, rgb2.r, rgb2.g, rgb2.b);
 
-      const rgb3 = hexToRgb(color3 || "#162325"); // default dark green/gray
+      const rgb3 = hexToRgb(color3 || "#162325");
       gl.uniform3f(uColor3Location, rgb3.r, rgb3.g, rgb3.b);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-      requestAnimationFrame(render);
+      animationFrameRef.current = requestAnimationFrame(render);
     };
 
-    render();
-  }, [color1, color2, color3]);
+    animationFrameRef.current = requestAnimationFrame(render);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [color1, color2, color3, quality, targetFPS]);
 
   const finalBlurClass = blurClassMap[backdropBlurAmount as BlurSize] || blurClassMap["sm"];
 

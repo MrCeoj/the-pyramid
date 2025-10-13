@@ -1,0 +1,1 @@
+ALTER TABLE "team" ADD COLUMN "loosing_streak" integer DEFAULT 0;

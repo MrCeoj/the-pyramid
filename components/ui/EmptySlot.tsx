@@ -9,7 +9,7 @@ const EmptySlot: React.FC<{ rowNumber: number; posNumber: number }> = ({
           Lugar Vacío
         </div>
         <div className="text-xs text-slate-500">
-          Fila {rowNumber} • Posición {posNumber}
+          {rowNumber < 8 ? `Fila ${rowNumber} • Posición ${posNumber}` : "Nadie quiere estar aqui..."}
         </div>
       </div>
     </div>
