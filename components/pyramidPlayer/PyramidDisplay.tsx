@@ -49,60 +49,66 @@ export default function PyramidDisplay({
   }, [userTeamId]);
 
   useEffect(() => {
-    fetchUnresolvedMatches();
-  }, [fetchUnresolvedMatches]);
+    if (userTeamId) fetchUnresolvedMatches();
+  }, [userTeamId, fetchUnresolvedMatches]);
 
   const isMobile = useIsMobile();
 
   // Transform all positions once at the beginning
-  const allPyramidPositions: PyramidPosition[] = data.positions.map((pos) => ({
-    id: pos.id,
-    row: pos.row,
-    col: pos.col,
-    team: pos.team as TeamWithPlayers | null,
-  }));
+  const allPyramidPositions = useMemo(
+    () =>
+      data.positions.map((pos) => ({
+        id: pos.id,
+        row: pos.row,
+        col: pos.col,
+        team: pos.team as TeamWithPlayers | null,
+      })),
+    [data.positions]
+  );
 
   const rows = useMemo(() => {
-      const rowsMap: { [key: number]: PyramidPosition[] } = {};
-      data.positions.forEach((pos) => {
-        if (!rowsMap[pos.row]) rowsMap[pos.row] = [];
-        const pyramidPos: PyramidPosition = {
-          id: pos.id,
-          row: pos.row,
-          col: pos.col,
-          team: pos.team as TeamWithPlayers | null,
-        };
-        rowsMap[pos.row].push(pyramidPos);
-      });
-      return rowsMap;
-    }, [data.positions]);
+    const rowsMap: { [key: number]: PyramidPosition[] } = {};
+    data.positions.forEach((pos) => {
+      if (!rowsMap[pos.row]) rowsMap[pos.row] = [];
+      const pyramidPos: PyramidPosition = {
+        id: pos.id,
+        row: pos.row,
+        col: pos.col,
+        team: pos.team as TeamWithPlayers | null,
+      };
+      rowsMap[pos.row].push(pyramidPos);
+    });
+    return rowsMap;
+  }, [data.positions]);
 
-  const filledRows: { [key: number]: PyramidPosition[] } = {};
-  for (let row = 1; row <= data.row_amount; row++) {
-    const expectedCols = row + 1;
-    const existing = rows[row] ?? [];
-    const filled: PyramidPosition[] = [];
-
-    for (let col = 1; col < expectedCols; col++) {
-      const match = existing.find((p) => p.col === col);
-      if (match) {
-        filled.push(match);
-      } else {
-        filled.push({
-          id: -1 * (row * 100 + col),
-          row,
-          col,
-          team: null,
-        });
+  const filledRows = useMemo(() => {
+    const rowsMap: Record<number, PyramidPosition[]> = {};
+    for (let row = 1; row <= data.row_amount; row++) {
+      const expectedCols = row + 1;
+      const existing = data.positions.filter((p) => p.row === row);
+      const filled: PyramidPosition[] = [];
+      for (let col = 1; col < expectedCols; col++) {
+        const match = existing.find((p) => p.col === col);
+        filled.push(
+          match
+            ? {
+                id: match.id,
+                row: match.row,
+                col: match.col,
+                team: match.team as TeamWithPlayers | null,
+              }
+            : { id: -1 * (row * 100 + col), row, col, team: null }
+        );
       }
+      rowsMap[row] = filled;
     }
-    filledRows[row] = filled;
-  }
+    return rowsMap;
+  }, [data.positions, data.row_amount]);
 
   useEffect(() => {
-      if (!rows[8]) setCellarTeam({ id: 123, row: 8, col: 1, team: null });
-      if (rows[8] && rows[8].length > 0) setCellarTeam(rows[8][0]);
-    }, [rows]);
+    if (!rows[8]) setCellarTeam({ id: 123, row: 8, col: 1, team: null });
+    if (rows[8] && rows[8].length > 0) setCellarTeam(rows[8][0]);
+  }, [rows]);
 
   return (
     <div className="flex flex-col items-center relative mb-5 no-scrollbar">

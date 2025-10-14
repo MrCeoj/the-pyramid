@@ -9,6 +9,7 @@ import {
   updateMatchStatus,
   swapPositionsIfNeeded,
   evaluateMatchesAfterResult,
+  swapPositionsWithCellarIfNeeded,
 } from "./helpers";
 
 export async function completeMatch(
@@ -57,13 +58,6 @@ export async function completeMatch(
 
       await updateTeamsAfterMatch(tx, winnerTeamId, loserTeamId);
 
-      await evaluateMatchesAfterResult(
-        tx,
-        pyramidId,
-        winnerTeamId,
-        loserTeamId
-      );
-
       if (shouldSwapPositions)
         await swapPositionsIfNeeded(
           tx,
@@ -71,6 +65,8 @@ export async function completeMatch(
           { winnerTeamId, loserTeamId },
           { winnerCurrentPos, loserCurrentPos }
         );
+
+      await swapPositionsWithCellarIfNeeded(tx, pyramidId, loserTeamId);
 
       await evaluateMatchesAfterResult(
         tx,

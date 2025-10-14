@@ -1,16 +1,8 @@
 "use server";
 import { db } from "@/lib/drizzle";
-import { eq, and, or, inArray } from "drizzle-orm";
+import { eq, and, or, inArray, sql } from "drizzle-orm";
 import { match, team, position, positionHistory } from "@/db/schema";
-import type { ExtractTablesWithRelations } from "drizzle-orm";
-import type { PgTransaction } from "drizzle-orm/pg-core";
-import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
-
-type DbTransaction = PgTransaction<
-  PostgresJsQueryResultHKT,
-  Record<string, never>,
-  ExtractTablesWithRelations<Record<string, never>>
->;
+import { DbTransaction } from "@/actions/matches/types";
 
 export async function getMatchData(matchId: number) {
   const result = await db
@@ -64,37 +56,81 @@ export async function updateTeamsAfterMatch(
     .set({ amountRejected: 0, defendable: false })
     .where(inArray(team.id, [winnerTeamId, loserTeamId]));
 
-  const [{ wins = 0 }] = await tx
-    .select({ wins: team.wins })
-    .from(team)
-    .where(eq(team.id, winnerTeamId))
-    .limit(1);
-
   await tx
     .update(team)
     .set({
-      wins: wins ? wins + 1 : 1,
+      wins: sql`${team.wins} + 1`,
       loosingStreak: 0,
       status: "winner",
       updatedAt: new Date(),
     })
     .where(eq(team.id, winnerTeamId));
 
-  const [{ losses = 0, loosingStreak = 0 }] = await tx
-    .select({ losses: team.losses, loosingStreak: team.loosingStreak })
-    .from(team)
-    .where(eq(team.id, loserTeamId))
-    .limit(1);
-
   await tx
     .update(team)
     .set({
-      losses: losses ? losses + 1 : 1,
-      loosingStreak: loosingStreak ? loosingStreak + 1 : 1,
+      losses: sql`${team.losses} + 1`,
+      loosingStreak: sql`${team.loosingStreak} + 1`,
       status: "looser",
       updatedAt: new Date(),
     })
     .where(eq(team.id, loserTeamId));
+}
+
+export async function swapPositionsWithCellarIfNeeded(
+  tx: DbTransaction,
+  pyramidId: number,
+  looserTeamId: number
+) {
+  const [{ loosingStreak }] = await tx
+    .select({ loosingStreak: team.loosingStreak })
+    .from(team)
+    .where(eq(team.id, looserTeamId))
+    .limit(1);
+
+  if (!loosingStreak) return;
+
+  if (loosingStreak < 3) return;
+
+  const [{ cellarTeamId }] = await tx
+    .select({ cellarTeamId: position.teamId })
+    .from(position)
+    .where(eq(position.row, 8))
+    .limit(1);
+
+  if (typeof cellarTeamId !== "number") return;
+
+  const [looserCurrentPos] = await tx
+    .select()
+    .from(position)
+    .where(
+      and(eq(position.teamId, looserTeamId), eq(position.pyramidId, pyramidId))
+    );
+
+  await tx
+    .update(position)
+    .set({ row: -1, col: -1 })
+    .where(
+      and(eq(position.teamId, looserTeamId), eq(position.pyramidId, pyramidId))
+    );
+
+  await tx
+    .update(position)
+    .set({
+      row: looserCurrentPos.row,
+      col: looserCurrentPos.col,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(eq(position.teamId, cellarTeamId), eq(position.pyramidId, pyramidId))
+    );
+
+  await tx
+    .update(position)
+    .set({ row: 8, col: 1, updatedAt: new Date() })
+    .where(
+      and(eq(position.teamId, looserTeamId), eq(position.pyramidId, pyramidId))
+    );
 }
 
 export async function swapPositionsIfNeeded(
@@ -160,7 +196,6 @@ export async function evaluateMatchesAfterResult(
   winnerTeamId: number,
   loserTeamId: number
 ) {
-  // 1. Get positions of winner, loser, and any other teams they have matches with
   const activeMatches = await tx
     .select({
       id: match.id,
@@ -183,11 +218,13 @@ export async function evaluateMatchesAfterResult(
 
   // 2. Collect all unique teamIds involved
   const involvedTeamIds = Array.from(
-    new Set(activeMatches.flatMap((m) => [m.challengerTeamId, m.defenderTeamId]))
+    new Set(
+      activeMatches.flatMap((m) => [m.challengerTeamId, m.defenderTeamId])
+    )
   );
 
   // 3. Fetch their current positions
-  const teamPositions = await getPositions(pyramidId, involvedTeamIds)
+  const teamPositions = await getPositions(pyramidId, involvedTeamIds);
 
   const positionMap = Object.fromEntries(
     teamPositions.map((p) => [p.teamId, { row: p.row, col: p.col }])

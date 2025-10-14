@@ -1,4 +1,7 @@
 import { TeamWithPlayers } from "@/actions/PositionActions";
+import type { ExtractTablesWithRelations } from "drizzle-orm";
+import type { PgTransaction } from "drizzle-orm/pg-core";
+import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 
 export type MatchWithDetails = {
   id: number;
@@ -46,3 +49,9 @@ export type MatchCompletionResult = {
   success: boolean;
   message: string;
 };
+
+export type DbTransaction = PgTransaction<
+  PostgresJsQueryResultHKT,
+  Record<string, never>,
+  ExtractTablesWithRelations<Record<string, never>>
+>;

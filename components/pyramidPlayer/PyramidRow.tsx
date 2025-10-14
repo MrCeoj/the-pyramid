@@ -3,7 +3,7 @@ import TeamCard from "@/components/ui/TeamCard";
 import EmptySlot from "@/components/ui/EmptySlot";
 import { useCenteredScroll } from "@/hooks/useCenteredScroll";
 import { useSessionStore } from "@/stores/sessionStore";
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import ChallengeModal from "@/components/ui/ChallengeModal";
 import { TeamWithPlayers } from "@/actions/PositionActions";
 
@@ -159,4 +159,4 @@ const PyramidRow = ({
   );
 };
 
-export default PyramidRow;
+export default React.memo(PyramidRow);
