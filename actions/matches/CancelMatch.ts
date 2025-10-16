@@ -47,7 +47,7 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
         );
       }
 
-      await sendCancelMail(attacker, defender, currentMatch.pyramidId);
+//      await sendCancelMail(attacker, defender, currentMatch.pyramidId);
 
       revalidatePath("/mis-retas");
       revalidatePath("/retas")

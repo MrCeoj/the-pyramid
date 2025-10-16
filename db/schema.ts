@@ -28,6 +28,13 @@ export const teamStatus = pgEnum("team_status", [
   "risky",
 ]);
 
+export const teamLastResult = pgEnum("team_last_result", [
+  "up",
+  "down",
+  "stayed",
+  "none"
+])
+
 export const users = pgTable("users", {
   id: text("id")
     .primaryKey()
@@ -173,6 +180,7 @@ export const team = pgTable(
     amountRejected: integer("amount_rejected").default(0),
     loosingStreak: integer("loosing_streak").default(0),
     status: teamStatus("status").default("idle"),
+    lastResult: teamLastResult("last_result").default("none"),
     defendable: boolean("defendable").default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),

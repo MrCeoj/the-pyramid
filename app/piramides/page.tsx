@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { Suspense } from "react";
 import { PyramidList } from "./PyramidList";
 import { CreatePyramidButton } from "@/app/piramides/CreatePyramidButton";
@@ -5,6 +6,14 @@ import { PyramidListSkeleton } from "@/app/piramides/PyramidListSkeleton";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "Pirámides | Liga Pirámide AM",
+  description: "La Pirámide AM",
+  icons: {
+    icon: "/piramide_logo_naranja.svg",
+  },
+};
 
 export default async function PyramidsPage() {
   const sesh = await auth();

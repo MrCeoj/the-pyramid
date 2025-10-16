@@ -3,6 +3,15 @@ import PyramidDisplay from "./PyramidPositionsEdit";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Posiciones | Liga Pirámide AM",
+  description: "La Pirámide AM",
+  icons: {
+    icon: "/piramide_logo_naranja.svg",
+  },
+};
 
 export default async function PositionsPage({
   params,

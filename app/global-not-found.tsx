@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import HellBackground from "@/components/lightswind/hell-background";
 import Image from "next/image";
+
 export const metadata: Metadata = {
   title: "La pirámide | Página no encontrada",
   description: "La página que buscas no existe.",

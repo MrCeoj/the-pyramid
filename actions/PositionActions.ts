@@ -70,8 +70,8 @@ export async function getApplicableTeams(
       })
       .from(team)
       .where(inArray(team.categoryId, categoryIds))
-      .innerJoin(users, or(eq(team.player1Id, users.id), eq(team.player2Id, users.id)))
-      .leftJoin(profile, eq(users.id, profile.userId));
+      .innerJoin(users, eq(team.player1Id, users.id))
+      .innerJoin(profile, eq(users.id, profile.userId));
 
     const teams: TeamWithPlayers[] = await Promise.all(
       teamsData.map(async (teamData) => {
@@ -112,7 +112,6 @@ export async function getApplicableTeams(
         };
       })
     );
-
 
     return teams;
   } catch (error) {
@@ -186,72 +185,74 @@ export async function setTeamInPosition(
 
     let displacedTeamId: number | null = null;
 
-    if (existingPosition.length > 0) {
-      // Store the displaced team info for history
-      displacedTeamId = existingPosition[0].teamId;
+    await db.transaction(async (tx) => {
+      if (existingPosition.length > 0) {
+        // Store the displaced team info for history
+        displacedTeamId = existingPosition[0].teamId;
 
-      // Record the displacement/removal of the old team
-      await db.insert(positionHistory).values({
+        // Record the displacement/removal of the old team
+        await tx.insert(positionHistory).values({
+          pyramidId,
+          matchId: null, // Admin action, not match-related
+          teamId: displacedTeamId,
+          affectedTeamId: teamId,
+          oldRow: row,
+          oldCol: col,
+          newRow: null, // Team was removed/displaced
+          newCol: null,
+          affectedOldRow: null, // New team had no previous position
+          affectedOldCol: null,
+          affectedNewRow: row, // New team gets this position
+          affectedNewCol: col,
+          effectiveDate: new Date(),
+        });
+
+        // Update existing position with new team
+        const result = await tx
+          .update(position)
+          .set({
+            teamId,
+            updatedAt: new Date(),
+          })
+          .where(eq(position.id, existingPosition[0].id))
+          .returning();
+
+        if (result.length === 0) {
+          throw new Error("No se actualizaron las posiciones en los registros");
+        }
+      } else {
+        // Create new position
+        const result = await tx
+          .insert(position)
+          .values({
+            pyramidId,
+            teamId,
+            row,
+            col,
+          })
+          .returning();
+
+        if (result.length === 0) {
+          throw new Error("No se crearon las nuevas posiciones");
+        }
+      }
+
+      // Record the placement of the new team
+      await tx.insert(positionHistory).values({
         pyramidId,
-        matchId: null, // Admin action, not match-related
-        teamId: displacedTeamId,
-        affectedTeamId: teamId,
-        oldRow: row,
-        oldCol: col,
-        newRow: null, // Team was removed/displaced
-        newCol: null,
-        affectedOldRow: null, // New team had no previous position
-        affectedOldCol: null,
-        affectedNewRow: row, // New team gets this position
-        affectedNewCol: col,
+        matchId: null,
+        teamId: teamId,
+        affectedTeamId: displacedTeamId,
+        oldRow: null,
+        oldCol: null,
+        newRow: row,
+        newCol: col,
+        affectedOldRow: displacedTeamId ? row : null,
+        affectedOldCol: displacedTeamId ? col : null,
+        affectedNewRow: null,
+        affectedNewCol: null,
         effectiveDate: new Date(),
       });
-
-      // Update existing position with new team
-      const result = await db
-        .update(position)
-        .set({
-          teamId,
-          updatedAt: new Date(),
-        })
-        .where(eq(position.id, existingPosition[0].id))
-        .returning();
-
-      if (result.length === 0) {
-        throw new Error("No se actualizaron las posiciones en los registros");
-      }
-    } else {
-      // Create new position
-      const result = await db
-        .insert(position)
-        .values({
-          pyramidId,
-          teamId,
-          row,
-          col,
-        })
-        .returning();
-
-      if (result.length === 0) {
-        throw new Error("No se crearon las nuevas posiciones");
-      }
-    }
-
-    // Record the placement of the new team
-    await db.insert(positionHistory).values({
-      pyramidId,
-      matchId: null,
-      teamId: teamId,
-      affectedTeamId: displacedTeamId,
-      oldRow: null,
-      oldCol: null,
-      newRow: row,
-      newCol: col,
-      affectedOldRow: displacedTeamId ? row : null,
-      affectedOldCol: displacedTeamId ? col : null,
-      affectedNewRow: null,
-      affectedNewCol: null,
-      effectiveDate: new Date(),
     });
 
     revalidatePath(`/piramides/${pyramidId}/posiciones`);
@@ -334,4 +335,3 @@ export async function removeTeamFromPosition(
     };
   }
 }
-

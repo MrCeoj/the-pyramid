@@ -133,7 +133,7 @@ export async function acceptMatch(
         .set({ amountRejected: 0 })
         .where(eq(team.id, defender.id));
 
-      await sendAcceptMail(attacker, defender, currentMatch.pyramidId);
+/*      await sendAcceptMail(attacker, defender, currentMatch.pyramidId);
       if (validRecipients.length > 0) {
         await sendCancelledBecauseAcceptedMail(
           validRecipients,
@@ -142,7 +142,7 @@ export async function acceptMatch(
           currentMatch.pyramidId
         );
       }
-
+*/
       revalidatePath("/mis-retas");
 
       return {

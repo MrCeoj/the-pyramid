@@ -110,7 +110,7 @@ export async function createMatch({
         status: "pending",
       })
       .returning();
-
+/*
     try {
       const emailResult = await sendChallengeMail(
         challengerTeamInfo,
@@ -129,7 +129,7 @@ export async function createMatch({
     } catch (emailError) {
       throw emailError;
     }
-
+*/
     revalidatePath("/mis-retas");
     revalidatePath("/");
 

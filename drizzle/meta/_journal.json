@@ -120,6 +120,13 @@
       "when": 1760376445167,
       "tag": "0016_zippy_klaw",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1760637949676,
+      "tag": "0017_watery_the_stranger",
+      "breakpoints": true
     }
   ]
 }
