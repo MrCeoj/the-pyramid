@@ -108,6 +108,16 @@ export async function swapPositionsWithCellarIfNeeded(
     );
 
   await tx
+    .update(team)
+    .set({ lastResult: "down" })
+    .where(eq(team.id, looserTeamId));
+
+  await tx
+    .update(team)
+    .set({ lastResult: "up" })
+    .where(eq(team.id, cellarTeamId));
+
+  await tx
     .update(position)
     .set({ row: -1, col: -1 })
     .where(
@@ -173,6 +183,16 @@ export async function swapPositionsIfNeeded(
     .where(
       and(eq(position.teamId, winnerTeamId), eq(position.pyramidId, pyramidId))
     );
+
+  await tx
+    .update(team)
+    .set({ lastResult: "up" })
+    .where(eq(team.id, winnerTeamId));
+
+  await tx
+    .update(team)
+    .set({ lastResult: "down" })
+    .where(eq(team.id, loserTeamId));
 
   await tx.insert(positionHistory).values({
     pyramidId,

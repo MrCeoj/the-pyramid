@@ -1,7 +1,11 @@
 "use client";
+import { useCallback, useEffect, useState } from "react";
 import { Fa1, Fa2, Fa3, Fa4, Fa5 } from "react-icons/fa6";
 import { Sword, Crown, Flag, Shield } from "lucide-react";
-import { TeamWithPlayers } from "@/actions/PositionActions";
+import {
+  getCurrentTeamDurationInPosition,
+  TeamWithPlayers,
+} from "@/actions/PositionActions";
 
 interface Position {
   id: number;
@@ -15,7 +19,7 @@ interface TeamCardProps {
   challengable?: boolean;
   isTop?: boolean;
   isPlayer?: boolean;
-  defended?: boolean; // Added defended prop
+  defended?: boolean;
   onChallenge?: (team: TeamWithPlayers) => void;
 }
 
@@ -42,12 +46,34 @@ const TeamCard = ({
     }
   };
 
+  const [topDate, setTopDate] = useState("");
+
   const handleChallenge = () => {
     // Ensure card is not defended before calling onChallenge
     if (data.team && onChallenge && !defended) {
       onChallenge(data.team);
     }
   };
+
+  const getTopDate = useCallback(async () => {
+    try{
+      if (!isTop) return;
+      if (!data.team) return;
+  
+      const time = await getCurrentTeamDurationInPosition(data.team.id);
+      if (!time) return;
+  
+      setTopDate(time.format);
+    } catch(error){
+      console.error("Error al calcular la duración del top", error)
+      setTopDate("... algún tiempo")
+    }
+
+  }, [data.team, isTop]);
+
+  useEffect(() => {
+    getTopDate();
+  }, [getTopDate]);
 
   const statusColors: Record<TeamWithPlayers["status"], string> = {
     looser: "bg-red-500/10 border-red-500/40 hover:border-red-500/60",
@@ -130,7 +156,7 @@ const TeamCard = ({
           onClick={isActuallyChallengable ? handleChallenge : undefined}
           className={`relative group ${
             isTop ? specialColors.champion : statusColors[data.team.status!]
-          } border-2 rounded-lg transition-all duration-300 p-3 min-w-[150px] max-w-[150px] backdrop-blur-sm snap-center ${getCardAnimation()} ${
+          } border-2 rounded-lg transition-all duration-300 p-3 ${isTop ? "min-w-[180px] max-w-[180px]" : "min-w-[150px] max-w-[150px]"} backdrop-blur-sm snap-center ${getCardAnimation()} ${
             isActuallyChallengable ? "cursor-pointer border-dashed" : ""
           }`}
         >
@@ -155,7 +181,8 @@ const TeamCard = ({
           {getStatusIcon()}
 
           {/* Header with category and name */}
-          <div className="flex items-center justify-between mb-2 min-h-[2.5rem] max-h-[2.5rem]">
+
+          <div className="flex items-center mb-2 justify-between min-h-[1.8rem] max-h-[2.5rem]">
             <div className="flex-1 min-w-0">
               <div
                 className={`font-semibold text-sm text-wrap ${
@@ -233,6 +260,12 @@ const TeamCard = ({
               </span>
             </div>
           </div>
+          {/* If is top Team display duration */}
+          {isTop && (
+            <div className="w-full mt-2 text-center text-yellow-300 text-sm font-medium">
+              <p>Escaló hace {topDate || "..."}</p>
+            </div>
+          )}
         </div>
       )}
     </>

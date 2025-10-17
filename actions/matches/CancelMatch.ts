@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/lib/drizzle";
-import { eq } from "drizzle-orm";
-import { match } from "@/db/schema";
+import { eq, inArray } from "drizzle-orm";
+import { match, team } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { sendCancelMail } from "@/actions/MailActions";
 import { MatchResult } from "@/actions/matches/types";
@@ -12,7 +12,7 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
     // Wrap the entire logic in a transaction
     return await db.transaction(async (tx) => {
       // 1. Get all necessary match info at once
-      const matchArr = await tx
+      const [currentMatch] = await tx
         .select({
           status: match.status,
           defenderTeamId: match.defenderTeamId,
@@ -23,10 +23,19 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
         .where(eq(match.id, matchId))
         .limit(1);
 
-      if (!matchArr.length) {
+      if (!currentMatch) {
         return { success: false, message: "Desafío no encontrado" };
       }
-      const currentMatch = matchArr[0];
+
+      const involvedTeams = [
+        currentMatch.attackerTeamId,
+        currentMatch.defenderTeamId,
+      ];
+
+      await tx
+        .update(team)
+        .set({ defendable: false })
+        .where(inArray(team.id, involvedTeams));
 
       await tx
         .update(match)
@@ -36,7 +45,7 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
         })
         .where(eq(match.id, matchId));
 
-      const [attacker, defender] = await Promise.all([
+      /*const [attacker, defender] = await Promise.all([
         getTeamWithPlayers(currentMatch.attackerTeamId),
         getTeamWithPlayers(currentMatch.defenderTeamId),
       ]);
@@ -47,10 +56,10 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
         );
       }
 
-//      await sendCancelMail(attacker, defender, currentMatch.pyramidId);
+      await sendCancelMail(attacker, defender, currentMatch.pyramidId);*/
 
       revalidatePath("/mis-retas");
-      revalidatePath("/retas")
+      revalidatePath("/retas");
 
       return {
         success: true,

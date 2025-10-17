@@ -1,9 +1,10 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { match, pyramid, position, positionHistory, team } from "@/db/schema";
-import { and, or, eq, lt, gte, inArray } from "drizzle-orm";
+import { and, or, eq, lt, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getPreviousMonday } from "@/actions/TeamsActions";
+import { getNextPosition, cancelExpiredMatches } from "./helpers";
 
 export async function processExpiredMatches(userId: string) {
   try {
@@ -61,10 +62,7 @@ export async function processExpiredMatches(userId: string) {
       if (recentCount >= 2) {
         const expiredIds = expired.map((m) => m.id);
 
-        await tx
-          .update(match)
-          .set({ status: "cancelled", updatedAt: new Date() })
-          .where(inArray(match.id, expiredIds));
+        await cancelExpiredMatches(tx, expiredIds)
 
         revalidatePath("/");
         return {
@@ -74,34 +72,43 @@ export async function processExpiredMatches(userId: string) {
         };
       }
 
-      const pyramidInfo = await tx
+      const [pyramidInfo] = await tx
         .select({ id: pyramid.id, rowAmount: pyramid.row_amount })
         .from(position)
-        .leftJoin(pyramid, eq(position.teamId, teamId))
-        .where(eq(pyramid.id, position.pyramidId))
+        .leftJoin(pyramid, eq(pyramid.id, position.pyramidId))
+        .where(eq(position.teamId, teamId))
         .limit(1);
 
-      if (pyramidInfo.length === 0)
+      if (!pyramidInfo || !pyramidInfo.id)
         return {
           success: false,
           expired: 0,
           error: "No se pudo conseguir info de la piramide",
         };
 
-      const rowAmount = pyramidInfo[0].rowAmount;
 
-      const defenderPosition = await tx
+      const rowAmount = pyramidInfo.rowAmount;
+
+      if (!rowAmount) {
+        return {
+          success: false,
+          expired: 0,
+          error: "No se pudo conseguir info de la piramide",
+        };
+      }
+
+      const [defenderPosition] = await tx
         .select()
         .from(position)
         .where(
           and(
-            eq(position.pyramidId, pyramidInfo[0].id!),
+            eq(position.pyramidId, pyramidInfo.id),
             eq(position.teamId, teamId)
           )
         )
         .limit(1);
 
-      if (defenderPosition.length === 0)
+      if (!defenderPosition)
         return {
           success: false,
           expired: 0,
@@ -109,33 +116,33 @@ export async function processExpiredMatches(userId: string) {
         };
 
       const currentPos = {
-        row: defenderPosition[0].row,
-        col: defenderPosition[0].col,
+        row: defenderPosition.row,
+        col: defenderPosition.col,
       };
 
-      const nextPos = getNextPosition(currentPos, rowAmount!);
+      const nextPos = getNextPosition(currentPos, rowAmount);
 
       if (nextPos) {
         // Find the team at the next position
-        const nextTeam = await tx
+        const [nextTeam] = await tx
           .select()
           .from(position)
           .where(
             and(
-              eq(position.pyramidId, pyramidInfo[0].id!),
+              eq(position.pyramidId, pyramidInfo.id),
               eq(position.row, nextPos.row),
               eq(position.col, nextPos.col)
             )
           )
           .limit(1);
 
-        if (nextTeam.length > 0) {
+        if (!nextTeam || !nextTeam.id) {
           await tx
             .update(position)
             .set({ row: 0, col: 0 })
             .where(
               and(
-                eq(position.pyramidId, pyramidInfo[0].id!),
+                eq(position.pyramidId, pyramidInfo.id),
                 eq(position.teamId, teamId)
               )
             );
@@ -145,8 +152,8 @@ export async function processExpiredMatches(userId: string) {
             .set({ row: currentPos.row, col: currentPos.col })
             .where(
               and(
-                eq(position.pyramidId, pyramidInfo[0].id!),
-                eq(position.teamId, nextTeam[0].teamId)
+                eq(position.pyramidId, pyramidInfo.id),
+                eq(position.teamId, nextTeam.teamId)
               )
             );
 
@@ -155,17 +162,34 @@ export async function processExpiredMatches(userId: string) {
             .set({ row: nextPos.row, col: nextPos.col })
             .where(
               and(
-                eq(position.pyramidId, pyramidInfo[0].id!),
+                eq(position.pyramidId, pyramidInfo.id),
                 eq(position.teamId, teamId)
               )
             );
 
           await tx.insert(positionHistory).values([
             {
-              pyramidId: pyramidInfo[0].id!,
+              pyramidId: pyramidInfo.id,
               matchId: null,
               teamId: teamId,
-              affectedTeamId: nextTeam[0].teamId,
+              affectedTeamId: nextTeam.teamId,
+              oldRow: currentPos.row,
+              oldCol: currentPos.col,
+              newRow: nextPos.row,
+              newCol: nextPos.col,
+              affectedOldRow: nextPos.row,
+              affectedOldCol: nextPos.col,
+              affectedNewRow: currentPos.row,
+              affectedNewCol: currentPos.col,
+            },
+          ]);
+
+          await tx.insert(positionHistory).values([
+            {
+              pyramidId: pyramidInfo.id,
+              matchId: null,
+              teamId: teamId,
+              affectedTeamId: nextTeam.teamId,
               oldRow: currentPos.row,
               oldCol: currentPos.col,
               newRow: nextPos.row,
@@ -177,15 +201,10 @@ export async function processExpiredMatches(userId: string) {
             },
           ]);
         }
-      } else {
-        return { success: true, expired: 0, error: "" };
       }
 
       const expiredIds = expired.map((m) => m.id);
-      await tx
-        .update(match)
-        .set({ status: "cancelled", updatedAt: new Date() })
-        .where(inArray(match.id, expiredIds));
+      await cancelExpiredMatches(tx, expiredIds)
 
       revalidatePath("/");
 
@@ -199,25 +218,4 @@ export async function processExpiredMatches(userId: string) {
       error: "Error al procesar las partidas expiradas",
     };
   }
-}
-
-function getNextPosition(
-  currentPos: { row: number; col: number },
-  rowAmount: number
-): { row: number; col: number } | null {
-  const { row, col } = currentPos;
-
-  if (row === rowAmount && col === row) {
-    return null;
-  }
-
-  if (col < row) {
-    return { row, col: col + 1 };
-  }
-
-  if (row < rowAmount) {
-    return { row: row + 1, col: 1 };
-  }
-
-  return null;
 }
