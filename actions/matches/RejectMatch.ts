@@ -118,7 +118,7 @@ export async function rejectMatch(
     });
 
     if (attacker && defender && playedMatchesThisWeek < 2) {
-//      await sendRejectMail(attacker, defender, matchData.pyramidId);
+      await sendRejectMail(attacker, defender, matchData.pyramidId);
     }
 
     revalidatePath("/mis-retas");

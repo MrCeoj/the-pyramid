@@ -45,7 +45,7 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
         })
         .where(eq(match.id, matchId));
 
-      /*const [attacker, defender] = await Promise.all([
+      const [attacker, defender] = await Promise.all([
         getTeamWithPlayers(currentMatch.attackerTeamId),
         getTeamWithPlayers(currentMatch.defenderTeamId),
       ]);
@@ -56,7 +56,7 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
         );
       }
 
-      await sendCancelMail(attacker, defender, currentMatch.pyramidId);*/
+      await sendCancelMail(attacker, defender, currentMatch.pyramidId);
 
       revalidatePath("/mis-retas");
       revalidatePath("/retas");
