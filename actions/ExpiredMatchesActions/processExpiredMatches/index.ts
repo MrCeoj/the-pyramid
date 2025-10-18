@@ -9,21 +9,23 @@ import { getNextPosition, cancelExpiredMatches } from "./helpers";
 export async function processExpiredMatches(userId: string) {
   try {
     return await db.transaction(async (tx) => {
-      const teamSearch = await tx
+      const [teamId] = await tx
         .select({ teamId: team.id })
         .from(team)
         .where(or(eq(team.player1Id, userId), eq(team.player2Id, userId)))
         .limit(1);
 
-      if (teamSearch.length <= 0) {
+      if (
+        teamId === null ||
+        teamId === undefined ||
+        typeof teamId !== "number"
+      ) {
         return {
           success: false,
           expired: 0,
           error: "No se pudo conseguir informacion del equipo",
         };
       }
-
-      const teamId = teamSearch[0].teamId;
 
       const expired = await tx
         .select()
@@ -62,7 +64,7 @@ export async function processExpiredMatches(userId: string) {
       if (recentCount >= 2) {
         const expiredIds = expired.map((m) => m.id);
 
-        await cancelExpiredMatches(tx, expiredIds)
+        await cancelExpiredMatches(tx, expiredIds);
 
         revalidatePath("/");
         return {
@@ -85,7 +87,6 @@ export async function processExpiredMatches(userId: string) {
           expired: 0,
           error: "No se pudo conseguir info de la piramide",
         };
-
 
       const rowAmount = pyramidInfo.rowAmount;
 
@@ -136,7 +137,7 @@ export async function processExpiredMatches(userId: string) {
           )
           .limit(1);
 
-        if (!nextTeam || !nextTeam.id) {
+        if (nextTeam && typeof nextTeam.id === "number") {
           await tx
             .update(position)
             .set({ row: 0, col: 0 })
@@ -166,6 +167,16 @@ export async function processExpiredMatches(userId: string) {
                 eq(position.teamId, teamId)
               )
             );
+
+          await tx
+            .update(team)
+            .set({ lastResult: "down" })
+            .where(eq(team.id, teamId));
+
+          await tx
+            .update(team)
+            .set({ lastResult: "up" })
+            .where(eq(team.id, nextTeam.id));
 
           await tx.insert(positionHistory).values([
             {
@@ -204,7 +215,7 @@ export async function processExpiredMatches(userId: string) {
       }
 
       const expiredIds = expired.map((m) => m.id);
-      await cancelExpiredMatches(tx, expiredIds)
+      await cancelExpiredMatches(tx, expiredIds);
 
       revalidatePath("/");
 

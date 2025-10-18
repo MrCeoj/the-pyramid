@@ -116,7 +116,7 @@ const HistoryMatchCard = ({
           </span>
         </div>
         <span className="text-sm text-white">
-          {formatDate(match.createdAt)}
+          {formatDate(match.updatedAt)}
         </span>
       </div>
 

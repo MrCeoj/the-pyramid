@@ -58,12 +58,12 @@ export async function completeMatch(
 
       await updateTeamsAfterMatch(tx, winnerTeamId, loserTeamId);
 
-      if (shouldSwapPositions)
         await swapPositionsIfNeeded(
           tx,
           { pyramidId, matchId },
           { winnerTeamId, loserTeamId },
-          { winnerCurrentPos, loserCurrentPos }
+          { winnerCurrentPos, loserCurrentPos },
+          shouldSwapPositions
         );
 
       await swapPositionsWithCellarIfNeeded(tx, pyramidId, loserTeamId);

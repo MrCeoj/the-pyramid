@@ -19,6 +19,8 @@ export type Team = {
   status: "winner" | "looser" | "idle" | "risky";
   categoryId: number | null;
   defendable?: boolean;
+  loosingStreak: number;
+  lastResult: "up" | "down" | "stayed" | "none"
   player1: {
     id: string;
     paternalSurname: string;
@@ -112,6 +114,8 @@ export async function getPlayerPyramid(
         teamLosses: team.losses,
         teamStatus: team.status,
         teamCategoryId: team.categoryId,
+        teamLoosingStreak: team.loosingStreak,
+        teamLastResult: team.lastResult,
         player1Id: team.player1Id,
         player2Id: team.player2Id,
         player1PaternalSurname: users.paternalSurname,
@@ -166,6 +170,8 @@ export async function getPlayerPyramid(
           status: pos.teamStatus || "idle",
           categoryId: pos.teamCategoryId,
           defendable: pos.teamDefendable!,
+          loosingStreak: pos.teamLoosingStreak || 0,
+          lastResult: pos.teamLastResult || "none",
           player1,
           player2,
         };
@@ -261,6 +267,8 @@ export async function getPyramidData(
         teamLosses: team.losses,
         teamStatus: team.status,
         teamCategoryId: team.categoryId,
+        teamLoosingStreak: team.loosingStreak,
+        teamLastResult: team.lastResult,
         defendable: team.defendable,
         player1Id: team.player1Id,
         player2Id: team.player2Id,
@@ -313,6 +321,8 @@ export async function getPyramidData(
           wins: pos.teamWins || 0,
           losses: pos.teamLosses || 0,
           status: pos.teamStatus || "idle",
+          loosingStreak: pos.teamLoosingStreak || 0,
+          lastResult: pos.teamLastResult || "none",
           categoryId: pos.teamCategoryId,
           defendable: pos.defendable || false,
           player1,
@@ -385,6 +395,8 @@ export async function getTeamData(teamId: number): Promise<Team | null> {
         wins: team.wins,
         losses: team.losses,
         status: team.status,
+        loosingStreak: team.loosingStreak,
+        lastResult: team.lastResult,
         categoryId: team.categoryId,
         player1Id: team.player1Id,
         player2Id: team.player2Id,
@@ -451,6 +463,8 @@ export async function getTeamData(teamId: number): Promise<Team | null> {
       wins: teamData[0].wins || 0,
       losses: teamData[0].losses || 0,
       status: teamData[0].status || "idle",
+      loosingStreak: teamData[0].loosingStreak || 0,
+      lastResult: teamData[0].lastResult || "none",
       categoryId: teamData[0].categoryId,
       player1,
       player2,

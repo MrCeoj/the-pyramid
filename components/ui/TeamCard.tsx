@@ -1,11 +1,19 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { Fa1, Fa2, Fa3, Fa4, Fa5 } from "react-icons/fa6";
-import { Sword, Crown, Flag, Shield } from "lucide-react";
 import {
   getCurrentTeamDurationInPosition,
   TeamWithPlayers,
 } from "@/actions/PositionActions";
+import {
+  Sword,
+  Crown,
+  Flag,
+  Shield,
+  ArrowBigDownDash,
+  ArrowBigUpDash,
+  CircleMinus,
+} from "lucide-react";
 
 interface Position {
   id: number;
@@ -56,19 +64,20 @@ const TeamCard = ({
   };
 
   const getTopDate = useCallback(async () => {
-    try{
+    try {
       if (!isTop) return;
       if (!data.team) return;
-  
+
+      console.log(data.team.lastResult);
+
       const time = await getCurrentTeamDurationInPosition(data.team.id);
       if (!time) return;
-  
-      setTopDate(time.format);
-    } catch(error){
-      console.error("Error al calcular la duración del top", error)
-      setTopDate("... algún tiempo")
-    }
 
+      setTopDate(time.format);
+    } catch (error) {
+      console.error("Error al calcular la duración del top", error);
+      setTopDate("... algún tiempo");
+    }
   }, [data.team, isTop]);
 
   useEffect(() => {
@@ -147,6 +156,42 @@ const TeamCard = ({
       : "";
   };
 
+  const getLastResultDisplay = () => {
+    if (!data.team?.lastResult || data.team.lastResult === "none") return null;
+
+    const config = {
+      down: {
+        icon: ArrowBigDownDash,
+        color: isTop ? "text-yellow-300" : isPlayer ? "text-red-300" : "text-red-400",
+      },
+      up: {
+        icon: ArrowBigUpDash,
+        color: isTop ? "text-yellow-300" : isPlayer ? "text-green-300" : "text-green-400",
+      },
+      stayed: {
+        icon: CircleMinus,
+        color: isTop ? "text-yellow-300" : isPlayer ? "text-slate-200" : "text-slate-300",
+      },
+    };
+
+    const { icon: Icon, color } = config[data.team.lastResult];
+
+    return (
+      <>
+        <div
+          className={`w-[1px] h-3 ${
+            isTop || isPlayer ? "bg-slate-400" : "bg-slate-600"
+          }`}
+        />
+        <div className="flex items-center">
+          <span className={`font-medium ${color}`}>
+            <Icon size={18} strokeWidth={3} />
+          </span>
+        </div>
+      </>
+    );
+  };
+
   const isActuallyChallengable = challengable && !defended;
 
   return (
@@ -156,7 +201,11 @@ const TeamCard = ({
           onClick={isActuallyChallengable ? handleChallenge : undefined}
           className={`relative group ${
             isTop ? specialColors.champion : statusColors[data.team.status!]
-          } border-2 rounded-lg transition-all duration-300 p-3 ${isTop ? "min-w-[180px] max-w-[180px]" : "min-w-[150px] max-w-[150px]"} backdrop-blur-sm snap-center ${getCardAnimation()} ${
+          } border-2 rounded-lg transition-all duration-300 p-3 ${
+            isTop
+              ? "min-w-[180px] max-w-[180px]"
+              : "min-w-[150px] max-w-[150px]"
+          } backdrop-blur-sm snap-center ${getCardAnimation()} ${
             isActuallyChallengable ? "cursor-pointer border-dashed" : ""
           }`}
         >
@@ -181,8 +230,13 @@ const TeamCard = ({
           {getStatusIcon()}
 
           {/* Header with category and name */}
-
-          <div className="flex items-center mb-2 justify-between min-h-[1.8rem] max-h-[2.5rem]">
+          <div
+            className={`flex items-center mb-2 justify-between ${
+              isTop
+                ? "min-h-[1.8rem] max-h-[1.8rem]"
+                : "min-h-[2.5rem] max-h-[2.5rem]"
+            }`}
+          >
             <div className="flex-1 min-w-0">
               <div
                 className={`font-semibold text-sm text-wrap ${
@@ -213,8 +267,8 @@ const TeamCard = ({
           </div>
 
           {/* Win/Loss stats */}
-          <div className="flex justify-center items-center space-x-4 text-xs">
-            <div className="flex items-center">
+          <div className="flex justify-evenly gap-3 items-center w-full text-xs">
+            <div className="flex self-center items-center">
               <span
                 className={`font-medium ${
                   isTop
@@ -235,7 +289,7 @@ const TeamCard = ({
               </span>
             </div>
             <div
-              className={`w-px h-3 ${
+              className={`w-[1px] h-3 ${
                 isTop || isPlayer ? "bg-slate-400" : "bg-slate-600"
               }`}
             />
@@ -259,6 +313,10 @@ const TeamCard = ({
                 {data.team.losses}
               </span>
             </div>
+
+            {data.team.lastResult !== "none" &&
+              data.team.lastResult &&
+              getLastResultDisplay()}
           </div>
           {/* If is top Team display duration */}
           {isTop && (

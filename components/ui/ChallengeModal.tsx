@@ -5,7 +5,6 @@ import { createMatch } from "@/actions/matches/";
 import { createPortal } from "react-dom";
 import { Swords } from "lucide-react";
 import { useState } from "react";
-import { usePyramidStore } from "@/stores/pyramidPositionStore";
 import toast from "react-hot-toast";
 import { TeamWithPlayers } from "@/actions/PositionActions";
 import { useSession } from "next-auth/react";
@@ -27,9 +26,6 @@ export default function ChallengeModal({
 }: ChallengeModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: session } = useSession();
-  const refreshPyramidData = usePyramidStore(
-    (state) => state.refreshPyramidData
-  );
 
   if (!attacker || !defender) return null;
 
@@ -72,6 +68,7 @@ export default function ChallengeModal({
       toast.error(
         "Hubo un error al procesar tu solicitud, intentalo de nuevo."
       );
+      await onClose()
       return;
     }
 
@@ -86,6 +83,7 @@ export default function ChallengeModal({
 
       if (!result.success) {
         toast.error(result.error || "Error al crear el desafío");
+        await onClose()
         return;
       }
 
@@ -100,10 +98,10 @@ export default function ChallengeModal({
         });
       }
 
-      refreshPyramidData();
-      onClose();
+      await onClose();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      await onClose()
       toast.error("Error inesperado al crear el desafío");
     } finally {
       setIsSubmitting(false);

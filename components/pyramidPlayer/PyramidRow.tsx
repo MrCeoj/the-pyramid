@@ -6,6 +6,7 @@ import { useSessionStore } from "@/stores/sessionStore";
 import React, { useState, useCallback } from "react";
 import ChallengeModal from "@/components/ui/ChallengeModal";
 import { TeamWithPlayers } from "@/actions/PositionActions";
+import { useRouter } from "next/navigation";
 
 type PyramidPosition = {
   id: number;
@@ -46,7 +47,8 @@ const PyramidRow = ({
     isOpen: boolean;
     defenderTeam: TeamWithPlayers | null;
   }>({ isOpen: false, defenderTeam: null });
-
+  const router = useRouter()
+  
   const hasUnresolvedWith = useCallback((targetTeamId: number | null) => {
     if (!userTeamId || !targetTeamId) return false;
     return unresolvedMatches.some(
@@ -73,8 +75,8 @@ const PyramidRow = ({
       isOpen: false,
       defenderTeam: null,
     });
-    
-  }, []);
+    router.refresh()
+  }, [router]);
 
   const isChallengable = useCallback((targetPos: PyramidPosition): boolean => {
     // Admins cannot challenge

@@ -153,8 +153,17 @@ export async function swapPositionsIfNeeded(
   }: {
     winnerCurrentPos: { row: number; col: number };
     loserCurrentPos: { row: number; col: number };
-  }
+  },
+  shouldSwapPositions: boolean
 ) {
+  if (!shouldSwapPositions) {
+    await tx
+      .update(team)
+      .set({ lastResult: "stayed" })
+      .where(inArray(team.id, [winnerTeamId, loserTeamId]));
+    return;
+  }
+
   await tx
     .update(position)
     .set({ row: -1, col: -1 })

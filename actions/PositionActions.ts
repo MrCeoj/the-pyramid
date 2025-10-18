@@ -21,6 +21,8 @@ export type TeamWithPlayers = {
   status: "winner" | "looser" | "idle" | "risky";
   categoryId: number | null;
   defendable?: boolean;
+  loosingStreak?: number;
+  lastResult: "up" | "down" | "stayed" | "none";
   player1: {
     id: string;
     paternalSurname: string;
@@ -62,6 +64,8 @@ export async function getApplicableTeams(
         losses: team.losses,
         status: team.status,
         categoryId: team.categoryId,
+        loosingStreak: team.loosingStreak,
+        lastResult: team.lastResult,
         player1Id: team.player1Id,
         player2Id: team.player2Id,
         player1PaternalSurname: users.paternalSurname,
@@ -106,6 +110,8 @@ export async function getApplicableTeams(
           wins: teamData.wins || 0,
           losses: teamData.losses || 0,
           status: teamData.status || "idle",
+          loosingStreak: teamData.loosingStreak || 0,
+          lastResult: teamData.lastResult || "none",
           categoryId: teamData.categoryId,
           player1,
           player2,

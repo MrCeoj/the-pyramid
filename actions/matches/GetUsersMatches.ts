@@ -1,6 +1,6 @@
 "use server";
 import { db } from "@/lib/drizzle";
-import { eq, or, desc } from "drizzle-orm";
+import { eq, or, asc } from "drizzle-orm";
 import { match, pyramid } from "@/db/schema";
 import { TeamWithPlayers } from "@/actions/PositionActions";
 import { MatchWithDetails } from "@/actions/matches/types";
@@ -44,7 +44,7 @@ export async function getUserMatches(userId: string): Promise<{
           )
         )
       )
-      .orderBy(desc(match.createdAt));
+      .orderBy(asc(match.updatedAt));
 
     // Get team info for all involved teams
     const teamIds = new Set<number>();

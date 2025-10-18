@@ -20,10 +20,7 @@ export default async function getRejectedAmount(teamId: number) {
             eq(match.challengerTeamId, teamId),
             eq(match.defenderTeamId, teamId)
           ),
-          and(
-            gte(match.updatedAt, prevMonday),
-            sql`${match.updatedAt} < ${currMonday}`
-          ),
+          gte(match.updatedAt, prevMonday),
           eq(match.status, "played")
         )
       );
