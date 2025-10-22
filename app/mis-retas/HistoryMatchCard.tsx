@@ -1,8 +1,9 @@
 "use client";
 import {
-  Trophy,
+  Star,
+  StarOff,
   CheckCircle,
-  XCircle,
+  Ban,
   AlertCircle,
   Clock,
   Crown,
@@ -27,19 +28,18 @@ const HistoryMatchCard = ({
     switch (status) {
       case "played":
         return {
-          icon: (
-            <Trophy
-              className={`${isWinner ? "text-green-600" : "text-red-500"}`}
-              size={16}
-            />
+          icon: isWinner ? (
+            <Star className={"text-green-600"} size={16} />
+          ) : (
+            <StarOff className={"text-red-500"} size={16} />
           ),
-          label: isWinner ? "Ganado" : "Perdido",
+          labelColor: isWinner ? "text-green-500" : "text-red-500",
           card: isWinner
             ? "from-indor-black to-green-800/60 border-green-800/80"
-            : "from-indor-black to-red-800/60 border-red-500/40",
-          labelColor: isWinner ? "text-green-500" : "text-red-500",
-        };
+            : "from-indor-black to-red-800/70 border-red-500",
 
+          label: isWinner ? "Ganado" : "Perdido",
+        };
       case "accepted":
         return {
           icon: <CheckCircle className="text-blue-400" size={16} />,
@@ -49,10 +49,10 @@ const HistoryMatchCard = ({
         };
       case "rejected":
         return {
-          icon: <XCircle className="text-red-400" size={16} />,
+          icon: <Ban className="text-red-500" size={16} />,
           label: "Rechazado",
-          card: "from-red-900/30 to-red-700/20 border-red-500/40",
-          labelColor: "text-red-400",
+          card: "from-rose-900/30 to-red-900/70 border-red-500/40",
+          labelColor: "text-red-500",
         };
       case "cancelled":
         return {
@@ -76,6 +76,7 @@ const HistoryMatchCard = ({
 
   const getTeamStyles = (teamId: number) => {
     const isWinnerTeam = hasWinner && match.winnerTeam?.id === teamId;
+    const isUserWin = isWinner;
 
     if (!hasWinner) {
       return {
@@ -89,13 +90,21 @@ const HistoryMatchCard = ({
     return {
       container: `flex-1 text-center relative ${isWinnerTeam ? "z-10" : ""}`,
       content: isWinnerTeam
-        ? "bg-gradient-to-br from-yellow-500/20 via-amber-500/10 to-yellow-600/20 border border-yellow-500/30 rounded-xl p-4 backdrop-blur-sm shadow-lg shadow-yellow-500/10 transform scale-105 transition-all duration-300"
+        ? `bg-gradient-to-br animate-pulse ${
+            isUserWin
+              ? "from-green-500/20 via-emerald-500/10 to-green-600/20 border border-green-500/30"
+              : "from-red-500/20 via-rose-500/10 to-red-600/20 border border-red-500/30"
+          } rounded-xl p-4 backdrop-blur-sm shadow-lg ${
+            isUserWin ? "shadow-yellow-500/20" : "shadow-yellow-500/20"
+          } transform scale-105 transition-all duration-300`
         : "text-white opacity-75",
       name: isWinnerTeam
-        ? "font-bold text-yellow-300 drop-shadow-lg text-lg"
+        ? `font-bold ${
+            isUserWin ? "text-green-400" : "text-red-300"
+          } drop-shadow-lg text-lg`
         : "font-semibold",
       category: isWinnerTeam
-        ? "text-sm text-yellow-200/80"
+        ? `text-sm ${isUserWin ? "text-green-200/80" : "text-red-200/80"}`
         : "text-sm text-slate-300",
     };
   };
@@ -105,7 +114,7 @@ const HistoryMatchCard = ({
 
   return (
     <div
-      className={`bg-gradient-to-tr backdrop-blur-md rounded-xl p-6 transition-all duration-300 border ${statusInfo.card}`}
+      className={`bg-gradient-to-tr backdrop-blur-md flex flex-col justify-between rounded-xl p-6 transition-all lg:max-w-2/5 lg:min-w-2/5 duration-300 border ${statusInfo.card}`}
     >
       {/* Status row */}
       <div className="flex items-center justify-between mb-3">
@@ -126,7 +135,7 @@ const HistoryMatchCard = ({
           <div className={challengerStyles.content}>
             {hasWinner && match.winnerTeam?.id === match.challengerTeam.id && (
               <div className="flex justify-center mb-2">
-                <Crown className="text-yellow-400 animate-pulse" size={20} />
+                <Crown className="text-yellow-400" size={20} />
               </div>
             )}
             <h4 className={challengerStyles.name}>
@@ -144,7 +153,10 @@ const HistoryMatchCard = ({
           <div className={defenderStyles.content}>
             {hasWinner && match.winnerTeam?.id === match.defenderTeam.id && (
               <div className="flex justify-center mb-2">
-                <Crown className="text-yellow-400 animate-pulse" size={20} />
+                <Crown
+                  className="text-yellow-400 animate-pulse text-shadow-lg text-shadow-amber-400"
+                  size={20}
+                />
               </div>
             )}
             <h4 className={defenderStyles.name}>

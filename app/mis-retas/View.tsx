@@ -128,7 +128,7 @@ const MatchesPage = () => {
   return (
     <div className="min-h-screen min-w-screen bg-indor-black/80 p-4">
       <UserDropdownMenu />
-      <div className="max-w-4xl mx-auto h-screen no-scrollbar pb-10 flex flex-col overflow-y-scroll">
+      <div className="max-w-6xl mx-auto h-screen no-scrollbar pb-10 flex flex-col overflow-y-scroll">
         {/* Header */}
         <div className="text-center mb-8 mt-6 md:mt-4">
           <h1 className="text-xl font-bold text-white mb-2 md:text-2xl">
@@ -221,7 +221,7 @@ const MatchesPage = () => {
                   initial={{ opacity: 0, y: 0 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="space-y-4 max-w-[95%] w-auto sm:w-full"
+                  className="space-y-4 w-full flex flex-col lg:flex-row flex-wrap justify-center gap-5 sm:w-full"
                 >
                   {matchHistory.map((match) => (
                     <HistoryMatchCard
