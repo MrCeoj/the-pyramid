@@ -37,12 +37,12 @@ const Modal = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div
-        className="fixed inset-0 backdrop-blur-lg bg-opacity-75 transition-opacity"
+        className="fixed inset-0 backdrop-blur-sm bg-opacity-75 transition-opacity"
         onClick={onClose}
       />
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className="relative bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+          className="relative bg-indor-black border-2 border-black rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {children}

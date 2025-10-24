@@ -188,7 +188,13 @@ export async function createTeam(data: {
  */
 export async function updateTeam(
   teamId: number,
-  data: { categoryId?: number; status?: "looser" | "winner" | "idle" | "risky" }
+  data: {
+    categoryId?: number;
+    status?: "looser" | "winner" | "idle" | "risky";
+    lastResult?: "up" | "down" | "stayed" | "none";
+    defendable?: boolean;
+    loosingStreak?: number;
+  }
 ) {
   try {
     const updatedTeam = await db

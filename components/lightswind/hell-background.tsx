@@ -10,7 +10,6 @@ interface HellBackgroundProps {
   color1?: string;
   color2?: string;
   color3?: string;
-  // New performance options
   quality?: "low" | "medium" | "high";
   targetFPS?: number;
 }
@@ -113,8 +112,8 @@ function HellBackground({
   color1 = "#DE443B",
   color2 = "#006BB4",
   color3 = "#162325",
-  quality = "low", // Default to low for TV
-  targetFPS = 20
+  quality = "low",
+  targetFPS = 20,
 }: HellBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>(0);
@@ -129,15 +128,18 @@ function HellBackground({
       antialias: false,
       depth: false,
       stencil: false,
-      powerPreference: "low-power"
+      powerPreference: "high-performance",
     });
-    
+
     if (!gl) {
       console.error("WebGL not supported");
       return;
     }
 
-    const compileShader = (type: number, source: string): WebGLShader | null => {
+    const compileShader = (
+      type: number,
+      source: string
+    ): WebGLShader | null => {
       const shader = gl.createShader(type);
       if (!shader) return null;
       gl.shaderSource(shader, source);
@@ -151,7 +153,10 @@ function HellBackground({
     };
 
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
+    const fragmentShader = compileShader(
+      gl.FRAGMENT_SHADER,
+      fragmentShaderSource
+    );
     if (!vertexShader || !fragmentShader) return;
 
     const program = gl.createProgram();
@@ -196,12 +201,14 @@ function HellBackground({
     };
 
     // Set quality uniform (0.0 = low, 0.5 = medium, 1.0 = high)
-    const qualityValue = quality === "low" ? 0.0 : quality === "medium" ? 0.5 : 1.0;
+    const qualityValue =
+      quality === "low" ? 0.0 : quality === "medium" ? 0.5 : 1.0;
     gl.uniform1f(uQualityLocation, qualityValue);
 
     // Resolution scale based on quality
-    const resolutionScale = quality === "low" ? 0.5 : quality === "medium" ? 0.75 : 1.0;
-    
+    const resolutionScale =
+      quality === "low" ? 0.5 : quality === "medium" ? 0.75 : 1.0;
+
     const startTime = Date.now();
     const frameInterval = 1000 / targetFPS;
 
@@ -246,16 +253,28 @@ function HellBackground({
     };
   }, [color1, color2, color3, quality, targetFPS]);
 
-  const finalBlurClass = blurClassMap[backdropBlurAmount as BlurSize] || blurClassMap["sm"];
+  const finalBlurClass =
+    blurClassMap[backdropBlurAmount as BlurSize] || blurClassMap["sm"];
 
   return (
     <div className={`w-full max-w-screen h-full overflow-hidden ${className}`}>
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full max-w-screen h-full overflow-hidden"
-        style={{ display: "block" }}
+        style={{
+          display: "block",
+          transform: "translateZ(0)",
+          willChange: "transform",
+        }}
       />
-      <div className={`absolute inset-0 ${finalBlurClass}`} />
+      <div
+        className={`absolute inset-0 ${finalBlurClass}`}
+        style={{
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          transform: "translateZ(0)",
+        }}
+      />
     </div>
   );
 }

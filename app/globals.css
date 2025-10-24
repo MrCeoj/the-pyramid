@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@theme static{
+@theme static {
   --color-indor-brown: #806c62;
   --color-indor-brown-light: #c6baaa;
   --color-indor-black: #2c2c2c;
@@ -14,13 +14,12 @@
   --color-green-dense: #6bbe38;
   --color-blue-vivid: #2dadff;
   --color-blue-dense: #1865ff;
-  --font-jolly: var(--font-jolly-lodger)
+  --font-jolly: var(--font-jolly-lodger);
 }
 
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
-
 
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
@@ -30,5 +29,19 @@ body {
   .no-scrollbar {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+  }
+}
+
+@layer base {
+  /* Hide increment-decrement controls */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
   }
 }

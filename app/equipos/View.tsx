@@ -1,13 +1,19 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
-import { Plus, Edit, Users, Trash2, Search, X } from "lucide-react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  Plus,
+  Edit,
+  Users,
+  Trash2,
+  Search,
+  X,
+  BicepsFlexed,
+} from "lucide-react";
 import {
   getTeams,
   getCategories,
   getPlayers,
   createTeam,
-  updateTeam,
-  updateTeamPlayers,
   deleteTeam,
   TeamWithPlayers,
 } from "@/actions/TeamsActions";
@@ -17,7 +23,6 @@ import Modal from "./EquipoModal";
 import EditTeamForm from "./EditTeamForm";
 import CreateTeamForm from "./CreateTeamForm";
 import { useIsMobile } from "@/hooks/use-mobile";
-
 
 type Category = { id: number; name: string };
 type Player = {
@@ -44,7 +49,7 @@ const TeamManagement = () => {
     if (!searchTerm.trim()) return teams;
 
     const searchLower = searchTerm.toLowerCase().trim();
-    
+
     return teams.filter((teamData) => {
       // Check display name
       if (teamData.displayName.toLowerCase().includes(searchLower)) {
@@ -55,8 +60,9 @@ const TeamManagement = () => {
       if (teamData.player1) {
         const player1Name = teamData.player1.user.name?.toLowerCase() || "";
         const player1Email = teamData.player1.user.email?.toLowerCase() || "";
-        const player1Nickname = teamData.player1.profile?.nickname?.toLowerCase() || "";
-        
+        const player1Nickname =
+          teamData.player1.profile?.nickname?.toLowerCase() || "";
+
         if (
           player1Name.includes(searchLower) ||
           player1Email.includes(searchLower) ||
@@ -70,8 +76,9 @@ const TeamManagement = () => {
       if (teamData.player2) {
         const player2Name = teamData.player2.user.name?.toLowerCase() || "";
         const player2Email = teamData.player2.user.email?.toLowerCase() || "";
-        const player2Nickname = teamData.player2.profile?.nickname?.toLowerCase() || "";
-        
+        const player2Nickname =
+          teamData.player2.profile?.nickname?.toLowerCase() || "";
+
         if (
           player2Name.includes(searchLower) ||
           player2Email.includes(searchLower) ||
@@ -119,6 +126,11 @@ const TeamManagement = () => {
     }
   }, [error]);
 
+  const onEditModalClose = useCallback(async () => {
+    setEditingTeam(null);
+    await loadData();
+  }, []);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -158,60 +170,6 @@ const TeamManagement = () => {
       if (err instanceof Error) {
         console.error("Error creating team:", err);
         setError(err.message || "Error al crear equipo. Inténtelo de nuevo.");
-      }
-    }
-  };
-
-  const handleUpdateTeam = async (
-    teamId: number,
-    originalData: TeamWithPlayers,
-    updatedData: {
-      categoryId: number;
-      status: "idle" | "risky" | "winner" | "looser";
-      player1Id: string;
-      player2Id: string;
-    }
-  ) => {
-    const promises = [];
-
-    if (
-      originalData.team.categoryId !== updatedData.categoryId ||
-      originalData.team.status !== updatedData.status
-    ) {
-      promises.push(
-        updateTeam(teamId, {
-          categoryId: updatedData.categoryId,
-          status: updatedData.status,
-        })
-      );
-    }
-
-    if (
-      originalData.team.player1Id !== updatedData.player1Id ||
-      originalData.team.player2Id !== updatedData.player2Id
-    ) {
-      promises.push(
-        updateTeamPlayers(teamId, {
-          player1Id: updatedData.player1Id,
-          player2Id: updatedData.player2Id,
-        })
-      );
-    }
-
-    if (promises.length === 0) {
-      setEditingTeam(null);
-      return;
-    }
-
-    try {
-      await Promise.all(promises);
-      toast.success("Equipo actualizado exitosamente!");
-      await loadData();
-      setEditingTeam(null);
-    } catch (err) {
-      if (err instanceof Error) {
-        console.error("Error updating team:", err);
-        setError(err.message || "Failed to update team. Please try again.");
       }
     }
   };
@@ -257,59 +215,67 @@ const TeamManagement = () => {
     );
 
   return (
-    <div className="min-h-screen p-6 mx-auto text-white bg-indor-black/60">
+    <div className="min-h-screen max-h-screen p-6 mx-auto w-full text-white bg-indor-black/60">
       <UserDropdownMenu />
       {loading ? (
         <div className="py-12 text-center text-gray-400">Cargando...</div>
       ) : (
         <>
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">Gestión de equipos</h1>
-            {isMobile ? (
-              <button 
-                onClick={() => setShowCreateForm(true)}
-                className="fixed bottom-7 right-5 flex items-center gap-2 p-2 text-white transition-colors duration-75 rounded-full bg-indor-orange/80 hover:bg-indor-orange"
-              >
-                <Plus size={26} strokeWidth={3} />
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="flex items-center gap-2 px-4 py-2 text-white transition-colors duration-75 rounded-md bg-indor-orange/80 hover:bg-indor-orange"
-              >
-                <Plus size={20} /> Crear equipo
-              </button>
-            )}
-          </div>
+          <div className="flex items-center justify-between mb-6 text-wrap">
+            {/* Header */}
+            <div className="flex items-center justify-between w-full flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-gradient-to-br from-indor-orange to-amber-600 via-amber-400 rounded-full">
+                  <BicepsFlexed className="text-white" size={20} />
+                </span>
+                <h1 className="text-3xl font-bold max-w-[60vw]">Equipos</h1>
+              </div>
 
-          {/* Search Bar */}
-          <div className="relative mb-6">
-            <div className="relative">
-              <Search 
-                size={20} 
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
-              />
-              <input
-                type="text"
-                placeholder="Buscar por nombre de equipo, jugadores o email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-10 py-3 bg-indor-black border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indor-orange/80 focus:ring-1 focus:ring-indor-orange/80"
-              />
-              {searchTerm && (
+              {/* Search Bar */}
+              <div className="relative w-full mt-4 md:w-1/3 md:mt-0">
+                <div className="relative">
+                  <Search
+                    size={20}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Buscar por jugadores o email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-10 py-3 bg-indor-black border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indor-orange/80 focus:ring-1 focus:ring-indor-orange/80"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={clearSearch}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                    >
+                      <X size={20} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* New team button */}
+              {isMobile ? (
                 <button
-                  onClick={clearSearch}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  onClick={() => setShowCreateForm(true)}
+                  className="fixed bottom-7 right-5 flex items-center gap-2 p-2 text-white transition-colors duration-75 rounded-full bg-indor-orange/80 hover:bg-indor-orange"
                 >
-                  <X size={20} />
+                  <Plus size={26} strokeWidth={3} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="flex items-center justify-center min-w-40 max-w-40 gap-2 px-4 py-2 text-white transition-colors duration-75 rounded-md bg-indor-orange/80 hover:bg-indor-orange"
+                >
+                  <Plus size={20} /> Crear equipo
                 </button>
               )}
             </div>
-            {searchTerm && (
-              <div className="mt-2 text-sm text-gray-400">
-                Mostrando {filteredTeams.length} de {teams.length} equipos
-              </div>
-            )}
+          </div>
+          <div className="px-4 py-2 text-sm text-gray-300 bg-indor-black/40">
+            Mostrando {filteredTeams.length} de {teams.length} equipos
           </div>
 
           <Modal
@@ -326,7 +292,7 @@ const TeamManagement = () => {
             />
           </Modal>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 max-h-[70vh] overflow-scroll p-2 border-t border-b border-indor-brown-light/20">
             {filteredTeams.map((teamData) => {
               const assignedPlayerIds = teams
                 .flatMap((t) => [t.team.player1Id, t.team.player2Id])
@@ -348,42 +314,49 @@ const TeamManagement = () => {
                   key={teamData.team.id}
                   className="flex flex-col justify-between p-5 border border-gray-700 rounded-lg bg-indor-black"
                 >
-                  {editingTeam === teamData.team.id ? (
+                  <Modal
+                    isOpen={editingTeam === teamData.team.id}
+                    onClose={() => {
+                      setEditingTeam(null);
+                    }}
+                  >
                     <EditTeamForm
                       teamData={teamData}
-                      onSave={(data) =>
-                        handleUpdateTeam(teamData.team.id, teamData, data)
-                      }
                       onCancel={() => setEditingTeam(null)}
+                      onEditModalClose={onEditModalClose}
                       availablePlayers={availablePlayersForEdit}
                       categories={categories}
                       setError={setError}
                     />
-                  ) : (
-                    <div>
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
+                  </Modal>
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="flex gap-4 items-center">
                           <h3 className="text-xl font-semibold text-white">
                             {teamData.displayName}
                           </h3>
-                          <span className="text-sm text-gray-400">
-                            {teamData.category?.name || "No Category"}
+                          <span className="text-sm">
+                            {teamData.category?.name || "Sin categoría"}
                           </span>
                         </div>
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            statusColors[teamData.team.status!]
-                          }`}
-                        >
-                          {teamData.team.status}
+                        <span className="text-sm text-gray-400 flex gap-4 justify-between w-full">
+                          <p>TeamID: {teamData.team.id}</p>
                         </span>
                       </div>
-                      <div className="mt-4 space-y-3">
-                        <PlayerDisplay player={teamData.player1} />
-                        <PlayerDisplay player={teamData.player2} />
-                      </div>
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          statusColors[teamData.team.status!]
+                        }`}
+                      >
+                        {teamData.team.status}
+                      </span>
                     </div>
-                  )}
+                    <div className="mt-4 space-y-3">
+                      <PlayerDisplay player={teamData.player1} />
+                      <PlayerDisplay player={teamData.player2} />
+                    </div>
+                  </div>
 
                   <div className="flex items-center gap-2 pt-4 mt-4 border-t border-gray-700">
                     <button
@@ -406,13 +379,8 @@ const TeamManagement = () => {
             })}
 
             {!loading && filteredTeams.length === 0 && searchTerm && (
-              <div className="col-span-full py-12 text-center rounded-lg bg-indor-black">
-                <h3 className="mb-2 text-lg font-medium text-white">
-                  No se encontraron equipos
-                </h3>
-                <p className="mb-4 text-gray-400">
-                  No hay equipos que coincidan con &quot;{searchTerm}&quot;
-                </p>
+              <div className="h-[70vh] flex justify-center col-span-3 px-4 py-6 text-center text-gray-400">
+                No hay equipos que coincidan con &quot;{searchTerm}&quot;
               </div>
             )}
 
