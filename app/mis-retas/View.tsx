@@ -2,12 +2,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { History, Inbox, Target } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  getUserMatches,
-  acceptMatch,
-  rejectMatch,
-} from "@/actions/matches";
-import { MatchWithDetails } from "@/actions/matches/types"
+import { getUserMatches, acceptMatch, rejectMatch } from "@/actions/matches";
+import { MatchWithDetails } from "@/actions/matches/types";
 import toast from "react-hot-toast";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import { useSession } from "next-auth/react";
@@ -24,18 +20,24 @@ const MatchesPage = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
-  const [userTeamId, setUserTeamId] = useState<number | null>()
-  const [rejectedAmount, setRejectedAmount] = useState<number>(0)
+  const [userTeamId, setUserTeamId] = useState<number | null>();
+  const [rejectedAmount, setRejectedAmount] = useState<number>(0);
 
   const fetchRejectedAmount = useCallback(async () => {
-    if (userTeamId=== null || userTeamId === undefined)  return
+    if (userTeamId === null || userTeamId === undefined) return;
 
-    const amount = await getRejectedAmount(userTeamId)
-    if (amount === null || amount === undefined) throw new Error("Error al conseguir cantidad de partidas rechazadas. Null")
-    if (typeof amount !== "number") throw new Error("Error al conseguir cantidad de partidas rechazadas. Error")
+    const amount = await getRejectedAmount(userTeamId);
+    if (amount === null || amount === undefined)
+      throw new Error(
+        "Error al conseguir cantidad de partidas rechazadas. Null"
+      );
+    if (typeof amount !== "number")
+      throw new Error(
+        "Error al conseguir cantidad de partidas rechazadas. Error"
+      );
 
-    setRejectedAmount(amount)
-  }, [userTeamId])
+    setRejectedAmount(amount);
+  }, [userTeamId]);
 
   const fetchMatches = useCallback(async () => {
     if (!user?.id) return;
@@ -43,12 +45,12 @@ const MatchesPage = () => {
     setLoading(true);
     try {
       const { pendingMatches, matchHistory } = await getUserMatches(user.id);
-      const utid = await getUserTeamId(user.id)
+      const utid = await getUserTeamId(user.id);
       setPendingMatches(pendingMatches);
       setMatchHistory(matchHistory);
-      if ("error" !in utid) return
-      setUserTeamId(utid.teamId)
-      await fetchRejectedAmount()
+      if ("error"! in utid) return;
+      setUserTeamId(utid.teamId);
+      await fetchRejectedAmount();
     } catch (error) {
       console.error("Error fetching matches:", error);
       toast.error("Error al cargar los combates");
@@ -82,6 +84,13 @@ const MatchesPage = () => {
       setActionLoading(null);
     }
   };
+
+  const handleCancelMatch = useCallback(async (matchId: number) => {
+    if (actionLoading || !user?.id) return; // Prevent multiple calls
+
+    setActionLoading(matchId);
+    await fetchMatches().then(() => setActionLoading(null));
+  }, [actionLoading, fetchMatches, user?.id]);
 
   const handleRejectMatch = async (matchId: number) => {
     if (actionLoading || !user?.id) return; // Prevent multiple calls
@@ -226,6 +235,7 @@ const MatchesPage = () => {
                   {matchHistory.map((match) => (
                     <HistoryMatchCard
                       key={match.id}
+                      handleCancelMatch={handleCancelMatch}
                       userTeamId={userTeamId!}
                       match={match}
                       formatDate={formatDate}

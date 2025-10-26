@@ -60,6 +60,7 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
 
       revalidatePath("/mis-retas");
       revalidatePath("/retas");
+      revalidatePath("/")
 
       return {
         success: true,
