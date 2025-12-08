@@ -22,11 +22,11 @@ export type TeamWithPlayers = {
   player1: {
     user: typeof users.$inferSelect;
     profile: typeof profile.$inferSelect | null;
-  } | null; // 👈 ahora acepta null
+  } | null;
   player2: {
     user: typeof users.$inferSelect;
     profile: typeof profile.$inferSelect | null;
-  } | null; // 👈 ahora acepta null
+  } | null;
   displayName: string;
 };
 

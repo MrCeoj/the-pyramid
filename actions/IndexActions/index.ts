@@ -1,6 +1,6 @@
 import { getAllPyramids } from "./getAllPyramids";
 import { getAllPyramidsTotal } from "./getAllPyramidsTotal";
-import { getPlayerPyramid } from "./getPlayerPyramid";
+import { getPlayerPyramids } from "./getPlayerPyramids";
 import { getPyramidData } from "./getPyramidData";
 import { getTeamData } from "./getTeamData";
 import { getUserPendingMatchesCount } from "./getUserPendingMatchesCount";
@@ -11,7 +11,7 @@ import { isUserInTeam } from "./isUserInTeam";
 export {
   getAllPyramids,
   getAllPyramidsTotal,
-  getPlayerPyramid,
+  getPlayerPyramids,
   getPyramidData,
   getTeamData,
   getUserPendingMatchesCount,

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getPyramidData } from "@/actions/IndexActions";
 import { Pyramid } from "lucide-react";
 
-const AdminPyramidSelector = () => {
+const PyramidSelector = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const {
     pyramids,
@@ -13,6 +13,8 @@ const AdminPyramidSelector = () => {
     setSelectedPyramidId,
     pyramidData,
     setPyramidData,
+    setTeamId,
+    teamId,
   } = usePyramidStore();
 
   useEffect(() => {
@@ -22,7 +24,7 @@ const AdminPyramidSelector = () => {
   useEffect(() => {
     const fetchPyramidData = async (id: number) => {
       const pyramidData = await getPyramidData(id);
-      console.log(pyramidData)
+      console.log(pyramidData);
       setPyramidData(pyramidData);
     };
     if (selectedPyramidId) {
@@ -32,6 +34,8 @@ const AdminPyramidSelector = () => {
 
   const handlePyramidChange = (pyramidId: number) => {
     setSelectedPyramidId(pyramidId);
+    const tId = pyramids.find((p) => p.id === pyramidId)?.teamId;
+    if (tId) setTeamId(tId);
   };
 
   return (
@@ -115,7 +119,7 @@ const AdminPyramidSelector = () => {
       </div>
 
       {/* Pyramid Display */}
-      {pyramidData && <PyramidDisplay data={pyramidData} />}
+      {pyramidData && <PyramidDisplay data={pyramidData} userTeamId={teamId} />}
 
       {!pyramidData && selectedPyramidId && (
         <div className="text-center py-8">
@@ -131,4 +135,4 @@ const AdminPyramidSelector = () => {
   );
 };
 
-export default AdminPyramidSelector;
+export default PyramidSelector;

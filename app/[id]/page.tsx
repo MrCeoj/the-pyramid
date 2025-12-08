@@ -21,7 +21,6 @@ export default async function PyramidView({
 
   const pyramidId = Number(id);
 
-  // Handle non-numeric or invalid ID
   if (Number.isNaN(pyramidId)) {
     notFound();
   }

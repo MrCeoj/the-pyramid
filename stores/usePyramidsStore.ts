@@ -1,36 +1,17 @@
 "use client";
 import { create } from "zustand";
-import { Team } from "@/actions/IndexActions/types";
-
-type Position = {
-  id: number;
-  row: number;
-  col: number;
-  team: Team | null;
-};
-
-export type PyramidData = {
-  positions: Position[];
-  row_amount: number;
-  pyramid_id: number;
-  pyramid_name: string;
-};
-
-export type PyramidOption = {
-  id: number;
-  name: string;
-  description: string | null;
-};
+import { PyramidData, PyramidOption } from "@/actions/IndexActions/types";
 
 interface PyramidState {
   pyramids: PyramidOption[];
   selectedPyramidId: number | null;
   pyramidData: PyramidData | null;
+  teamId: number | null;
 
-  // actions
   setPyramids: (pyramids: PyramidOption[]) => void;
   setSelectedPyramidId: (id: number | null) => void;
   setPyramidData: (data: PyramidData | null) => void;
+  setTeamId: (id: number) => void;
   reset: () => void;
 }
 
@@ -38,10 +19,12 @@ export const usePyramidStore = create<PyramidState>((set) => ({
   pyramids: [],
   selectedPyramidId: null,
   pyramidData: null,
+  teamId: null,
 
   setPyramids: (pyramids) => set({ pyramids }),
   setSelectedPyramidId: (id) => set({ selectedPyramidId: id }),
   setPyramidData: (data) => set({ pyramidData: data }),
+  setTeamId: (id) => set({teamId: id}),
 
   reset: () => set({ pyramids: [], selectedPyramidId: null, pyramidData: null }),
 }));

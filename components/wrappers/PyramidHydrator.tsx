@@ -2,30 +2,42 @@
 
 "use client";
 import { usePyramidStore } from "@/stores/usePyramidsStore";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
+import { PyramidOption } from "@/actions/IndexActions/types";
 
 interface PyramidHydratorProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  pyramids: any[]; // Replace with your actual pyramid type
+  pyramids: PyramidOption[];
   defaultPyramidId?: number | null;
 }
 
-export const PyramidHydrator: React.FC<PyramidHydratorProps> = ({ 
-  pyramids, 
-  defaultPyramidId 
+export const PyramidHydrator: React.FC<PyramidHydratorProps> = ({
+  pyramids,
+  defaultPyramidId,
 }) => {
-  const { setPyramids, setSelectedPyramidId, selectedPyramidId } = usePyramidStore();
+  const { setPyramids, setSelectedPyramidId, selectedPyramidId, setTeamId } =
+    usePyramidStore();
+
+  const initializeState = useCallback(() => {
+    if (defaultPyramidId && !selectedPyramidId) {
+      setSelectedPyramidId(defaultPyramidId);
+      const teamId = pyramids.find((p) => p.id === defaultPyramidId)?.teamId;
+      if (teamId) setTeamId(teamId);
+    }
+  }, [
+    defaultPyramidId,
+    pyramids,
+    selectedPyramidId,
+    setSelectedPyramidId,
+    setTeamId,
+  ]);
 
   useEffect(() => {
     setPyramids(pyramids);
   }, [pyramids, setPyramids]);
 
   useEffect(() => {
-    // Only set default if no pyramid is currently selected
-    if (defaultPyramidId && !selectedPyramidId) {
-      setSelectedPyramidId(defaultPyramidId);
-    }
-  }, [defaultPyramidId, selectedPyramidId, setSelectedPyramidId]);
+    initializeState();
+  }, [initializeState]);
 
-  return null; // This is a hydration component, no UI
+  return null;
 };

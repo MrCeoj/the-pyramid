@@ -7,7 +7,7 @@ export default function UnauthorizedView({ type }: { type: "no-session" | "user-
         <h1 className="text-2xl font-bold mb-4">
           {type === "no-session" ? "Acceso no permitido" : "Usuario no encontrado"}
         </h1>
-        {type === "no-session" && <p className="mb-4">Inicia sesión para ver una pirámide.</p>}
+        {type === "no-session" && <p className="mb-4">Inicia sesión para poder interactuar con tus pirámides.</p>}
         <UserDropdownMenu />
       </div>
     </main>

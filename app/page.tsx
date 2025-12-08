@@ -3,11 +3,11 @@ import { db } from "@/lib/drizzle";
 import { eq, desc } from "drizzle-orm";
 import { users, pyramid } from "@/db/schema";
 
-import UnauthorizedView from "./views/UnauthorizedView";
-import AdminView from "./views/AdminView";
-import PlayerView from "./views/PlayerView";
+import UnauthorizedView from "@/app/views/UnauthorizedView";
+import AdminView from "@/app/views/AdminView";
+import PlayerView from "@/app/views/PlayerView";
 
-import { getAllPyramidsTotal, getPlayerPyramid, getUserTeamId } from "@/actions/IndexActions";
+import { getAllPyramidsTotal, getPlayerPyramids } from "@/actions/IndexActions";
 
 export default async function Home() {
   const session = await auth();
@@ -42,18 +42,7 @@ export default async function Home() {
     );
   }
 
-  const [playerPyramid, teamIdResult] = await Promise.all([
-    getPlayerPyramid(session.user.id),
-    getUserTeamId(session.user.id),
-  ]);
+  const playerPyramids = await getPlayerPyramids(session.user.id);
 
-  const userTeamId =
-    "error" in teamIdResult ? null : teamIdResult?.teamId ?? null;
-
-  return (
-    <PlayerView
-      pyramid={playerPyramid}
-      userTeamId={userTeamId}
-    />
-  );
+  return <PlayerView pyramids={playerPyramids} />;
 }

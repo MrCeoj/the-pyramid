@@ -1,4 +1,4 @@
-import AdminPyramidSelector from "@/app/AdminPyramidSelector";
+import PyramidSelector from "@/app/PyramidSelector";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import ZustandSessionInitializer from "@/components/wrappers/ZustandSessionInitializer";
 import { PyramidHydrator } from "@/components/wrappers/PyramidHydrator";
@@ -7,6 +7,7 @@ export default function AdminView({
   allPyramids,
   defaultPyramidId,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   allPyramids: any[];
   defaultPyramidId: number | null;
 }) {
@@ -37,7 +38,7 @@ export default function AdminView({
       </div>
 
       <div className="flex flex-col justify-center overflow-y-auto">
-        <AdminPyramidSelector />
+        <PyramidSelector />
       </div>
     </main>
   );

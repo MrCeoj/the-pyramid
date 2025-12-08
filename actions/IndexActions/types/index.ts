@@ -34,10 +34,13 @@ export type PyramidData = {
   row_amount: number;
   pyramid_id: number;
   pyramid_name: string;
+  description: string | null;
+  teamId?: number;
 };
 
 export type PyramidOption = {
   id: number;
   name: string;
   description: string | null;
+  teamId?: number;
 };

@@ -76,9 +76,6 @@ export function EditPyramidModal({
   useEffect(() => {
     if (error) toast.error(error);
   }, [error]);
-  useEffect(() => {
-    console.log(formData);
-  }, [formData]);
 
   if (!isOpen) return null;
 

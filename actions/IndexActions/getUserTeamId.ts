@@ -13,7 +13,8 @@ export async function getUserTeamId(
 
     return { teamId: result.teamIds.length > 0 ? result.teamIds[0] : null };
   } catch (error) {
-    console.error("Error fetching user team:", error);
+    if (error instanceof Error)
+      console.error("Error fetching user team for userId:", userId);
     return { error: "Internal server error" };
   }
 }
