@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createPyramid } from "@/actions/PyramidActions";
+import { createPyramid, getCategories } from "@/actions/PyramidActions";
 
 interface CreatePyramidModalProps {
   isOpen: boolean;
@@ -14,15 +14,33 @@ export function CreatePyramidModal({
   isOpen,
   onClose,
 }: CreatePyramidModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    row_amount: number;
+    active: boolean;
+    categories: number[];
+  }>({
     name: "",
     description: "",
     row_amount: 1,
     active: true,
+    categories: [],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [cats, setCats] = useState<{ id: number; name: string }[]>([]);
   const router = useRouter();
+
+  const fetchCategories = useCallback(async () => {
+    const res = await getCategories();
+    if (!res) return;
+    setCats(res);
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   if (!isOpen) return null;
 
@@ -34,7 +52,13 @@ export function CreatePyramidModal({
     try {
       await createPyramid(formData);
       onClose();
-      setFormData({ name: "", description: "", row_amount: 1, active: true });
+      setFormData({
+        name: "",
+        description: "",
+        row_amount: 1,
+        active: true,
+        categories: [],
+      });
       router.refresh();
     } catch (err) {
       if (err instanceof Error) {
@@ -50,19 +74,14 @@ export function CreatePyramidModal({
       <div className="bg-indor-black/80 rounded-lg p-6 w-full max-w-md mx-4 border-2 border-black">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Crear nueva pirámide</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
             <X size={24} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Nombre:*
-            </label>
+            <label className="block text-sm font-medium mb-1">Nombre:*</label>
             <input
               type="text"
               required
@@ -109,6 +128,49 @@ export function CreatePyramidModal({
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Categorías:
+            </label>
+
+            <div className="space-y-2 max-h-15 rounded-lg p-2 grid grid-cols-3 justify-between">
+              {cats.length === 0 && (
+                <p className="text-gray-400 text-sm">
+                  No hay categorías disponibles.
+                </p>
+              )}
+
+              {cats.map((cat) => {
+                const checked = formData.categories.includes(cat.id);
+
+                return (
+                  <label
+                    key={cat.id}
+                    className="flex items-center space-x-2 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        setFormData((prev) => {
+                          const already = prev.categories.includes(cat.id);
+                          return {
+                            ...prev,
+                            categories: already
+                              ? prev.categories.filter((c) => c !== cat.id)
+                              : [...prev.categories, cat.id],
+                          };
+                        });
+                      }}
+                      className="h-4 w-4 accent-indor-orange"
+                    />
+                    <span className="text-xs sm:text-sm">{cat.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -119,10 +181,7 @@ export function CreatePyramidModal({
               }
               className="h-4 w-4 text-white accent-indor-orange focus:ring-indor-orange border-gray-300 rounded"
             />
-            <label
-              htmlFor="active"
-              className="ml-2 block text-sm"
-            >
+            <label htmlFor="active" className="ml-2 block text-sm">
               ¿Está activa?
             </label>
           </div>

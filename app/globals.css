@@ -45,3 +45,8 @@ body {
     -moz-appearance: textfield;
   }
 }
+
+@keyframes losing-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.4); }
+  50% { box-shadow: 100px 30px 30px rgba(255, 0, 0, 0.8); }
+}

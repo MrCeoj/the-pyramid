@@ -162,15 +162,27 @@ const TeamCard = ({
     const config = {
       down: {
         icon: ArrowBigDownDash,
-        color: isTop ? "text-yellow-300" : isPlayer ? "text-red-300" : "text-red-400",
+        color: isTop
+          ? "text-yellow-300"
+          : isPlayer
+          ? "text-red-300"
+          : "text-red-400",
       },
       up: {
         icon: ArrowBigUpDash,
-        color: isTop ? "text-yellow-300" : isPlayer ? "text-green-300" : "text-green-400",
+        color: isTop
+          ? "text-yellow-300"
+          : isPlayer
+          ? "text-green-300"
+          : "text-green-400",
       },
       stayed: {
         icon: CircleMinus,
-        color: isTop ? "text-yellow-300" : isPlayer ? "text-slate-200" : "text-slate-300",
+        color: isTop
+          ? "text-yellow-300"
+          : isPlayer
+          ? "text-slate-200"
+          : "text-slate-300",
       },
     };
 
@@ -207,7 +219,9 @@ const TeamCard = ({
               : "min-w-[150px] max-w-[150px]"
           } backdrop-blur-sm snap-center ${getCardAnimation()} ${
             isActuallyChallengable ? "cursor-pointer border-dashed" : ""
-          }`}
+          }
+          ${data.team.loosingStreak! >= 2 ? "animate-losing-glow" :""}
+          `}
         >
           {/* Status indicator */}
           <div
@@ -267,7 +281,11 @@ const TeamCard = ({
           </div>
 
           {/* Win/Loss stats */}
-          <div className="flex justify-evenly gap-3 items-center w-full text-xs">
+          <div
+            className={`flex justify-evenly gap-3 items-center w-full text-xs ${
+              data.team.loosingStreak! >= 2 ? "animate-pulse" : ""
+            }`}
+          >
             <div className="flex self-center items-center">
               <span
                 className={`font-medium ${

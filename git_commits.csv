@@ -1,0 +1,56 @@
+Commit Hash;Committer;Date;Time;Title;Description
+6ebf562033d699c70f3cb4ac4e45574daaaf24ca;Marcelo Ortiz;2025-10-26;13:58:42;Added cancelling matches;Now users can cancell their own accepted matches
+3a65d5a1b5458be820aaa90ffaede5646999a557;Marcelo Ortiz;2025-10-24;13:14:21;Added Git Logger;For easier management
+1cb487fa8c42daf05062d442fab9602d3ccf6ec7;Marcelo Ortiz;2025-10-24;12:49:50;Updated Team Management UI;Added missing data fields in edit form. Migrated to floating modal. Refactored layout. Missing pagination
+65c5d867db049dec0c8e4cc72bc8133c6fa643a4;Marcelo Ortiz;2025-10-22;10:34:36;Improved Match History For User;Ordered correctly now, improved visual cue for winners, refactored space usage
+1f5cc88fcd20f4e659806d318b333d61f1f06919;Marcelo Ortiz;2025-10-17;20:53:25;restored mail actions to prod;
+eeeec83b656bb4b1f873b0a1bf16988f6d384dd6;Marcelo Ortiz;2025-10-17;20:46:26;Add lastResult and loosingStreak to team data;Introduces lastResult and loosingStreak fields to team objects and propagates them throughout actions and UI components. Updates logic to set lastResult on match completion and expired match processing, and displays lastResult in TeamCard. Also fixes match ordering and date display in history, and improves ChallengeModal and PyramidRow refresh handling.
+f58d436b180d9381ac89a0643848a67a8902e73f;Marcelo Ortiz;2025-10-17;13:37:37;Improves expired match processing and UI display;Refactors expired match processing for better readability and maintainability.
+7895833f43f26566763c050b162b902537973c87;Marcelo Ortiz;2025-10-16;12:04:56;Changed to test db in server;lots of pending stuff, gotta remove not null policy in position history
+17d7852202f3a04bda8db883279d03c6e6b363b9;Marcelo Ortiz;2025-10-14;10:53:52;Improves match completion logic and UI;Refactors match completion process to include cellar team swapping for teams with long losing streaks, improving pyramid stability and team progression.
+a2c5ca2974bdaf8c3986fc62300a3ab5b2910f2e;Marcelo Ortiz;2025-10-13;12:00:12;Refactors match completion logic;Simplifies and improves match completion process by extracting helper functions.
+e7e2eb9481b4975493b44918c4afdfdaa2d19bbf;Marcelo Ortiz;2025-10-11;17:49:53;Add cellar row to pyramid display and editing;Introduces a dedicated 'cellar' (sótano) row at the base of the pyramid in both player and admin views, with new CellarRow components for display and editing. Updates data handling to support the cellar row, adjusts styling for a wood-textured effect, and refines team selection and deletion logic. Also includes minor bug fixes, code cleanup, and improved error handling in modals.
+e94a9f5f40031f604b7fba6279f137dac6490434;Marcelo Ortiz;2025-10-10;12:58:03;Temporal fix for miscelaneous problems;Shield still doesn't show on admin panel, still not implemented auto punish, untested new risky checking
+a1d42ae2797a8c7c388bedb0c398c362ecd810f3;Marcelo Ortiz;2025-10-07;12:31:32;Adds match history and disputed team stats;Implements functionality to retrieve match history and identify the most disputed team within a pyramid.
+f271d38a8b9fd5e0e47050231c257470e35b7348;Marcelo Ortiz;2025-10-06;22:01:28;Fix param type check and conversion in PyramidView;Changed the type check for param.id from number to string and added conversion to number before fetching pyramid data. This ensures correct handling of route parameters.
+1ffbc68ef8dcd5658ff494709fbb9d2f97013435;Marcelo Ortiz;2025-10-06;21:44:21;Add defendable flag to teams and update match logic;Introduces a 'defendable' boolean column to the team schema and database, with migration. Updates match acceptance and completion logic to set and reset this flag appropriately. Adjusts pyramid and team card UI to reflect defendable status, and ensures teams cannot be challenged while defendable. Also fixes some import paths and enables expired match checks in the user dropdown menu.
+4c931c229423cc077bb7828be67a7d40363d83ea;Marcelo Ortiz;2025-10-05;19:34:59;Update match rejection logic and add pyramid view route;Refactors match rejection and risky team logic to consider matches played since previous Monday, enforcing a minimum of 2 matches before demotion or rejection limits apply. Adds defended state to pyramid row/team card UI, updates not-found/global-not-found to use div instead of html/body, and introduces a new dynamic pyramid view route. Middleware now allows numeric public routes and improves route checks.
+a1cb8ffc731efca2de9ade917c81ad1cc6d552aa;Marcelo Ortiz;2025-10-01;22:18:50;Add bulk team retrieval for match cancellation;Introduces getBulkTeamsWithPlayers to efficiently fetch multiple teams and their players. Updates AcceptMatch to use this function for sending cancellation emails to affected teams when a match is accepted.
+add575864705f50a6c940d4dbd7df097994ac1f0;Marcelo Ortiz;2025-10-01;13:03:20;Improves match handling and notifications;Refactors team data fetching to include player details, improving performance and data consistency.
+d93609fd55a18f5b120ff30eca44681a0d093554;Marcelo Ortiz;2025-09-29;19:49:28;Changed handicap message;Now it's on every service
+5a7cc959bcb4c7689da59862b726663829120abe;Marcelo Ortiz;2025-09-29;18:17:44;Enhances reject mail with player details.;Improves the reject email notification by including the
+71a62131aa3639d2dc165738788a26010f598ef6;Marcelo Ortiz;2025-09-29;17:00:16;Merge remote-tracking branch 'origin/master';
+b2ad5cc7ebc3d89e9fcf34e907f624bc3531ef14;Marcelo Ortiz;2025-09-29;17:00:00;Extends session duration;Increases the session `maxAge` from 16 hours to 30 days.
+21b82de9c3d66a124270db6fa18911072f829b97;Marcelo Ortiz;2025-09-29;14:04:52;Refactor team and user schema, update relations;Major refactor of database schema and relations: team now references player1Id and player2Id, and positionHistory now uses teamId and affectedTeamId instead of challenger/defender. Updated related code and relations to match new schema. Also fixed display name logic to use maternalSurname, improved category color logic in TeamCard, and adjusted dev/start scripts to use port 3000. Removed unused code and improved error handling in actions.
+6dfc5652b97883cf37835d5642611c4103aaef69;Marcelo Ortiz;2025-09-27;11:53:23;v1 done;
+06b8fa2db93aa4d785e2bab24514d7987d7ddab4;Marcelo Ortiz;2025-09-27;00:13:42;One step closer to the end;
+fbdd4b9f29a2954c80d727e04d27665481f4f44d;Marcelo Ortiz;2025-09-26;16:34:33;quality of life improvements;
+3e369508a7d6bc55c06a02149643418c94e79600;Marcelo Ortiz;2025-09-26;00:11:12;Almost ready, half of the risky done;
+a77cdc28a071cfb47b81f2f2d4b0db3bfa7b6a11;Marcelo Ortiz;2025-09-25;13:52:14;Implements challenge functionality with email notifications;Adds functionality to challenge other teams within the pyramid, including sending email notifications to the challenged team.
+68afa484432c25b9c5e1241acf98ff0833f6cb77;Marcelo Ortiz;2025-09-24;22:31:19;nodemailer and shi;
+64ef11d8d8fd88aee84561ddcc13e11ec2d9d144;Marcelo Ortiz;2025-09-24;15:21:32;Improves team management and user profile setup;Enhances the team management page with create, edit, and delete functionality.
+b9457b132502ecae147b1e8d2221ced4ad435ce9;Marcelo Ortiz;2025-09-24;01:05:57;The great refactor part 2;
+a5e2c71b684ed57c0c2f4c782808b18bcbf8a436;Marcelo Ortiz;2025-09-23;19:08:56;The great refactor;
+719ca30552cf03a7eb48ffaea64894df2f7b7128;Marcelo Ortiz;2025-09-23;14:03:02;Half a commit;Gotta change the schema to use lastnames only, team.name is being dropped
+fea20aa470cc426ce1b98aa3af5b2c4d2010d649;Marcelo Ortiz;2025-09-22;12:44:58;Improves match system and UI components;Refactors match handling logic to enhance user experience, fix bugs, and improve admin match management.
+5ecbf818bca36f401bd8548883dac148ec776448;Marcelo Ortiz;2025-09-22;00:45:06;I saw hell...;
+0156bab26393b6c88621e2767ee402df0a3d6555;Marcelo Ortiz;2025-09-21;00:09:20;A lot happened;Added half of the admin's dashboard utilities, pyramids and profiles, teams pending, also matches, need to add search user, maybe pagination ( :( )
+fff28449f113e992afa4f9ac03b6bc95a9e33736;Marcelo Ortiz;2025-09-20;16:42:54;Implements pyramid display and selection;Adds functionality for displaying and selecting pyramids, with different views for admins and regular users.
+9182c1b4cc0f352629e6185e119ddf621bfe2130;Marcelo Ortiz;2025-09-19;13:42:21;Implements email-based login and profile setup;Refactors the login flow to use a two-step email validation and password entry process.
+001ed97fafda998fe9b2f4624a3055eaae899bc9;Marcelo Ortiz;2025-09-19;10:51:48;Cleanup;
+d49e1e96c641638c0e2a6c3d8a3c5af112c48892;Marcelo Ortiz;2025-09-18;13:49:29;bug in auth redirection;
+8034b3bfdfc4bad81d97cfa638a738a6c9059680;Marcelo Ortiz;2025-09-18;13:14:35;Updates database schema and logo size;Updates table names in the database schema to plural form for consistency.
+448348cf2fcfe0870de5eb7e354dd81c93fa76e9;Marcelo Ortiz;2025-09-18;12:31:57;Implements user authentication and profile setup;Adds user registration and authentication using NextAuth.
+fafebb41fb55c0b30cf4800c7e8ce0e82928dab7;Marcelo Ortiz;2025-09-17;23:50:51;migrated to local database;
+2086540897eed2a1775c4ce36b40aee4c20c7e20;Marcelo Ortiz;2025-09-17;23:07:45;Made progress, but gotta migrate to avoid supabase;yep
+c84385e5910c853e922300205ff320703c15edb6;Marcelo Ortiz;2025-09-17;12:32:33;Adds CRUD functionality for pyramids;Implements the Create, Read, Update, and Delete (CRUD) operations for pyramids within the admin panel.
+5c46cda6e7eaf976ab8766d6fc4b8b5b8247a945;Marcelo Ortiz;2025-09-17;11:20:00;Mid changes;vscode stops working
+11d2cebdcbbb56995834b6adaffd77a37bdfcece;Marcelo Ortiz;2025-09-16;23:49:14;flexxed pyramid, changed stuff;added the missing row in pyramid, also modified animation for better mobile
+dfb5e7ba9b01ced2268919f102e2a69fa5f24f1d;Marcelo Ortiz;2025-09-16;23:16:56;Pyramid made, changes made;
+70878566123af5d9e667154872d09d4643051b74;Marcelo Ortiz;2025-09-15;22:35:13;Add initial database schema and category display;Introduces a comprehensive database schema for pyramid, category, team, profile, match, and related tables using drizzle-orm. Updates PlayerCard and Home page components to fetch and display category data from the database. Adjusts drizzle config for new schema location and options. Adds initial migration files for schema setup.
+2e4caabb99c177ebd36844c97a632dc4b361ff29;Marcelo Ortiz;2025-09-15;13:51:45;sabe luego defino;
+eb34e2b718c9e3a2af2942edb582f5ddd3a1d743;Marcelo Ortiz;2025-09-13;17:37:27;Added Supabase CLI;
+2e3ad53e3b55fe73a7563df2da2a69ad0f0c8d3b;Marcelo Ortiz;2025-09-13;16:07:57;Fetch and sample pyramid;- Refactored structure
+3a731dd5da2926c1a5070339d66a65f79cc74265;Marcelo Ortiz;2025-09-12;21:59:33;Supabase implementation - PARTIAL;- Added types
+80a90b81265fa0c35d1a0cfca42c1ebf276cd476;Marcelo Ortiz;2025-09-12;09:51:47;First and foremost;
+882473560160fd4f194fcfae8cf2ac97ae0aaf91;Marcelo Ortiz;2025-09-12;09:51:17;Initial commit;

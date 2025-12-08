@@ -11,6 +11,7 @@ interface Pyramid {
   description: string | null;
   row_amount: number | null;
   active: boolean;
+  categories: number[];
   createdAt: Date | null;
   updatedAt: Date | null;
 }

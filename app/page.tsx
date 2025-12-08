@@ -18,12 +18,11 @@ export default async function Home() {
   let userTeamId: number | null | undefined;
   if ("error" in result) {
     console.error(result.error);
-    userTeamId = null; // or undefined, depending on what you want
+    userTeamId = null;
   } else {
     userTeamId = result.teamId;
   }
 
-  // This should never happen
   if (!session?.user?.id) {
     return (
       <main className="h-screen flex flex-col justify-center items-center">

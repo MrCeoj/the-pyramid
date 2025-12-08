@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { updatePyramid } from "@/actions/PyramidActions";
+import { updatePyramid, getCategories } from "@/actions/PyramidActions";
+import toast from "react-hot-toast";
 
 interface Pyramid {
   id: number;
@@ -11,6 +12,7 @@ interface Pyramid {
   description: string | null;
   row_amount: number | null;
   active: boolean;
+  categories: number[];
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -26,15 +28,34 @@ export function EditPyramidModal({
   isOpen,
   onClose,
 }: EditPyramidModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    row_amount: number;
+    active: boolean;
+    categories: number[];
+  }>({
     name: "",
     description: "",
     row_amount: 1,
     active: true,
+    categories: [],
   });
+
+  const [cats, setCats] = useState<{ id: number; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  const fetchCategories = useCallback(async () => {
+    const res = await getCategories();
+    if (!res) return;
+    setCats(res);
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   useEffect(() => {
     if (isOpen && pyramid) {
@@ -42,10 +63,20 @@ export function EditPyramidModal({
         name: pyramid.name,
         description: pyramid.description || "",
         row_amount: pyramid.row_amount || 1,
+        categories: pyramid.categories || [],
         active: pyramid.active,
       });
     }
   }, [isOpen, pyramid]);
+
+  useEffect(() => {
+    if(error)
+      toast.error(error)
+  }, [error])
+
+  useEffect(() => {
+    console.log(formData)
+  },[formData])
 
   if (!isOpen) return null;
 
@@ -59,9 +90,8 @@ export function EditPyramidModal({
       onClose();
       router.refresh();
     } catch (err) {
-      if (err instanceof Error) {
-        setError("Failed to update pyramid");
-      }
+      console.log(err)
+      setError("Error al actualizar la pirámide");
     } finally {
       setIsLoading(false);
     }
@@ -78,6 +108,7 @@ export function EditPyramidModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name */}
           <div>
             <label className="block text-sm font-medium mb-1">Nombre*</label>
             <input
@@ -91,10 +122,9 @@ export function EditPyramidModal({
             />
           </div>
 
+          {/* Description */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Descripción
-            </label>
+            <label className="block text-sm font-medium mb-1">Descripción</label>
             <textarea
               value={formData.description}
               onChange={(e) =>
@@ -105,6 +135,7 @@ export function EditPyramidModal({
             />
           </div>
 
+          {/* Rows */}
           <div>
             <label className="block text-sm font-medium mb-1">
               Cantidad de filas
@@ -124,6 +155,49 @@ export function EditPyramidModal({
             />
           </div>
 
+          {/* Categories — SAME as CreatePyramidModal */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Categorías</label>
+
+            <div className="space-y-2 max-h-15 rounded-lg p-2 grid grid-cols-3 gap-2">
+              {cats.length === 0 && (
+                <p className="text-gray-400 text-sm">
+                  No hay categorías disponibles.
+                </p>
+              )}
+
+              {cats.map((cat) => {
+                const checked = formData.categories.includes(cat.id);
+
+                return (
+                  <label
+                    key={cat.id}
+                    className="flex items-center space-x-2 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        setFormData((prev) => {
+                          const already = prev.categories.includes(cat.id);
+                          return {
+                            ...prev,
+                            categories: already
+                              ? prev.categories.filter((c) => c !== cat.id)
+                              : [...prev.categories, cat.id],
+                          };
+                        });
+                      }}
+                      className="h-4 w-4 accent-indor-orange"
+                    />
+                    <span className="text-xs sm:text-sm">{cat.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Active */}
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -134,16 +208,12 @@ export function EditPyramidModal({
               }
               className="h-4 w-4 text-indor-orange focus:ring-orange-pale border-white rounded accent-indor-orange"
             />
-            <label
-              htmlFor="edit-active"
-              className="ml-2 block text-sm text-white"
-            >
+            <label htmlFor="edit-active" className="ml-2 block text-sm">
               ¿Está activa?
             </label>
           </div>
 
-          {error && <div className="text-red-600 text-sm">{error}</div>}
-
+          {/* Actions */}
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
