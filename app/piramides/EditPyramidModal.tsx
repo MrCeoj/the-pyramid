@@ -48,9 +48,13 @@ export function EditPyramidModal({
   const router = useRouter();
 
   const fetchCategories = useCallback(async () => {
-    const res = await getCategories();
-    if (!res) return;
-    setCats(res);
+    try {
+      const res = await getCategories();
+      if (!res) return;
+      setCats(res);
+    } catch (error) {
+      if (error instanceof Error) toast.error("Error al cargar categorías");
+    }
   }, []);
 
   useEffect(() => {
@@ -70,13 +74,11 @@ export function EditPyramidModal({
   }, [isOpen, pyramid]);
 
   useEffect(() => {
-    if(error)
-      toast.error(error)
-  }, [error])
-
+    if (error) toast.error(error);
+  }, [error]);
   useEffect(() => {
-    console.log(formData)
-  },[formData])
+    console.log(formData);
+  }, [formData]);
 
   if (!isOpen) return null;
 
@@ -90,7 +92,7 @@ export function EditPyramidModal({
       onClose();
       router.refresh();
     } catch (err) {
-      console.log(err)
+      console.log(err);
       setError("Error al actualizar la pirámide");
     } finally {
       setIsLoading(false);
@@ -124,7 +126,9 @@ export function EditPyramidModal({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium mb-1">Descripción</label>
+            <label className="block text-sm font-medium mb-1">
+              Descripción
+            </label>
             <textarea
               value={formData.description}
               onChange={(e) =>
@@ -148,7 +152,8 @@ export function EditPyramidModal({
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  row_amount: e.target.value === "" ? 0 : parseInt(e.target.value),
+                  row_amount:
+                    e.target.value === "" ? 0 : parseInt(e.target.value),
                 })
               }
               className="w-full px-3 py-2 border border-white rounded-lg focus:ring-2 focus:ring-indor-orange focus:border-indor-orange"

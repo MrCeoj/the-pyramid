@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/drizzle";
 import { category, pyramid, pyramidCategory } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 interface CreatePyramidData {
@@ -34,13 +34,15 @@ export async function createPyramid(data: CreatePyramidData) {
         })
         .returning({ id: pyramid.id });
 
-      for (const cat of data.categories) {
-        await tx.insert(pyramidCategory).values({
-          pyramidId: id,
-          categoryId: cat,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      if (data.categories.length > 0) {
+        await tx.insert(pyramidCategory).values(
+          data.categories.map((cat) => ({
+            pyramidId: id,
+            categoryId: cat,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }))
+        );
       }
     });
 
@@ -82,24 +84,22 @@ export async function updatePyramid(id: number, data: UpdatePyramidData) {
       const toAdd = [...incoming].filter((cat) => !existing.has(cat));
       const toRemove = [...existing].filter((cat) => !incoming.has(cat));
 
-      for (const cat of toAdd) {
-        await tx.insert(pyramidCategory).values({
-          pyramidId: id,
-          categoryId: cat,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+      if (toAdd.length > 0) {
+        await tx.insert(pyramidCategory).values(
+          toAdd.map((cat) => ({
+            pyramidId: id,
+            categoryId: cat,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }))
+        );
       }
 
-      // Delete removed ones
-      for (const cat of toRemove) {
+      if (toRemove.length > 0) {
         await tx
           .delete(pyramidCategory)
           .where(
-            and(
-              eq(pyramidCategory.pyramidId, id),
-              eq(pyramidCategory.categoryId, cat)
-            )
+            and(eq(pyramidCategory, id), inArray(pyramidCategory, toRemove))
           );
       }
     });

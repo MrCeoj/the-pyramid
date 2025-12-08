@@ -22,7 +22,6 @@ export async function PyramidList() {
     .groupBy(pyramid.id)
     .orderBy(desc(pyramid.updatedAt));
 
-  console.log(pyramids);
 
   if (pyramids.length === 0) {
     return (

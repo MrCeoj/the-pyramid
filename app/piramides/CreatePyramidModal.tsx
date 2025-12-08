@@ -33,9 +33,14 @@ export function CreatePyramidModal({
   const router = useRouter();
 
   const fetchCategories = useCallback(async () => {
-    const res = await getCategories();
-    if (!res) return;
-    setCats(res);
+    try {
+      const res = await getCategories();
+      if (!res) return;
+      setCats(res);
+    } catch (error) {
+      if (error instanceof Error)
+        setError("Error al conseguir categorías")
+    }
   }, []);
 
   useEffect(() => {
@@ -133,7 +138,7 @@ export function CreatePyramidModal({
               Categorías:
             </label>
 
-            <div className="space-y-2 max-h-15 rounded-lg p-2 grid grid-cols-3 justify-between">
+            <div className="space-y-2 max-h-16 rounded-lg p-2 grid grid-cols-3 justify-between">
               {cats.length === 0 && (
                 <p className="text-gray-400 text-sm">
                   No hay categorías disponibles.

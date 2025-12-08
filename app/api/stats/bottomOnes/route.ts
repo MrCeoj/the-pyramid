@@ -7,10 +7,18 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const pyramidId = body.pyramidId;
-    const [{ rowAmount }] = await db
+    if (!pyramidId) {
+      return NextResponse.json({ error: "pyramidId is required" }, { status: 400 });
+    }
+    const pyramidResult = await db
       .select({ rowAmount: pyramid.row_amount })
       .from(pyramid)
       .where(eq(pyramid.id, pyramidId));
+
+    if (!pyramidResult.length) {
+      return NextResponse.json({ error: "Pyramid not found" }, { status: 404 });
+    }
+    const { rowAmount } = pyramidResult[0];
 
     const teamsInPyramid = await db
       .select({ team: position.teamId })
@@ -123,8 +131,12 @@ export async function POST(req: NextRequest) {
       ])
     );
 
-    return new NextResponse(JSON.stringify(readable));
+    return NextResponse.json(readable);
   } catch (e) {
     console.error(e);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
