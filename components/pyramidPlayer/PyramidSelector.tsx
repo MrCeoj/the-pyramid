@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import PyramidDisplay from "./PyramidDisplay";
-import { PyramidData } from "@/actions/IndexActions";
+import { PyramidData } from "@/actions/IndexActions/types";
 
 type Pyramid = {
   id: number;

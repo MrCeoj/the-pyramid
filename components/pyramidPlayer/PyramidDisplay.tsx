@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getUnresolvedMatchesForTeam } from "@/actions/matches/";
 import { UnresolvedMatch } from "@/actions/matches/types";
-import { PyramidData } from "@/actions/IndexActions";
+import { PyramidData } from "@/actions/IndexActions/types";
 import { TeamWithPlayers } from "@/actions/PositionActions";
 import CellarRow from "./CellarRow";
 

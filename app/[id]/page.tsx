@@ -3,7 +3,6 @@ import { getPyramidData } from "@/actions/IndexActions";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 
-// every 10 minutes
 export const revalidate = 600;
 
 export default async function PyramidView({
@@ -11,20 +10,31 @@ export default async function PyramidView({
 }: {
   params: { id: string };
 }) {
-  // Dynamically rendered
   headers();
-  const { id } = await params;
-  if (typeof id !== "string") notFound();
-  const pyramidId = Number(id);
-  const pyramidData = await getPyramidData(pyramidId);
 
-  if (pyramidData) {
-    return (
-      <div className="h-screen overflow-scroll no-scrollbar pt-16">
-        <PyramidDisplay data={pyramidData} />
-      </div>
-    );
-  } else {
+  const { id } = params;
+
+  // Validate param type
+  if (typeof id !== "string") {
     notFound();
   }
+
+  const pyramidId = Number(id);
+
+  // Handle non-numeric or invalid ID
+  if (Number.isNaN(pyramidId)) {
+    notFound();
+  }
+
+  const pyramidData = await getPyramidData(pyramidId);
+
+  if (!pyramidData) {
+    notFound();
+  }
+
+  return (
+    <div className="h-screen overflow-scroll no-scrollbar pt-16">
+      <PyramidDisplay data={pyramidData} />
+    </div>
+  );
 }

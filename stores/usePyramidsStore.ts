@@ -1,6 +1,6 @@
 "use client";
 import { create } from "zustand";
-import { Team } from "@/actions/IndexActions";
+import { Team } from "@/actions/IndexActions/types";
 
 type Position = {
   id: number;
