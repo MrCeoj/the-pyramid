@@ -164,7 +164,7 @@ export default function UserDropdownMenu() {
 
   if (status === "loading") {
     return (
-      <div className="z-40 fixed right-5 top-6 md:top-auto md:bottom-5">
+      <div className="z-[100] fixed right-5 top-6 md:top-auto md:bottom-5">
         <div className="p-3 rounded-full ring-2 ring-indor-brown-light bg-indor-black/80 animate-pulse">
           <User color="gray" strokeWidth={2} size={20} />
         </div>
@@ -180,7 +180,7 @@ export default function UserDropdownMenu() {
     <>
       <Toaster position={isMobile ? "top-center" : "top-right"} />
       <div
-        className="z-40 fixed right-5 top-6 md:top-auto md:bottom-5"
+        className="z-[100] fixed right-5 top-6 md:top-auto md:bottom-5"
         ref={dropdownRef}
       >
         {/* Your existing dropdown button and menu JSX remains exactly the same */}

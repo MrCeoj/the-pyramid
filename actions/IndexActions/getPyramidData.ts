@@ -22,6 +22,8 @@ export async function getPyramidData(
         id: pyramid.id,
         name: pyramid.name,
         row_amount: pyramid.row_amount,
+        description: pyramid.description,
+        active: pyramid.active
       })
       .from(pyramid)
       .where(eq(pyramid.id, pyramidId))
@@ -118,6 +120,8 @@ export async function getPyramidData(
       row_amount: pyramidInfo[0].row_amount || 0,
       pyramid_id: pyramidInfo[0].id,
       pyramid_name: pyramidInfo[0].name,
+      active: pyramidInfo[0].active,
+      description: pyramidInfo[0].description
     };
   } catch (error) {
     console.error("Error fetching pyramid data:", error);

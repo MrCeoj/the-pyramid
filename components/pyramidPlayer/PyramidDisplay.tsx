@@ -8,6 +8,7 @@ import { UnresolvedMatch } from "@/actions/matches/types";
 import { PyramidData } from "@/actions/IndexActions/types";
 import { TeamWithPlayers } from "@/actions/PositionActions";
 import CellarRow from "./CellarRow";
+import InactivePyramidModal from "./InactivePyramidModal";
 
 type PyramidPosition = {
   id: number;
@@ -24,6 +25,7 @@ export default function PyramidDisplay({
   userTeamId?: number | null;
 }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showInactiveModal, setShowInactiveModal] = useState(false);
   const [unresolvedMatches, setUnresolvedMatches] = useState<UnresolvedMatch[]>(
     []
   );
@@ -47,6 +49,12 @@ export default function PyramidDisplay({
       setIsRefreshing(false);
     }
   }, [userTeamId]);
+
+  useEffect(() => {
+    if (data.active === false) {
+      setShowInactiveModal(true);
+    }
+  }, [data.active]);
 
   useEffect(() => {
     if (userTeamId) fetchUnresolvedMatches();
@@ -176,6 +184,11 @@ export default function PyramidDisplay({
           Actualizando...
         </div>
       )}
+
+      <InactivePyramidModal
+        isOpen={showInactiveModal}
+        onClose={() => setShowInactiveModal(false)}
+      />
     </div>
   );
 }

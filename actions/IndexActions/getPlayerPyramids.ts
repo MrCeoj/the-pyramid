@@ -1,6 +1,6 @@
 "use server";
 import { db } from "@/lib/drizzle";
-import { eq, and, or, inArray } from "drizzle-orm";
+import { eq, or, inArray } from "drizzle-orm";
 import { position, team, pyramid } from "@/db/schema";
 
 import { PyramidOption } from "@/actions/IndexActions/types";
@@ -45,10 +45,11 @@ export async function getPlayerPyramids(
         name: pyramid.name,
         row_amount: pyramid.row_amount,
         description: pyramid.description,
-        updated: pyramid.updatedAt
+        updated: pyramid.updatedAt,
+        active: pyramid.active
       })
       .from(pyramid)
-      .where(and(inArray(pyramid.id, pyramidIds), eq(pyramid.active, true)));
+      .where(inArray(pyramid.id, pyramidIds));
 
     if (!pyramidsInfo.length) return null;
 
@@ -69,6 +70,7 @@ export async function getPlayerPyramids(
         description: p.description,
         id: p.id,
         name: p.name,
+        active: p.active
       });
     }
 

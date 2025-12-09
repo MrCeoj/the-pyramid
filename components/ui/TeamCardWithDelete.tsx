@@ -26,8 +26,6 @@ const TeamCardWithDelete: React.FC<TeamCardWithDeleteProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  
-
   const handleDeleteConfirmed = async () => {
     setIsDeleting(true);
     setShowConfirm(false);

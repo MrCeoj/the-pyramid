@@ -9,7 +9,7 @@ export default function AdminView({
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   allPyramids: any[];
-  defaultPyramidId: number | null;
+  defaultPyramidId: number;
 }) {
   if (allPyramids.length === 0) {
     return (

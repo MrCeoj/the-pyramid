@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/drizzle";
-import { eq, desc } from "drizzle-orm";
-import { users, pyramid } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { users } from "@/db/schema";
 
 import UnauthorizedView from "@/app/views/UnauthorizedView";
 import AdminView from "@/app/views/AdminView";
@@ -29,17 +29,10 @@ export default async function Home() {
   const userRole = userData.role;
 
   if (userRole === "admin") {
-    const [allPyramids, latest] = await Promise.all([
-      getAllPyramidsTotal(),
-      db.select().from(pyramid).orderBy(desc(pyramid.updatedAt)).limit(1),
-    ]);
+    const allPyramids = await getAllPyramidsTotal();
+    const latest = allPyramids[0].id;
 
-    return (
-      <AdminView
-        allPyramids={allPyramids}
-        defaultPyramidId={latest?.[0]?.id ?? null}
-      />
-    );
+    return <AdminView allPyramids={allPyramids} defaultPyramidId={latest} />;
   }
 
   const playerPyramids = await getPlayerPyramids(session.user.id);

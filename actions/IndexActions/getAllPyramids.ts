@@ -12,6 +12,7 @@ export async function getAllPyramids(): Promise<PyramidOption[]> {
         id: pyramid.id,
         name: pyramid.name,
         description: pyramid.description,
+        active: pyramid.active
       })
       .from(pyramid)
       .where(eq(pyramid.active, true))

@@ -35,6 +35,7 @@ export type PyramidData = {
   pyramid_id: number;
   pyramid_name: string;
   description: string | null;
+  active: boolean;
   teamId?: number;
 };
 
@@ -42,5 +43,6 @@ export type PyramidOption = {
   id: number;
   name: string;
   description: string | null;
+  active: boolean;
   teamId?: number;
 };

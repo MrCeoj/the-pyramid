@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { pyramid } from "@/db/schema";
-
+import { desc } from "drizzle-orm"
 import { PyramidOption } from "@/actions/IndexActions/types";
 
 export async function getAllPyramidsTotal(): Promise<PyramidOption[]> {
@@ -11,9 +11,10 @@ export async function getAllPyramidsTotal(): Promise<PyramidOption[]> {
         id: pyramid.id,
         name: pyramid.name,
         description: pyramid.description,
+        active: pyramid.active
       })
       .from(pyramid)
-      .orderBy(pyramid.name);
+      .orderBy(desc(pyramid.updatedAt));
 
     return pyramids;
   } catch (error) {

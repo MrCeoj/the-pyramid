@@ -35,9 +35,9 @@ const PyramidSelector = () => {
   };
 
   return (
-    <div className="flex flex-col justify-start md:mt-10 items-center h-screen">
+    <div className="flex flex-col justify-start md:mt-10 items-center h-screen z-50">
       <div className="max-w-md md:w-full flex md:flex-row-reverse absolute top-5 left-5 md:right-5 md:left-auto">
-        <div className="relative z-20">
+        <div className="relative z-[100]">
           {/* Circular Button */}
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -95,7 +95,14 @@ const PyramidSelector = () => {
                     <div className="mt-4 pt-3 border-t border-black">
                       <div className="text-sm text-white">
                         <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <div
+                            className={`w-2 h-2 ${
+                              pyramids.find((p) => p.id === selectedPyramidId)!
+                                .active
+                                ? "bg-green-500"
+                                : "bg-red-500"
+                            } rounded-full`}
+                          ></div>
                           <span className="font-medium">
                             Seleccionado:{" "}
                             {
