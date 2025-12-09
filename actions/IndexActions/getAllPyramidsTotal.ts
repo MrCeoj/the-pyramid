@@ -18,6 +18,6 @@ export async function getAllPyramidsTotal(): Promise<PyramidOption[]> {
     return pyramids;
   } catch (error) {
     console.error("Hubo un error al conseguir las piramides:", error);
-    return [];
+    throw error;
   }
 }

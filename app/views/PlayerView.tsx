@@ -1,17 +1,17 @@
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import ZustandSessionInitializer from "@/components/wrappers/ZustandSessionInitializer";
 import { PyramidHydrator } from "@/components/wrappers/PyramidHydrator";
-import { PyramidData, PyramidOption } from "@/actions/IndexActions/types";
-import PyramidSelector from "@/app/PyramidSelector";
+import { PyramidOption } from "@/actions/IndexActions/types";
+import PyramidSelector from "@/components/ui/PyramidSelector";
 
 export default function PlayerView({
   pyramids,
 }: {
-  pyramids: PyramidData[] | null;
+  pyramids: PyramidOption[] | null;
 }) {
-  if (!pyramids) {
+  if (!pyramids || !pyramids.length) {
     return (
-      <main className="h-screen flex flex-col justify-center items-center bg-gradient-to-b from-black/20 to-indor-black/80 text-white px-4">
+      <main className="h-screen w-screen flex flex-col justify-center items-center bg-gradient-to-b from-black/20 to-indor-black/80 text-white px-4">
         <ZustandSessionInitializer />
         <UserDropdownMenu />
         <div className="bg-indor-black/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 max-w-md text-center border border-white/10">
@@ -27,23 +27,13 @@ export default function PlayerView({
     );
   }
 
-  const pyramidOptions: PyramidOption[] = [];
-  pyramids.map((p) => {
-    pyramidOptions.push({
-      id: p.pyramid_id,
-      name: p.pyramid_name,
-      description: p.description,
-      teamId: p.teamId,
-    });
-  });
-  
   return (
-    <main className="h-screen flex flex-col justify-center">
+    <main className="h-screen w-screen flex flex-col justify-center">
       <ZustandSessionInitializer />
-      <div className="flex flex-col justify-start py-16 overflow-y-scroll no-scrollbar">
+      <div className="flex flex-col justify-start py-16 md:py-0 overflow-y-scroll no-scrollbar">
         <PyramidHydrator
-          pyramids={pyramidOptions}
-          defaultPyramidId={pyramids[0].pyramid_id}
+          pyramids={pyramids}
+          defaultPyramidId={pyramids[0].id}
         />
         <PyramidSelector />
       </div>

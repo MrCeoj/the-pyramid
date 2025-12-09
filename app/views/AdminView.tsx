@@ -1,4 +1,4 @@
-import PyramidSelector from "@/app/PyramidSelector";
+import PyramidSelector from "@/components/ui/PyramidSelector";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import ZustandSessionInitializer from "@/components/wrappers/ZustandSessionInitializer";
 import { PyramidHydrator } from "@/components/wrappers/PyramidHydrator";

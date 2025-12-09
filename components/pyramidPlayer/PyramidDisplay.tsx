@@ -111,7 +111,7 @@ export default function PyramidDisplay({
   }, [rows]);
 
   return (
-    <div className="flex flex-col items-center relative mb-5 no-scrollbar">
+    <div className="flex flex-col w-screen items-center relative mb-5 no-scrollbar">
       {/* Logo Display */}
       {isMobile ? (
         <Image
@@ -119,10 +119,10 @@ export default function PyramidDisplay({
           alt="Logo"
           width={200}
           height={120}
-          className="static drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
+          className="drop-shadow-slate-700 drop-shadow-[0_0_0.3rem]"
         />
       ) : (
-        <div className="max-w-1/4 w-[16rem] h-[8rem] lg:w-[400px] lg:h-[160px] absolute left-2">
+        <div className="absolute left-8 lg:left-20 aspect-video w-[16rem] lg:w-[18rem] xl:w-[20rem]">
           <Image
             src={"/piramide_logo_title_naranja.svg"}
             priority

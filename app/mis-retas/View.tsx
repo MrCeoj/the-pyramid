@@ -11,6 +11,7 @@ import PendingMatchCard from "./PendingMatchCard";
 import HistoryMatchCard from "./HistoryMatchCard";
 import { getUserTeamId } from "@/actions/IndexActions";
 import { getRejectedAmount } from "@/actions/matches";
+import { usePyramidStore } from "@/stores/usePyramidsStore";
 
 const MatchesPage = () => {
   const { data } = useSession();
@@ -22,6 +23,8 @@ const MatchesPage = () => {
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
   const [userTeamId, setUserTeamId] = useState<number | null>();
   const [rejectedAmount, setRejectedAmount] = useState<number>(0);
+  const { pyramids, selectedPyramidId, setSelectedPyramidId } =
+    usePyramidStore();
 
   const fetchRejectedAmount = useCallback(async () => {
     if (userTeamId === null || userTeamId === undefined) return;
@@ -38,6 +41,16 @@ const MatchesPage = () => {
 
     setRejectedAmount(amount);
   }, [userTeamId]);
+
+  const filteredPendingMatches = useMemo(() => {
+    if (!selectedPyramidId) return pendingMatches;
+    return pendingMatches.filter((m) => m.pyramidId === selectedPyramidId);
+  }, [pendingMatches, selectedPyramidId]);
+
+  const filteredMatchHistory = useMemo(() => {
+    if (!selectedPyramidId) return matchHistory;
+    return matchHistory.filter((m) => m.pyramidId === selectedPyramidId);
+  }, [matchHistory, selectedPyramidId]);
 
   const fetchMatches = useCallback(async () => {
     if (!user?.id) return;
@@ -85,22 +98,25 @@ const MatchesPage = () => {
     }
   };
 
-  const handleCancelMatch = useCallback(async (matchId: number) => {
-    if (actionLoading || !user?.id) return; // Prevent multiple calls
+  const handleCancelMatch = useCallback(
+    async (matchId: number) => {
+      if (actionLoading || !user?.id) return;
 
-    setActionLoading(matchId);
-    await fetchMatches().then(() => setActionLoading(null));
-  }, [actionLoading, fetchMatches, user?.id]);
+      setActionLoading(matchId);
+      await fetchMatches().then(() => setActionLoading(null));
+    },
+    [actionLoading, fetchMatches, user?.id]
+  );
 
   const handleRejectMatch = async (matchId: number) => {
-    if (actionLoading || !user?.id) return; // Prevent multiple calls
+    if (actionLoading || !user?.id) return;
 
     setActionLoading(matchId);
     try {
       const result = await rejectMatch(matchId, user.id);
       if (result.success) {
         toast.success(result.message);
-        await fetchMatches(); // Refresh data
+        await fetchMatches();
       } else {
         toast.error(result.message);
       }
@@ -148,6 +164,31 @@ const MatchesPage = () => {
           </p>
         </div>
 
+        {/* Pyramid filter */}
+        <div className="max-w-6xl mb-6 flex justify-end">
+          <div className="max-w-sm flex items-center justify-end gap-3">
+            <label className="text-white text-sm whitespace-nowrap">
+              Filtrar por pirámide:
+            </label>
+            <select
+              value={selectedPyramidId ?? ""}
+              onChange={(e) =>
+                setSelectedPyramidId(
+                  e.target.value === "" ? null : Number(e.target.value)
+                )
+              }
+              className="flex-1 bg-indor-black border border-indor-brown text-white max-w-xs min-w-xs rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="">Todas</option>
+              {pyramids.map((pyramid) => (
+                <option key={pyramid.id} value={pyramid.id}>
+                  {pyramid.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {/* Tabs */}
         <div className="flex bg-indor-black border-2 max-w-[95%] min-w-[80%] self-center border-black rounded-xl mb-8">
           <button
@@ -179,6 +220,7 @@ const MatchesPage = () => {
             <span>Historial</span>
           </button>
         </div>
+        
 
         {/* Content */}
         <AnimatePresence mode="wait">
@@ -191,8 +233,8 @@ const MatchesPage = () => {
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
-              {pendingMatches.length > 0 ? (
-                pendingMatches.map((match) => (
+              {filteredPendingMatches.length > 0 ? (
+                filteredPendingMatches.map((match) => (
                   <PendingMatchCard
                     key={match.id}
                     match={match}
@@ -225,14 +267,14 @@ const MatchesPage = () => {
               transition={{ duration: 0.2 }}
               className="space-y-4 flex flex-col items-center"
             >
-              {matchHistory.length > 0 ? (
+              {filteredMatchHistory.length > 0 ? (
                 <motion.div
                   initial={{ opacity: 0, y: 0 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                   className="space-y-4 w-full flex flex-col lg:flex-row flex-wrap justify-center gap-5 sm:w-full"
                 >
-                  {matchHistory.map((match) => (
+                  {filteredMatchHistory.map((match) => (
                     <HistoryMatchCard
                       key={match.id}
                       handleCancelMatch={handleCancelMatch}

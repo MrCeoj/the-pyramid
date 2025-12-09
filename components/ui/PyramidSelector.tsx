@@ -18,10 +18,6 @@ const PyramidSelector = () => {
   } = usePyramidStore();
 
   useEffect(() => {
-    console.log(pyramids, selectedPyramidId, pyramidData);
-  }, [pyramidData, pyramids, selectedPyramidId]);
-
-  useEffect(() => {
     const fetchPyramidData = async (id: number) => {
       const pyramidData = await getPyramidData(id);
       console.log(pyramidData);
@@ -60,7 +56,7 @@ const PyramidSelector = () => {
               />
 
               {/* Dropdown Content */}
-              <div className="absolute top-16 left-0 md:right-0 md:left-auto bg-indor-black/80 rounded-lg shadow-xl border border-black min-w-80 max-w-sm animate-in fade-in duration-100">
+              <div className="absolute top-16 left-0 md:right-0 md:left-auto bg-indor-black/80 rounded-lg shadow-xl border border-black min-w-75 max-w-sm animate-in fade-in duration-100">
                 <div className="p-4">
                   <h2 className="text-lg font-bold mb-3 border-b border-black text-white">
                     Selecciona una pirámide

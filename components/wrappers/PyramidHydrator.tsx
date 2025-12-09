@@ -7,7 +7,7 @@ import { PyramidOption } from "@/actions/IndexActions/types";
 
 interface PyramidHydratorProps {
   pyramids: PyramidOption[];
-  defaultPyramidId?: number | null;
+  defaultPyramidId: number;
 }
 
 export const PyramidHydrator: React.FC<PyramidHydratorProps> = ({
@@ -18,7 +18,7 @@ export const PyramidHydrator: React.FC<PyramidHydratorProps> = ({
     usePyramidStore();
 
   const initializeState = useCallback(() => {
-    if (defaultPyramidId && !selectedPyramidId) {
+    if (!selectedPyramidId) {
       setSelectedPyramidId(defaultPyramidId);
       const teamId = pyramids.find((p) => p.id === defaultPyramidId)?.teamId;
       if (teamId) setTeamId(teamId);

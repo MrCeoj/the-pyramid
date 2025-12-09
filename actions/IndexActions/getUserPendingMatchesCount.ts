@@ -6,7 +6,7 @@ import { match } from "@/db/schema";
 import { getUserTeamId } from "@/actions/IndexActions/getUserTeamId";
 
 export async function getUserPendingMatchesCount(userId: string): Promise<number | null> {
-  if (!userId?.trim()) {
+  if (!userId.trim()) {
     console.error("Invalid userId provided to getUserPendingMatchesCount");
     return null;
   }

@@ -22,6 +22,6 @@ export async function isUserInTeam(
     return result.length > 0;
   } catch (error) {
     console.error("Error checking if user is in team:", error);
-    return false;
+    throw new Error("Failed to check team membership", { cause: error });
   }
 }

@@ -7,7 +7,7 @@ export type Team = {
   categoryId: number | null;
   defendable?: boolean;
   loosingStreak: number;
-  lastResult: "up" | "down" | "stayed" | "none"
+  lastResult: "up" | "down" | "stayed" | "none";
   player1: {
     id: string;
     paternalSurname: string;

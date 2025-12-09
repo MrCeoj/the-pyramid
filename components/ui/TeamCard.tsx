@@ -215,7 +215,7 @@ const TeamCard = ({
             isTop ? specialColors.champion : statusColors[data.team.status!]
           } border-2 rounded-lg transition-all duration-300 p-3 ${
             isTop
-              ? "min-w-[180px] max-w-[180px]"
+              ? "min-w-[180px] max-w-[200px]"
               : "min-w-[150px] max-w-[150px]"
           } backdrop-blur-sm snap-center ${getCardAnimation()} ${
             isActuallyChallengable ? "cursor-pointer border-dashed" : ""
