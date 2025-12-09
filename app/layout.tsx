@@ -33,7 +33,7 @@ export default function RootLayout({
             backdropBlurAmount="lg"
             className="fixed h-full w-full z-0"
           />
-          <div className="relative z-10 w-full h-full">{children}</div>
+          <div className="relative w-full h-full">{children}</div>
         </body>
       </SessionProvider>
     </html>

@@ -15,9 +15,11 @@ const CellarRow = ({
   position,
   isFirst = false,
   isLast = false,
+  active = true,
 }: {
   position: PyramidPosition;
   userTeamId?: number | null;
+  active?: boolean;
   isFirst?: boolean;
   isLast?: boolean;
 }) => {
@@ -89,6 +91,7 @@ const CellarRow = ({
               defended={position.team.defendable!}
               isTop={position.row === 1}
               onChallenge={() => {}}
+              activityAllowed={active}
             />
           ) : (
             <EmptySlot rowNumber={position.row} posNumber={position.col} />

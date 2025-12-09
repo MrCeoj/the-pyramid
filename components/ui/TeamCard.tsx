@@ -24,6 +24,7 @@ interface Position {
 
 interface TeamCardProps {
   data: Position;
+  activityAllowed: boolean;
   challengable?: boolean;
   isTop?: boolean;
   isPlayer?: boolean;
@@ -37,6 +38,7 @@ const TeamCard = ({
   isTop = false,
   isPlayer = false,
   defended = false,
+  activityAllowed = true,
   onChallenge,
 }: TeamCardProps) => {
   const getIcon = (category: number) => {
@@ -220,7 +222,7 @@ const TeamCard = ({
           } backdrop-blur-sm snap-center ${getCardAnimation()} ${
             isActuallyChallengable ? "cursor-pointer border-dashed" : ""
           }
-          ${data.team.loosingStreak! >= 2 ? "animate-losing-glow" :""}
+          ${data.team.loosingStreak! >= 2 ? "animate-losing-glow" : ""}
           `}
         >
           {/* Status indicator */}

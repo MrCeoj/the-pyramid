@@ -16,7 +16,7 @@ export default function AdminView({
       <main className="h-screen flex flex-col">
         <ZustandSessionInitializer />
 
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-4 right-4 z-[200]">
           <UserDropdownMenu />
         </div>
 
@@ -32,7 +32,7 @@ export default function AdminView({
     <main className="h-screen flex flex-col justify-start">
       <ZustandSessionInitializer />
 
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-4">
+      <div className="fixed top-4 right-4 z-[200] flex items-center gap-4">
         <PyramidHydrator pyramids={allPyramids} defaultPyramidId={defaultPyramidId} />
         <UserDropdownMenu />
       </div>

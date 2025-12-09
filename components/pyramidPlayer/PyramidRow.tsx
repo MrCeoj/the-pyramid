@@ -31,9 +31,11 @@ const PyramidRow = ({
   pyramidId,
   unresolvedMatches = [],
   className,
+  active=true
 }: {
   positions: PyramidPosition[];
   onTeamClick: (team: TeamWithPlayers) => void;
+  active?: boolean;
   isFirst?: boolean;
   allPositions: PyramidPosition[];
   userTeamId?: number | null;
@@ -82,6 +84,9 @@ const PyramidRow = ({
     // Admins cannot challenge
     if (session?.user.role === "admin") return false;
 
+    // Pyramid must be active
+    if (!active) return false;
+
     // Target must have a team
     if (!targetPos.team) return false;
 
@@ -124,7 +129,7 @@ const PyramidRow = ({
 
     // No other challenges allowed
     return false;
-  }, [session?.user.role, userTeamId, allPositions, hasUnresolvedWith]);
+  }, [session?.user.role, userTeamId, allPositions, hasUnresolvedWith, active]);
 
   return (
     <div
@@ -142,6 +147,7 @@ const PyramidRow = ({
               defended={pos.team.defendable!}
               isTop={pos.row === 1}
               onChallenge={(team) => handleChallenge(team)}
+              activityAllowed={active}
             />
           ) : (
             <EmptySlot key={pos.id} rowNumber={pos.row} posNumber={pos.col} />

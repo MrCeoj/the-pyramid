@@ -9,6 +9,7 @@ import { PyramidData } from "@/actions/IndexActions/types";
 import { TeamWithPlayers } from "@/actions/PositionActions";
 import CellarRow from "./CellarRow";
 import InactivePyramidModal from "./InactivePyramidModal";
+import { useSessionStore } from "@/stores/sessionStore";
 
 type PyramidPosition = {
   id: number;
@@ -35,6 +36,7 @@ export default function PyramidDisplay({
     col: 1,
     team: null,
   });
+  const {session} = useSessionStore()
 
   const fetchUnresolvedMatches = useCallback(async () => {
     if (!userTeamId) return;
@@ -51,10 +53,16 @@ export default function PyramidDisplay({
   }, [userTeamId]);
 
   useEffect(() => {
-    if (data.active === false) {
+    const role = session?.user.role
+
+    if (data.active === false && role === 'player') {
       setShowInactiveModal(true);
+    } else {
+      setShowInactiveModal(false);
     }
-  }, [data.active]);
+
+    
+  }, [data.active, session]);
 
   useEffect(() => {
     if (userTeamId) fetchUnresolvedMatches();
@@ -119,7 +127,7 @@ export default function PyramidDisplay({
   }, [rows]);
 
   return (
-    <div className="flex flex-col w-screen items-center relative mb-5 no-scrollbar">
+    <div className="flex flex-col w-screen items-center relative mb-5 no-scrollbar -z-20">
       {/* Logo Display */}
       {isMobile ? (
         <Image
@@ -159,10 +167,13 @@ export default function PyramidDisplay({
                 allPositions={allPyramidPositions}
                 unresolvedMatches={unresolvedMatches}
                 userTeamId={userTeamId}
+                active={data.active}
                 pyramidId={data.pyramid_id!}
-                className={`flex gap-4 p-4 justify-start min-w-max overflow-x-scroll scroll-smooth no-scrollbar items-center snap-x rounded-t-2xl border-2 border-slate-400/40 border-dashed bg-indor-black/80 ${
-                  isLast ? "border-b-2 rounded-b-2xl" : "border-b-0"
-                } ${isRefreshing ? "opacity-75" : ""}`}
+                className={`flex gap-4 p-4 justify-start min-w-max overflow-x-scroll scroll-smooth 
+                  no-scrollbar items-center snap-x rounded-t-2xl border-2 border-slate-400/40 
+                  border-dashed bg-indor-black/80 ${
+                    isLast ? "border-b-2 rounded-b-2xl" : "border-b-0"
+                  } ${isRefreshing ? "opacity-75" : ""}`}
               />
             );
           })}
@@ -173,6 +184,7 @@ export default function PyramidDisplay({
         <CellarRow
           userTeamId={userTeamId}
           position={cellarTeam!}
+          active={data.active}
           isFirst={true}
           isLast={true}
         />

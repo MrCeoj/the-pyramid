@@ -164,7 +164,7 @@ export default function UserDropdownMenu() {
 
   if (status === "loading") {
     return (
-      <div className="z-[100] fixed right-5 top-6 md:top-auto md:bottom-5">
+      <div className="z-[50] fixed right-5 top-6 md:top-auto md:bottom-5">
         <div className="p-3 rounded-full ring-2 ring-indor-brown-light bg-indor-black/80 animate-pulse">
           <User color="gray" strokeWidth={2} size={20} />
         </div>
@@ -178,9 +178,8 @@ export default function UserDropdownMenu() {
 
   return (
     <>
-      <Toaster position={isMobile ? "top-center" : "top-right"} />
       <div
-        className="z-[100] fixed right-5 top-6 md:top-auto md:bottom-5"
+        className="z-[50] fixed right-5 top-6 md:top-auto md:bottom-5"
         ref={dropdownRef}
       >
         {/* Your existing dropdown button and menu JSX remains exactly the same */}
@@ -189,7 +188,7 @@ export default function UserDropdownMenu() {
           onClick={() => setIsOpen(!isOpen)}
         >
           {notifsCount > 0 && (
-            <span className="absolute bg-red-500 -top-2 -left-2 rounded-full text-white p-1 z-50 animate-pulse">
+            <span className="absolute bg-red-500 -top-2 -left-2 rounded-full text-white p-1 z-[50] animate-pulse">
               <BellDotIcon size={16} />
             </span>
           )}
@@ -303,6 +302,8 @@ export default function UserDropdownMenu() {
           </div>
         )}
       </div>
+
+      <Toaster position={isMobile ? "top-center" : "top-right"} />
 
       <EditProfileModal
         isOpen={isProfileModalOpen}

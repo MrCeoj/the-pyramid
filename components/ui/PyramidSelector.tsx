@@ -56,7 +56,7 @@ const PyramidSelector = () => {
               />
 
               {/* Dropdown Content */}
-              <div className="absolute top-16 left-0 md:right-0 md:left-auto bg-indor-black/80 rounded-lg shadow-xl border border-black min-w-75 max-w-sm animate-in fade-in duration-100">
+              <div className="absolute top-16 left-0 md:right-0 md:left-auto bg-indor-black/95 rounded-lg shadow-xl border border-black min-w-75 max-w-sm animate-in fade-in duration-100">
                 <div className="p-4">
                   <h2 className="text-lg font-bold mb-3 border-b border-black text-white">
                     Selecciona una pirámide
@@ -71,20 +71,27 @@ const PyramidSelector = () => {
                             handlePyramidChange(pyramid.id);
                             setIsDropdownOpen(false);
                           }}
-                          className={`w-full text-left p-3 rounded-md transition-colors duration-150 hover:bg-indor-brown-light/80 focus:outline-none focus:bg-indor-brown-light focus:ring-2 focus:ring-indor-brown-light ${
+                          className={`w-full flex justify-between items-center pr-4 text-left p-3 rounded-md transition-colors duration-150 hover:bg-indor-brown-light/80 focus:outline-none focus:bg-indor-brown-light focus:ring-2 focus:ring-indor-brown-light ${
                             selectedPyramidId === pyramid.id
                               ? "bg-indor-brown-light/30 border-l-4 border-indor-orange"
                               : "border-l-4 border-transparent"
                           }`}
                         >
-                          <div className="font-medium text-sm text-white">
-                            {pyramid.name}
-                          </div>
-                          {pyramid.description && (
-                            <div className="text-sm text-white mt-1">
-                              {pyramid.description}
+                          <div>
+                            <div className="font-medium text-sm text-white">
+                              {pyramid.name}
                             </div>
-                          )}
+                            {pyramid.description && (
+                              <div className="text-sm text-white mt-1">
+                                {pyramid.description}
+                              </div>
+                            )}
+                          </div>
+                          <div
+                            className={`w-2 h-2 ${
+                              pyramid.active ? "bg-green-500" : "bg-red-500"
+                            } rounded-full`}
+                          ></div>
                         </button>
                       ))}
                     </div>
