@@ -1,10 +1,13 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { eq, or, and } from "drizzle-orm";
-import { match, position } from "@/db/schema";
+import { match, position, pyramid } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { sendChallengeMail } from "@/actions/MailActions";
-import { getTeamWithPlayers, getUserTeamIds } from "@/actions/matches/TeamService";
+import {
+  getTeamWithPlayers,
+  getUserTeamIds,
+} from "@/actions/matches/TeamService";
 
 export async function createMatch({
   pyramidId,
@@ -25,6 +28,18 @@ export async function createMatch({
         success: false,
         error: "No tienes permisos para crear este desafío",
       };
+    }
+
+    const [activityAllowed] = await db
+      .select({active: pyramid.active})
+      .from(pyramid)
+      .where(eq(pyramid.id, pyramidId));
+
+    if (!activityAllowed) {
+      return {
+        success: false,
+        error: "La pirámide está desactivada, no es posible abrir retas"
+      }
     }
 
     // Check if teams exist and are in the pyramid
@@ -137,7 +152,7 @@ export async function createMatch({
       success: true,
       match: newMatch,
       emailSent: true, // You could track email status if needed
-      warning: ""
+      warning: "",
     };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {

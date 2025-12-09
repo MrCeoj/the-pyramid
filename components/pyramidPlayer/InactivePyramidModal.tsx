@@ -19,7 +19,7 @@ const InactivePyramidModal: FC<InactivePyramidModalProps> = ({
           Pirámide Inactiva
         </h2>
         <p className="text-gray-200 mb-6 text-sm">
-          No puedes jugar en esta pirámide porque se encuentra inactiva. ¡Pero aún puedes ver las posiciones!
+          No puedes jugar en esta pirámide porque se encuentra desactivada. ¡Pero aún puedes ver las posiciones!
         </p>
         <button
           onClick={onClose}
