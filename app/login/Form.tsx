@@ -2,15 +2,13 @@
 import { useState, useTransition, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { login, validateMailExistance } from "@/actions/LoginActions";
+import { login, validateMailExistence } from "@/actions/LoginActions";
 import toast, { Toaster } from "react-hot-toast";
 import { ProfileSetupForm } from "./ProfileSetupForm";
 import { PasswordSetupForm } from "./PasswordSetupForm";
 
 type FormState = "email-only" | "password-only" | "setup";
 
-// --- UPDATED USERDATA INTERFACE ---
-// Replaced `hasProfile` with `needsProfileSetup` to match the server action's response.
 interface UserData {
   id: string;
   name: string | null;
@@ -53,7 +51,7 @@ export default function LoginForm() {
     const email = formData.get("email") as string;
 
     startTransition(async () => {
-      const result = await validateMailExistance(email);
+      const result = await validateMailExistence(email);
 
       if (result?.error) {
         setError(result.error);
@@ -107,9 +105,10 @@ export default function LoginForm() {
             </div>
           </div>
 
-          <div className="bg-indor-black shadow-2xl rounded-2xl flex flex-col items-center p-8 w-3/4 lg:w-1/4 md:w-1/3 backdrop-blur-md">
-            <h1 className="text-2xl font-bold text-center text-gray-300 mb-6">
-              ¡Hola de nuevo!
+          <div className="bg-indor-black shadow-2xl rounded-2xl flex flex-col items-center p-8 w-3/4 lg:w-1/3 md:w-1/3 backdrop-blur-md">
+            <h1 className="text-2xl flex flex-col font-bold text-center text-gray-300 mb-6">
+              <strong className="text-indor-orange">¡Hola!</strong>
+              <span className="text-sm md:text-lg">¿Estamos listos para <strong className="text-indor-orange">ganar</strong>?</span>
             </h1>
             <form
               action={

@@ -5,18 +5,17 @@ import { db } from "@/lib/drizzle";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { z } from "zod";
+import { object, string, email } from "zod";
 
 // Define the validation schema using Zod
-const userSchema = z.object({
-  email: z.string().email({ message: "Por favor, introduce un email válido." }),
-  password: z
-    .string()
+const userSchema = object({
+  email: email({ message: "Por favor, introduce un email válido." }),
+  password: string()
     .min(8, { message: "La contraseña debe tener al menos 8 caracteres." })
     .optional(),
-  paternalSurname: z.string(),
-  maternalSurname: z.string(),
-  role: z.string().optional(),
+  paternalSurname: string(),
+  maternalSurname: string(),
+  role: string().optional(),
 });
 
 export async function POST(req: Request) {
