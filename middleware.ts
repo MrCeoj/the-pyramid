@@ -12,6 +12,7 @@ export default auth((req: NextRequest & { auth: any }) => {
 
   const publicRoutes = [
     "/login",
+    "/signup",
     "/error",
     "/api/auth",
     "/api/mail",

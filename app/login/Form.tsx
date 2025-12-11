@@ -6,8 +6,9 @@ import { login, validateMailExistence } from "@/actions/LoginActions";
 import toast, { Toaster } from "react-hot-toast";
 import { ProfileSetupForm } from "./ProfileSetupForm";
 import { PasswordSetupForm } from "./PasswordSetupForm";
+import SignupForm from "./SignupForm";
 
-type FormState = "email-only" | "password-only" | "setup";
+type FormState = "email-only" | "password-only" | "setup" | "signup";
 
 interface UserData {
   id: string;
@@ -16,6 +17,7 @@ interface UserData {
   image: string | null;
   role: string;
   needsProfileSetup: boolean;
+  needsRegistratino?: boolean;
 }
 
 export default function LoginForm() {
@@ -57,10 +59,15 @@ export default function LoginForm() {
         setError(result.error);
       } else if (result?.user) {
         emailRef.current = result.user.email;
+
+        if (result.user.needsRegistration) {
+          setFormState("signup");
+          return;
+        }
+
         setUser(result.user as UserData);
 
         if (result.user.needsProfileSetup || result.user.needAdminSetup) {
-          // If the backend says setup is needed, switch to the setup state.
           setFormState("setup");
         } else {
           setFormState("password-only");
@@ -74,7 +81,9 @@ export default function LoginForm() {
     <div className="flex flex-col md:flex-row items-center md:justify-center md:gap-16 h-screen max-h-screen mb-5">
       <Toaster position={isMobile ? "top-center" : "top-right"} />
 
-      {formState === "setup" && user ? (
+      {formState === "signup" ? (
+        <SignupForm email={emailRef.current!} />
+      ) : formState === "setup" && user ? (
         user.role === "player" ? (
           <ProfileSetupForm user={user} />
         ) : user.role === "admin" ? (
@@ -108,7 +117,10 @@ export default function LoginForm() {
           <div className="bg-indor-black shadow-2xl rounded-2xl flex flex-col items-center p-8 w-3/4 lg:w-1/3 md:w-1/3 backdrop-blur-md">
             <h1 className="text-2xl flex flex-col font-bold text-center text-gray-300 mb-6">
               <strong className="text-indor-orange">¡Hola!</strong>
-              <span className="text-sm md:text-lg">¿Estamos listos para <strong className="text-indor-orange">ganar</strong>?</span>
+              <span className="text-sm md:text-lg">
+                ¿Estamos listos para{" "}
+                <strong className="text-indor-orange">ganar</strong>?
+              </span>
             </h1>
             <form
               action={

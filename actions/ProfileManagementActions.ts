@@ -2,6 +2,7 @@
 import { db } from "@/lib/drizzle";
 import { users, profile } from "@/db/schema";
 import { eq, sql, desc, or, ilike, ne, and } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 // Helper function to generate full name
 function getFullName(paternalSurname: string, maternalSurname: string): string {
@@ -17,7 +18,7 @@ function getDisplayName(
   return nickname || getFullName(paternalSurname, maternalSurname);
 }
 
-export interface UserWithProfile {
+export type UserWithProfile = {
   id: string;
   email: string | null;
   paternalSurname: string;
@@ -29,9 +30,9 @@ export interface UserWithProfile {
     nickname: string | null;
     avatarUrl: string | null;
   } | null;
-}
+};
 
-export interface CreateUserData {
+export type CreateUserData = {
   paternalSurname: string;
   maternalSurname: string;
   email: string;
@@ -40,9 +41,18 @@ export interface CreateUserData {
     nickname?: string;
     avatarUrl?: string;
   };
-}
+};
 
-export interface UpdateUserData {
+export type NewUserData = {
+  paternalSurname: string;
+  maternalSurname: string;
+  password: string;
+  email: string;
+  role: string;
+  nickname?: string;
+};
+
+export type UpdateUserData = {
   paternalSurname: string;
   maternalSurname: string;
   email: string;
@@ -51,41 +61,65 @@ export interface UpdateUserData {
     nickname?: string;
     avatarUrl?: string;
   };
-}
+};
 
-// Get all users with their profile
-export async function getUsers(): Promise<UserWithProfile[]> {
-  const rows = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      paternalSurname: users.paternalSurname,
-      maternalSurname: users.maternalSurname,
-      role: users.role,
-      profileNickname: profile.nickname,
-      profileAvatarUrl: profile.avatarUrl,
-    })
-    .from(users)
-    .leftJoin(profile, eq(users.id, profile.userId))
-    .orderBy(users.paternalSurname, users.maternalSurname);
+export async function createNewUserAndProfile(data: NewUserData) {
+  try {
+    // Validate required fields
+    if (!data.paternalSurname?.trim()) {
+      throw new Error("El apellido paterno es obligatorio");
+    }
+    if (!data.maternalSurname?.trim()) {
+      throw new Error("El apellido materno es obligatorio");
+    }
+    if (!data.email?.trim()) {
+      throw new Error("El correo electrónico es obligatorio");
+    }
 
-  return rows.map((row) => ({
-    id: row.id,
-    email: row.email,
-    paternalSurname: row.paternalSurname,
-    maternalSurname: row.maternalSurname,
-    fullName: getFullName(row.paternalSurname, row.maternalSurname),
-    displayName: getDisplayName(
-      row.paternalSurname,
-      row.maternalSurname,
-      row.profileNickname
-    ),
-    role: row.role,
-    profile: {
-      nickname: row.profileNickname,
-      avatarUrl: row.profileAvatarUrl,
-    },
-  }));
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const role = "player";
+
+    // Check if already registered
+    const existing = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, normalizedEmail))
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new Error("Este correo ya está registrado.");
+    }
+
+    return await db.transaction(async (tx) => {
+      // 1) Create user
+      const passwordHash = await bcrypt.hash(data.password, 10);
+      const [newUser] = await tx
+        .insert(users)
+        .values({
+          name: data.paternalSurname.trim() + " " + data.maternalSurname.trim(),
+          paternalSurname: data.paternalSurname.trim(),
+          maternalSurname: data.maternalSurname.trim(),
+          email: normalizedEmail,
+          passwordHash,
+          role,
+        })
+        .returning();
+
+      // 2) Create profile only if player
+      if (role === "player") {
+        await tx.insert(profile).values({
+          userId: newUser.id,
+          nickname: data.nickname?.trim() || null,
+        });
+      }
+
+      return { success: true, data: newUser, error: null };
+    });
+  } catch (error) {
+    if (error instanceof Error)
+      return { success: false, data: null, error: error.message };
+    else return { success: false, data: null, error: null };
+  }
 }
 
 // Create user + profile automatically

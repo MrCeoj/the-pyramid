@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 export async function validateMailExistence(email: string) {
   const loweredCasedEmail = email.toLowerCase().trim();
 
-  if (!loweredCasedEmail || loweredCasedEmail === "") {
+  if (!loweredCasedEmail) {
     return { error: "Ingresa un correo válido." };
   }
 
@@ -26,27 +26,38 @@ export async function validateMailExistence(email: string) {
       .where(eq(users.email, loweredCasedEmail))
       .limit(1);
 
+    // --------------------------------------------
+    // CASE: Email does not exist → Allow registration
+    // --------------------------------------------
     if (userResult.length === 0) {
       return {
-        error: "Tu correo no está inscrito, comunícate con los organizadores.",
+        user: {
+          email: loweredCasedEmail,
+          needsRegistration: true,
+          needsProfileSetup: false,
+          needAdminSetup: false,
+        },
       };
     }
 
+    // --------------------------------------------
+    // CASE: User exists → Keep original logic
+    // --------------------------------------------
     const foundUser = userResult[0];
 
     const needsProfileSetup =
       foundUser.role === "player" && !foundUser.password;
 
-    const needAdminSetup =
-      foundUser.role === "admin" && !foundUser.password;
+    const needAdminSetup = foundUser.role === "admin" && !foundUser.password;
 
-    const userWithSetupStatus = {
-      ...foundUser,
-      needsProfileSetup: needsProfileSetup,
-      needAdminSetup: needAdminSetup,
+    return {
+      user: {
+        ...foundUser,
+        needsProfileSetup,
+        needAdminSetup,
+        needsRegistration: false,
+      },
     };
-
-    return { user: userWithSetupStatus };
   } catch (err) {
     console.error(err);
     return { error: "No se pudo procesar el correo.\nInténtalo de nuevo." };

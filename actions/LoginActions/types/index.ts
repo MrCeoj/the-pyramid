@@ -18,6 +18,13 @@ export type CreateProfileData = {
   password?: string;
 };
 
+export type newProfileData = {
+  firstName: string;
+  lastName: string;
+  nickname: string | null;
+  password?: string;
+}
+
 export type CreateAdminPasswordData = {
   userId: string;
   password: string;
