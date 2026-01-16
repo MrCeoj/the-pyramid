@@ -4,7 +4,6 @@ import { db } from "@/lib/drizzle";
 import { users, profile } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { CreateProfileData } from "./types";
 
 export async function updateProfile(data: CreateProfileData) {
   try {

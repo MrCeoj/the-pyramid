@@ -8,6 +8,7 @@ type TeamWithPlayers = {
   losses: number;
   status: "winner" | "looser" | "idle" | "risky";
   categoryId: number | null;
+  categoryName: string | null;
   defendable?: boolean;
   loosingStreak: number;
   lastResult: "up" | "down" | "stayed" | "none";
@@ -282,3 +283,77 @@ type RiskyWarningMailData = {
   currentPosition?: number;
   nextRowPosition?: number;
 }
+
+/**
+ * From LoginActions
+ */
+
+type CreateProfileData = {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  nickname: string | null;
+  avatarUrl?: string | null;
+  password?: string;
+};
+
+
+type CreateAdminPasswordData = {
+  userId: string;
+  password: string;
+};
+type UserWithProfile = {
+  id: string;
+  email: string | null;
+  paternalSurname: string;
+  maternalSurname: string;
+  fullName: string;
+  displayName: string;
+  role: "player" | "admin";
+  profile: {
+    nickname: string | null;
+    avatarUrl: string | null;
+  } | null;
+};
+
+type CreateUserData = {
+  paternalSurname: string;
+  maternalSurname: string;
+  email: string;
+  role: string;
+  profile?: {
+    nickname?: string;
+    avatarUrl?: string;
+  };
+};
+
+type NewUserData = {
+  paternalSurname: string;
+  maternalSurname: string;
+  password: string;
+  email: string;
+  role: string;
+  nickname?: string;
+};
+
+type UpdateUserData = {
+  paternalSurname: string;
+  maternalSurname: string;
+  email: string;
+  role: string;
+  profile?: {
+    nickname?: string;
+    avatarUrl?: string;
+  };
+};
+
+
+type Category = { id: number; name: string };
+
+type Player = {
+  id: string;
+  name: string | null;
+  paternalSurname: string | null;
+  nickname: string | null;
+  email: string | null;
+};

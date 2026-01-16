@@ -1,21 +1,8 @@
 import { useState } from "react";
-import {
-  TeamWithPlayers,
-  updateTeamPlayers,
-  updateTeam,
-} from "@/actions/TeamsActions";
+import { updateTeamPlayers, updateTeam } from "@/actions/TeamsActions";
 import PlayerSearchBar from "./PlayerSearchbar";
 import toast from "react-hot-toast";
 import { Save, X } from "lucide-react";
-
-type Category = { id: number; name: string };
-type Player = {
-  id: string;
-  name: string | null;
-  paternalSurname: string | null;
-  nickname: string | null;
-  email: string | null;
-};
 
 const EditTeamForm = ({
   teamData,
@@ -33,13 +20,13 @@ const EditTeamForm = ({
   setError: React.Dispatch<React.SetStateAction<string | null>>;
 }) => {
   const [formData, setFormData] = useState({
-    categoryId: teamData.category!.id,
-    status: teamData.team.status || "idle",
-    player1Id: teamData.team.player1Id || "",
-    player2Id: teamData.team.player2Id || "",
-    defended: teamData.team.defendable || false,
-    lastResult: teamData.team.lastResult || "stayed",
-    loosingStreak: teamData.team.loosingStreak || 0,
+    categoryId: teamData.categoryId,
+    status: teamData.status || "idle",
+    player1Id: teamData.player1?.id || "",
+    player2Id: teamData.player2?.id || "",
+    defended: teamData.defendable || false,
+    lastResult: teamData.lastResult || "stayed",
+    loosingStreak: teamData.loosingStreak || 0,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -52,51 +39,51 @@ const EditTeamForm = ({
       setError("Los jugadores no pueden ser la misma persona.");
       return;
     }
-    updateTeamData(teamData.team.id, teamData, formData);
+    updateTeamData(teamData.id, teamData, formData);
   };
 
   const updateTeamData = async (
     teamId: number,
     originalData: TeamWithPlayers,
     updatedData: {
-      categoryId: number;
+      categoryId: number | null;
       status: "idle" | "risky" | "winner" | "looser";
       player1Id: string;
       player2Id: string;
       defended: boolean;
       lastResult: "up" | "down" | "stayed" | "none";
       loosingStreak: number;
-    }
+    },
   ) => {
     const promises = [];
 
     if (
-      originalData.team.categoryId !== updatedData.categoryId ||
-      originalData.team.status !== updatedData.status ||
-      originalData.team.lastResult !== updatedData.lastResult ||
-      originalData.team.defendable !== updatedData.defended ||
-      originalData.team.loosingStreak !== updatedData.loosingStreak
+      originalData.categoryId !== updatedData.categoryId ||
+      originalData.status !== updatedData.status ||
+      originalData.lastResult !== updatedData.lastResult ||
+      originalData.defendable !== updatedData.defended ||
+      originalData.loosingStreak !== updatedData.loosingStreak
     ) {
       promises.push(
         updateTeam(teamId, {
-          categoryId: updatedData.categoryId,
+          categoryId: updatedData.categoryId!,
           status: updatedData.status,
           lastResult: updatedData.lastResult,
           defendable: updatedData.defended,
           loosingStreak: updatedData.loosingStreak,
-        })
+        }),
       );
     }
 
     if (
-      originalData.team.player1Id !== updatedData.player1Id ||
-      originalData.team.player2Id !== updatedData.player2Id
+      originalData.player1?.id !== updatedData.player1Id ||
+      originalData.player2?.id !== updatedData.player2Id
     ) {
       promises.push(
         updateTeamPlayers(teamId, {
           player1Id: updatedData.player1Id,
           player2Id: updatedData.player2Id,
-        })
+        }),
       );
     }
 
@@ -120,9 +107,7 @@ const EditTeamForm = ({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex justify-between items-center border-b border-black p-4">
         <h1 className="text-2xl font-bold">{teamData.displayName}</h1>
-        <span className="text-sm text-gray-300">
-          TeamID: {teamData.team.id}
-        </span>
+        <span className="text-sm text-gray-300">TeamID: {teamData.id}</span>
       </div>
       <div className="px-4 space-y-4">
         {/* Player selectors */}
@@ -148,7 +133,7 @@ const EditTeamForm = ({
               Categoría
             </label>
             <select
-              value={formData.categoryId}
+              value={formData.categoryId!}
               onChange={(e) =>
                 setFormData({ ...formData, categoryId: Number(e.target.value) })
               }

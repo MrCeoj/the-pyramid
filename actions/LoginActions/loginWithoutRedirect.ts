@@ -2,7 +2,7 @@
 import * as z from "zod";
 import { AuthError } from "@auth/core/errors";
 import { signIn } from "@/lib/auth";
-import { LoginSchema } from "./types";
+import { LoginSchema } from "@/types/custom";
 
 // New function for login without redirect
 export async function loginWithoutRedirect(

@@ -1,6 +1,5 @@
 "use server";
 import { AuthError } from "@auth/core/errors";
-import { CreateProfileData } from "./types";
 import { updateProfile } from "./updateProfile";
 
 // New combined function for profile setup with login

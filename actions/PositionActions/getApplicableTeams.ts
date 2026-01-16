@@ -77,6 +77,7 @@ export async function getApplicableTeams(
           loosingStreak: teamData.loosingStreak || 0,
           lastResult: teamData.lastResult || "none",
           categoryId: teamData.categoryId,
+          categoryName: null,
           player1,
           player2,
         };

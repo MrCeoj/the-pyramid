@@ -15,7 +15,6 @@ import {
   getPlayers,
   createTeam,
   deleteTeam,
-  TeamWithPlayers,
 } from "@/actions/TeamsActions";
 import toast from "react-hot-toast";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
@@ -58,10 +57,10 @@ const TeamManagement = () => {
 
       // Check player 1 details
       if (teamData.player1) {
-        const player1Name = teamData.player1.user.name?.toLowerCase() || "";
-        const player1Email = teamData.player1.user.email?.toLowerCase() || "";
+        const player1Name = teamData.player1.paternalSurname.toLowerCase() + " " + teamData.player1.maternalSurname.toLowerCase() || "";
+        const player1Email = teamData.player1.email?.toLowerCase() || "";
         const player1Nickname =
-          teamData.player1.profile?.nickname?.toLowerCase() || "";
+          teamData.player1.nickname?.toLowerCase() || "";
 
         if (
           player1Name.includes(searchLower) ||
@@ -74,10 +73,10 @@ const TeamManagement = () => {
 
       // Check player 2 details
       if (teamData.player2) {
-        const player2Name = teamData.player2.user.name?.toLowerCase() || "";
-        const player2Email = teamData.player2.user.email?.toLowerCase() || "";
+        const player2Name = teamData.player2.paternalSurname.toLowerCase() + " " + teamData.player2.maternalSurname.toLowerCase()|| "";
+        const player2Email = teamData.player2.email?.toLowerCase() || "";
         const player2Nickname =
-          teamData.player2.profile?.nickname?.toLowerCase() || "";
+          teamData.player2.nickname?.toLowerCase() || "";
 
         if (
           player2Name.includes(searchLower) ||
@@ -207,8 +206,8 @@ const TeamManagement = () => {
   const PlayerDisplay = ({ player }: { player: TeamWithPlayers["player1"] }) =>
     player ? (
       <div className="font-medium">
-        {player.profile?.nickname || `${player.user.name}`}
-        <div className="text-sm text-gray-400">{player.user.email}</div>
+        {player.nickname || `${player.paternalSurname.toLowerCase() + " " + player.maternalSurname.toLowerCase()}`}
+        <div className="text-sm text-gray-400">{player.email}</div>
       </div>
     ) : (
       <div className="text-gray-500 italic">Jugador no asignado</div>
@@ -295,12 +294,12 @@ const TeamManagement = () => {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 max-h-[70vh] overflow-scroll p-2 border-t border-b border-indor-brown-light/20">
             {filteredTeams.map((teamData) => {
               const assignedPlayerIds = teams
-                .flatMap((t) => [t.team.player1Id, t.team.player2Id])
+                .flatMap((t) => [t.player1!.id, t.player2!.id])
                 .filter(Boolean);
 
               const currentTeamPlayers = [
-                teamData.team.player1Id,
-                teamData.team.player2Id,
+                teamData.player1!.id,
+                teamData.player2!.id,
               ].filter(Boolean);
 
               const availablePlayersForEdit = allPlayers.filter(
@@ -311,11 +310,11 @@ const TeamManagement = () => {
 
               return (
                 <div
-                  key={teamData.team.id}
+                  key={teamData.id}
                   className="flex flex-col justify-between p-5 border border-gray-700 rounded-lg bg-indor-black"
                 >
                   <Modal
-                    isOpen={editingTeam === teamData.team.id}
+                    isOpen={editingTeam === teamData.id}
                     onClose={() => {
                       setEditingTeam(null);
                     }}
@@ -337,19 +336,19 @@ const TeamManagement = () => {
                             {teamData.displayName}
                           </h3>
                           <span className="text-sm">
-                            {teamData.category?.name || "Sin categoría"}
+                            {teamData.categoryName || "Sin categoría"}
                           </span>
                         </div>
                         <span className="text-sm text-gray-400 flex gap-4 justify-between w-full">
-                          <p>TeamID: {teamData.team.id}</p>
+                          <p>TeamID: {teamData.id}</p>
                         </span>
                       </div>
                       <span
                         className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          statusColors[teamData.team.status!]
+                          statusColors[teamData.status]
                         }`}
                       >
-                        {teamData.team.status}
+                        {teamData.status}
                       </span>
                     </div>
                     <div className="mt-4 space-y-3">
@@ -360,14 +359,14 @@ const TeamManagement = () => {
 
                   <div className="flex items-center gap-2 pt-4 mt-4 border-t border-gray-700">
                     <button
-                      onClick={() => setEditingTeam(teamData.team.id)}
+                      onClick={() => setEditingTeam(teamData.id)}
                       className="p-2 text-gray-400 rounded-md hover:text-white hover:bg-gray-700"
                     >
                       <Edit size={16} />
                     </button>
                     <button
                       onClick={() =>
-                        handleDeleteTeam(teamData.team.id, teamData.displayName)
+                        handleDeleteTeam(teamData.id, teamData.displayName)
                       }
                       className="p-2 text-gray-400 rounded-md hover:text-red-500 hover:bg-gray-700"
                     >

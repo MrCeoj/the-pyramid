@@ -5,7 +5,7 @@ import { team, profile, users } from "@/db/schema";
 import { getTeamDisplayName } from "@/db/schema";
 
 export async function getTeamWithPlayers(
-  teamId: number
+  teamId: number,
 ): Promise<TeamWithPlayers | null> {
   try {
     const [teamRecord] = await db
@@ -47,7 +47,7 @@ export async function getTeamWithPlayers(
           .where(eq(users.id, teamRecord.player1Id))
           .limit(1)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .then((res) => [1, res] as [number, any[]])
+          .then((res) => [1, res] as [number, any[]]),
       );
     }
 
@@ -66,7 +66,7 @@ export async function getTeamWithPlayers(
           .where(eq(users.id, teamRecord.player2Id))
           .limit(1)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .then((res) => [2, res] as [number, any[]])
+          .then((res) => [2, res] as [number, any[]]),
       );
     }
 
@@ -114,6 +114,7 @@ export async function getTeamWithPlayers(
       loosingStreak: teamRecord.loosingStreak || 0,
       lastResult: teamRecord.lastResult || "none",
       categoryId: teamRecord.categoryId,
+      categoryName: null,
       player1,
       player2,
     };
@@ -124,7 +125,7 @@ export async function getTeamWithPlayers(
 }
 
 export async function getBulkTeamsWithPlayers(
-  teamIds: number[]
+  teamIds: number[],
 ): Promise<TeamWithPlayers[]> {
   if (teamIds.length === 0) return [];
 
@@ -169,12 +170,12 @@ export async function getBulkTeamsWithPlayers(
         nickname: p.nickname ?? "",
         email: p.email ?? "",
       },
-    ])
+    ]),
   );
 
   return teamRecords.map((t) => {
-    const player1 = t.player1Id ? playerMap.get(t.player1Id) ?? null : null;
-    const player2 = t.player2Id ? playerMap.get(t.player2Id) ?? null : null;
+    const player1 = t.player1Id ? (playerMap.get(t.player1Id) ?? null) : null;
+    const player2 = t.player2Id ? (playerMap.get(t.player2Id) ?? null) : null;
 
     return {
       id: t.id,

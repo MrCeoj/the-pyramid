@@ -99,6 +99,7 @@ export async function getPyramidData(
           loosingStreak: pos.teamLoosingStreak || 0,
           lastResult: pos.teamLastResult || "none",
           categoryId: pos.teamCategoryId,
+          categoryName: null,
           defendable: pos.defendable || false,
           player1,
           player2,

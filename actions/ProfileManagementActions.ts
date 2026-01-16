@@ -18,51 +18,6 @@ function getDisplayName(
   return nickname || getFullName(paternalSurname, maternalSurname);
 }
 
-export type UserWithProfile = {
-  id: string;
-  email: string | null;
-  paternalSurname: string;
-  maternalSurname: string;
-  fullName: string;
-  displayName: string;
-  role: "player" | "admin";
-  profile: {
-    nickname: string | null;
-    avatarUrl: string | null;
-  } | null;
-};
-
-export type CreateUserData = {
-  paternalSurname: string;
-  maternalSurname: string;
-  email: string;
-  role: string;
-  profile?: {
-    nickname?: string;
-    avatarUrl?: string;
-  };
-};
-
-export type NewUserData = {
-  paternalSurname: string;
-  maternalSurname: string;
-  password: string;
-  email: string;
-  role: string;
-  nickname?: string;
-};
-
-export type UpdateUserData = {
-  paternalSurname: string;
-  maternalSurname: string;
-  email: string;
-  role: string;
-  profile?: {
-    nickname?: string;
-    avatarUrl?: string;
-  };
-};
-
 export async function createNewUserAndProfile(data: NewUserData) {
   try {
     // Validate required fields

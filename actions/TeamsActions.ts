@@ -16,20 +16,6 @@ import {
   match,
 } from "@/db/schema";
 
-export type TeamWithPlayers = {
-  team: typeof team.$inferSelect;
-  category: typeof category.$inferSelect | null;
-  player1: {
-    user: typeof users.$inferSelect;
-    profile: typeof profile.$inferSelect | null;
-  } | null;
-  player2: {
-    user: typeof users.$inferSelect;
-    profile: typeof profile.$inferSelect | null;
-  } | null;
-  displayName: string;
-};
-
 /**
  * Fetches all teams with their associated players, profiles, and categories.
  */
@@ -42,12 +28,31 @@ export async function getTeams(): Promise<TeamWithPlayers[]> {
 
     const teamsData = await db
       .select({
-        team,
+        team: {
+          id: team.id,
+          wins: team.wins,
+          losses: team.losses,
+          status: team.status,
+          loosingStreak: team.loosingStreak,
+          lastResult: team.lastResult,
+        },
         category,
-        user1,
-        profile1,
-        user2,
-        profile2,
+        user1: {
+          id: user1.id,
+          paternalSurname: user1.paternalSurname,
+          maternalSurname: user1.maternalSurname,
+        },
+        profile1: {
+          nickname: profile1.nickname,
+        },
+        user2: {
+          id: user2.id,
+          paternalSurname: user2.paternalSurname,
+          maternalSurname: user2.maternalSurname,
+        },
+        profile2: {
+          nickname: profile2.nickname,
+        },
       })
       .from(team)
       .leftJoin(category, eq(team.categoryId, category.id))
@@ -57,51 +62,59 @@ export async function getTeams(): Promise<TeamWithPlayers[]> {
       .leftJoin(profile2, eq(user2.id, profile2.userId));
 
     const structuredTeams = teamsData.map((row) => {
-      const player1User = row.user1 as typeof users.$inferSelect | null;
-      const player2User = row.user2 as typeof users.$inferSelect | null;
-
-      const player1Profile = row.profile1 ?? null;
-      const player2Profile = row.profile2 ?? null;
-
-      const p1 = player1User
-        ? { user: player1User, profile: player1Profile }
-        : null;
-
-      const p2 = player2User
-        ? { user: player2User, profile: player2Profile }
-        : null;
+      const player1: TeamWithPlayers["player1"] | null = {
+        id: row.user1!.id,
+        paternalSurname: row.user1!.paternalSurname,
+        maternalSurname: row.user1!.maternalSurname,
+        email: row.user1?.maternalSurname,
+        nickname: row.profile1?.nickname,
+      };
+      const player2: TeamWithPlayers["player2"] | null = {
+        id: row.user2!.id,
+        paternalSurname: row.user2!.paternalSurname,
+        maternalSurname: row.user2!.maternalSurname,
+        email: row.user2?.maternalSurname,
+        nickname: row.profile2?.nickname,
+      };
 
       const displayName = getTeamDisplayName(
-        p1
+        player1
           ? {
-              id: p1.user.id,
-              paternalSurname: p1.user.paternalSurname,
-              maternalSurname: p1.user.maternalSurname,
-              nickname: p1.profile?.nickname,
+              id: player1.id,
+              paternalSurname: player1.paternalSurname,
+              maternalSurname: player1.maternalSurname,
+              nickname: player1.nickname,
             }
           : null,
-        p2
+        player2
           ? {
-              id: p2.user.id,
-              paternalSurname: p2.user.paternalSurname,
-              maternalSurname: p2.user.maternalSurname,
-              nickname: p2.profile?.nickname,
+              id: player2.id,
+              paternalSurname: player2.paternalSurname,
+              maternalSurname: player2.maternalSurname,
+              nickname: player2.nickname,
             }
-          : null
+          : null,
       );
 
       return {
+        id: row.team.id,
+        wins: row.team.wins!,
+        losses: row.team.losses!,
+        status: row.team.status!,
+        categoryId: row.category!.id,
+        categoryName: row.category!.name,
+        loosingStreak: row.team.loosingStreak!,
+        lastResult: row.team.lastResult!,
         team: row.team,
-        category: row.category,
-        player1: p1,
-        player2: p2,
+        player1: player1,
+        player2: player2,
         displayName,
       };
     });
 
     // Deduplicate teams since the joins can result in multiple rows per team
     const uniqueTeams = Array.from(
-      new Map(structuredTeams.map((t) => [t.team.id, t])).values()
+      new Map(structuredTeams.map((t) => [t.team.id, t])).values(),
     );
 
     return uniqueTeams;
@@ -194,7 +207,7 @@ export async function updateTeam(
     lastResult?: "up" | "down" | "stayed" | "none";
     defendable?: boolean;
     loosingStreak?: number;
-  }
+  },
 ) {
   try {
     const updatedTeam = await db
@@ -216,7 +229,7 @@ export async function updateTeam(
  */
 export async function updateTeamPlayers(
   teamId: number,
-  data: { player1Id?: string | null; player2Id?: string | null }
+  data: { player1Id?: string | null; player2Id?: string | null },
 ) {
   // Validate that if both players are provided, they are different
   if (data.player1Id && data.player2Id && data.player1Id === data.player2Id) {
@@ -279,9 +292,8 @@ export async function deleteTeam(teamId: number) {
   }
 }
 
-
 export async function checkAndMarkRiskyTeams(
-  pyramidId: number
+  pyramidId: number,
 ): Promise<RiskyCheckResult> {
   try {
     const [pyramidRowsTotal] = await db
@@ -305,8 +317,8 @@ export async function checkAndMarkRiskyTeams(
       .where(
         and(
           eq(position.pyramidId, pyramidId),
-          ne(position.row, pyramidRowsTotal.row_amount!)
-        )
+          ne(position.row, pyramidRowsTotal.row_amount!),
+        ),
       );
 
     if (teamsInPyramid.length === 0) {
@@ -335,9 +347,9 @@ export async function checkAndMarkRiskyTeams(
           gte(match.updatedAt, currMonday), // Current week
           or(
             inArray(match.challengerTeamId, allTeamIds),
-            inArray(match.defenderTeamId, allTeamIds)
-          )
-        )
+            inArray(match.defenderTeamId, allTeamIds),
+          ),
+        ),
       );
 
     // Get matches from previous week (between prevMonday and currMonday)
@@ -355,9 +367,9 @@ export async function checkAndMarkRiskyTeams(
           lt(match.updatedAt, currMonday), // Previous week only
           or(
             inArray(match.challengerTeamId, allTeamIds),
-            inArray(match.defenderTeamId, allTeamIds)
-          )
-        )
+            inArray(match.defenderTeamId, allTeamIds),
+          ),
+        ),
       );
 
     // Count matches per team for current week
@@ -365,11 +377,11 @@ export async function checkAndMarkRiskyTeams(
     currentWeekMatches.forEach((m) => {
       currentWeekCounts.set(
         m.challengerTeamId,
-        (currentWeekCounts.get(m.challengerTeamId) || 0) + 1
+        (currentWeekCounts.get(m.challengerTeamId) || 0) + 1,
       );
       currentWeekCounts.set(
         m.defenderTeamId,
-        (currentWeekCounts.get(m.defenderTeamId) || 0) + 1
+        (currentWeekCounts.get(m.defenderTeamId) || 0) + 1,
       );
     });
 
@@ -378,11 +390,11 @@ export async function checkAndMarkRiskyTeams(
     previousWeekMatches.forEach((m) => {
       previousWeekCounts.set(
         m.challengerTeamId,
-        (previousWeekCounts.get(m.challengerTeamId) || 0) + 1
+        (previousWeekCounts.get(m.challengerTeamId) || 0) + 1,
       );
       previousWeekCounts.set(
         m.defenderTeamId,
-        (previousWeekCounts.get(m.defenderTeamId) || 0) + 1
+        (previousWeekCounts.get(m.defenderTeamId) || 0) + 1,
       );
     });
 
@@ -399,7 +411,7 @@ export async function checkAndMarkRiskyTeams(
 
     // Step 3: Find inactive teams (teams that haven't played)
     const inactiveTeamIds = allTeamIds.filter(
-      (teamId) => !activeTeamIds.has(teamId)
+      (teamId) => !activeTeamIds.has(teamId),
     );
 
     if (inactiveTeamIds.length === 0) {
@@ -447,7 +459,7 @@ export async function checkAndMarkRiskyTeams(
           teamData,
           pyramidId,
           teamPosition?.row,
-          nextRowPosition
+          nextRowPosition,
         );
 
         emailResults.push({
@@ -495,7 +507,7 @@ export async function checkAndMarkRiskyTeams(
 
 export async function getPreviousMonday(
   previous = true,
-  date: Date = new Date()
+  date: Date = new Date(),
 ): Promise<Date> {
   const d = new Date(date);
   const day = d.getDay();

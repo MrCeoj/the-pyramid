@@ -2,7 +2,6 @@
 
 import { X, Save, User } from "lucide-react";
 import { useState, useEffect } from "react";
-import { UserWithProfile } from "@/actions/ProfileManagementActions";
 
 interface UserFormModalProps {
   isOpen: boolean;

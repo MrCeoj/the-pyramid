@@ -3,8 +3,7 @@ import { useState, useEffect } from "react";
 import {
   getUsersPaginated,
   createUserWithProfile,
-  updateUserWithProfile,
-  UserWithProfile
+  updateUserWithProfile
 } from "@/actions/ProfileManagementActions";
 import { Plus, Pencil, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import UserFormModal from "./UserFormModal";

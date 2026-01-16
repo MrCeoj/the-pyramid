@@ -4,7 +4,6 @@ import { db } from "@/lib/drizzle";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { CreateAdminPasswordData } from "./types";
 
 export async function createAdminPassword(data: CreateAdminPasswordData) {
   try {

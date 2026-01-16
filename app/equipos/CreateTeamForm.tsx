@@ -1,4 +1,3 @@
-import { TeamWithPlayers } from "@/actions/TeamsActions";
 import { useState } from "react"
 import PlayerSearchBar from "./PlayerSearchbar";
 import {Save, X} from "lucide-react"
@@ -36,7 +35,7 @@ const CreateTeamForm = ({
 
   // Players that are already in any team
   const assignedPlayerIds = teams
-    .flatMap((t) => [t.team.player1Id, t.team.player2Id])
+    .flatMap((t) => [t.player1?.id, t.player2?.id])
     .filter(Boolean);
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -82,6 +82,7 @@ export async function getTeamData(teamId: number): Promise<TeamWithPlayers | nul
       loosingStreak: teamData[0].loosingStreak || 0,
       lastResult: teamData[0].lastResult || "none",
       categoryId: teamData[0].categoryId,
+      categoryName: null,
       player1,
       player2,
     };
