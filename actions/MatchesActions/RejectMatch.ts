@@ -8,7 +8,7 @@ import { getPreviousMonday } from "@/lib/utils";
 import {
   getTeamWithPlayers,
   getUserTeamIds,
-} from "@/actions/matches/TeamService";
+} from "@/actions/MatchesActions/TeamService";
 import getRejectedAmount from "./GetRejectedAmount";
 
 export async function rejectMatch(

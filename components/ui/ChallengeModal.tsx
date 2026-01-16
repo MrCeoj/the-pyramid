@@ -1,7 +1,7 @@
 "use client";
 import { Sword, X, AlertTriangle, TrendingUp, Zap } from "lucide-react";
 import { motion } from "framer-motion";
-import { createMatch } from "@/actions/matches/";
+import { createMatch } from "@/actions/MatchesActions/";
 import { createPortal } from "react-dom";
 import { Swords } from "lucide-react";
 import { useState } from "react";

@@ -3,7 +3,7 @@ import { db } from "@/lib/drizzle";
 import { eq, or, and } from "drizzle-orm";
 import { match, position } from "@/db/schema";
 import { revalidatePath } from "next/cache";
-import { getTeamWithPlayers } from "@/actions/matches/TeamService";
+import { getTeamWithPlayers } from "@/actions/MatchesActions/TeamService";
 
 //TODO validate admin sesh and implement front
 export async function createMatchAdmin({

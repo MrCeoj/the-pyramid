@@ -7,7 +7,7 @@ import { sendChallengeMail } from "@/actions/MailActions";
 import {
   getTeamWithPlayers,
   getUserTeamIds,
-} from "@/actions/matches/TeamService";
+} from "@/actions/MatchesActions/TeamService";
 
 export async function createMatch({
   pyramidId,

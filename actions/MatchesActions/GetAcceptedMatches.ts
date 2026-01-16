@@ -2,7 +2,7 @@
 import { db } from "@/lib/drizzle";
 import { eq, and } from "drizzle-orm";
 import { match, pyramid, position } from "@/db/schema";
-import { getTeamWithPlayers } from "@/actions/matches/TeamService";
+import { getTeamWithPlayers } from "@/actions/MatchesActions/TeamService";
 
 export async function getAcceptedMatches(): Promise<
   AcceptedMatchWithDetails[]

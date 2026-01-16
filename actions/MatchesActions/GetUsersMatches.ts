@@ -2,7 +2,7 @@
 import { db } from "@/lib/drizzle";
 import { eq, or, desc } from "drizzle-orm";
 import { match, pyramid } from "@/db/schema";
-import { getTeamWithPlayers, getUserTeamIds } from "@/actions/matches/TeamService";
+import { getTeamWithPlayers, getUserTeamIds } from "@/actions/MatchesActions/TeamService";
 
 export async function getUserMatches(userId: string): Promise<{
   pendingMatches: MatchWithDetails[];

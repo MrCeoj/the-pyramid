@@ -2,7 +2,7 @@
 import { db } from "@/lib/drizzle";
 import { sendRiskyWarningMail } from "@/actions/MailActions";
 import { getPreviousMonday } from "@/lib/utils";
-import { getTeamWithPlayers } from "@/actions/matches/TeamService";
+import { getTeamWithPlayers } from "@/actions/MatchesActions/TeamService";
 import { eq, and, gte, or, inArray, lt, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import {

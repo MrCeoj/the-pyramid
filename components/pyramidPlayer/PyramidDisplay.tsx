@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import PyramidRow from "./PyramidRow";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getUnresolvedMatchesForTeam } from "@/actions/matches/";
+import { getUnresolvedMatchesForTeam } from "@/actions/MatchesActions/";
 import CellarRow from "./CellarRow";
 import InactivePyramidModal from "./InactivePyramidModal";
 import { useSessionStore } from "@/stores/sessionStore";

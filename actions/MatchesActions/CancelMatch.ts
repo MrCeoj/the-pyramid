@@ -4,7 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 import { match, team } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { sendCancelMail } from "@/actions/MailActions";
-import { getTeamWithPlayers } from "@/actions/matches/TeamService";
+import { getTeamWithPlayers } from "@/actions/MatchesActions/TeamService";
 
 export async function cancelMatch(matchId: number): Promise<MatchResult> {
   try {

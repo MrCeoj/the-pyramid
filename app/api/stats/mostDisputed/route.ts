@@ -1,4 +1,4 @@
-import { GetMostDisputedTeam } from "@/actions/stats";
+import { GetMostDisputedTeam } from "@/actions/StatsActions";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

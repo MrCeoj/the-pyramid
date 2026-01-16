@@ -19,7 +19,7 @@ import {
   getAcceptedMatches,
   completeMatch,
   cancelMatch,
-} from "@/actions/matches/";
+} from "@/actions/MatchesActions/";
 import toast from "react-hot-toast";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import { useIsMobile } from "@/hooks/use-mobile";

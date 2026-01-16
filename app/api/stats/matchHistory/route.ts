@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GetPlayedMatchHistory } from "@/actions/stats";
+import { GetPlayedMatchHistory } from "@/actions/StatsActions";
 
 export async function POST(req: NextRequest) {
     try{

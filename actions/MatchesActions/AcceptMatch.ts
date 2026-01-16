@@ -11,7 +11,7 @@ import {
   getBulkTeamsWithPlayers,
   getTeamWithPlayers,
   getUserTeamIds,
-} from "@/actions/matches/TeamService";
+} from "@/actions/MatchesActions/TeamService";
 
 export async function acceptMatch(
   matchId: number,
