@@ -2,7 +2,7 @@
 import { eq, and, or, gte, sql } from "drizzle-orm";
 import { team, match } from "@/db/schema";
 import { db } from "@/lib/drizzle";
-import { getPreviousMonday } from "@/actions/TeamsActions";
+import { getPreviousMonday } from "@/lib/utils";
 
 export default async function getRejectedAmount(teamId: number) {
   try {

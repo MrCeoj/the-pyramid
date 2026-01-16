@@ -3,7 +3,7 @@ import { db } from "@/lib/drizzle";
 import { match, pyramid, position, positionHistory, team } from "@/db/schema";
 import { and, or, eq, lt, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { getPreviousMonday } from "@/actions/TeamsActions";
+import { getPreviousMonday } from "@/lib/utils";
 import { getNextPosition, cancelExpiredMatches } from "./helpers";
 
 export async function processExpiredMatches(userId: string) {

@@ -4,7 +4,7 @@ import { match, team } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { revalidatePath } from "next/cache";
 import { sendRejectMail } from "@/actions/MailActions";
-import { getPreviousMonday } from "@/actions/TeamsActions";
+import { getPreviousMonday } from "@/lib/utils";
 import {
   getTeamWithPlayers,
   getUserTeamIds,
