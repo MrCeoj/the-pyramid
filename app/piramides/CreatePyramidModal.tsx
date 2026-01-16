@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createPyramid, getCategories } from "@/actions/PyramidActions";
+import { createPyramid } from "@/actions/PyramidActions";
+import { getCategories } from "@/actions/TeamsActions";
 
 interface CreatePyramidModalProps {
   isOpen: boolean;
