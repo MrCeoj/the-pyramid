@@ -2,7 +2,7 @@
 import { db } from "@/lib/drizzle";
 import { eq, and, or, inArray, sql } from "drizzle-orm";
 import { match, team, position, positionHistory } from "@/db/schema";
-import { DbTransaction } from "@/actions/matches/types";
+import { DbTransaction } from "@/types/custom";
 
 export async function getMatchData(matchId: number) {
   const result = await db

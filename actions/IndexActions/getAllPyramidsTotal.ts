@@ -2,7 +2,6 @@
 import { db } from "@/lib/drizzle";
 import { pyramid } from "@/db/schema";
 import { desc } from "drizzle-orm"
-import { PyramidOption } from "@/actions/IndexActions/types";
 
 export async function getAllPyramidsTotal(): Promise<PyramidOption[]> {
   try {

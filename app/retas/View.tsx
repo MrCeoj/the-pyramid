@@ -20,7 +20,6 @@ import {
   completeMatch,
   cancelMatch,
 } from "@/actions/matches/";
-import { AcceptedMatchWithDetails } from "@/actions/matches/types";
 import toast from "react-hot-toast";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import { useIsMobile } from "@/hooks/use-mobile";

@@ -4,8 +4,6 @@ import PyramidRow from "./PyramidRow";
 import Image from "next/image";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getUnresolvedMatchesForTeam } from "@/actions/matches/";
-import { UnresolvedMatch } from "@/actions/matches/types";
-import { PyramidData } from "@/actions/IndexActions/types";
 import CellarRow from "./CellarRow";
 import InactivePyramidModal from "./InactivePyramidModal";
 import { useSessionStore } from "@/stores/sessionStore";

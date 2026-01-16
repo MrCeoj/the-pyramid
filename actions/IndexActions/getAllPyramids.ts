@@ -3,8 +3,6 @@ import { db } from "@/lib/drizzle";
 import { eq } from "drizzle-orm";
 import { pyramid } from "@/db/schema";
 
-import { PyramidOption } from "@/actions/IndexActions/types";
-
 export async function getAllPyramids(): Promise<PyramidOption[]> {
   try {
     const pyramids = await db

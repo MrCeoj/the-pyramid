@@ -8,7 +8,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
-import { MatchWithDetails } from "@/actions/matches/types";
 
 interface PendingMatchCardData {
   match: MatchWithDetails;

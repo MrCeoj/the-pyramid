@@ -10,8 +10,6 @@ import {
   getTeamDisplayName,
 } from "@/db/schema";
 
-import {Position, PyramidData, Team} from "@/actions/IndexActions/types"
-
 export async function getPyramidData(
   pyramidId: number
 ): Promise<PyramidData | null> {

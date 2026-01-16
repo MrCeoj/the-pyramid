@@ -1,6 +1,6 @@
 import { match } from "@/db/schema";
+import { DbTransaction } from "@/types/custom";
 import { inArray } from "drizzle-orm";
-import { DbTransaction } from "@/actions/matches/types";
 
 export function getNextPosition(
   currentPos: { row: number; col: number },

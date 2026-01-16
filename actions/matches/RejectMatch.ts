@@ -3,7 +3,6 @@ import { eq, and, or, gte, sql } from "drizzle-orm";
 import { match, team } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { revalidatePath } from "next/cache";
-import { MatchResult } from "@/actions/matches/types";
 import { sendRejectMail } from "@/actions/MailActions";
 import { getPreviousMonday } from "@/actions/TeamsActions";
 import {

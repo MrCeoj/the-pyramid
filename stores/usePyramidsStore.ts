@@ -1,6 +1,5 @@
 "use client";
 import { create } from "zustand";
-import { PyramidData, PyramidOption } from "@/actions/IndexActions/types";
 
 interface PyramidState {
   pyramids: PyramidOption[];

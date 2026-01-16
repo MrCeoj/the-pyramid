@@ -3,8 +3,6 @@ import { db } from "@/lib/drizzle";
 import { eq, or, inArray } from "drizzle-orm";
 import { position, team, pyramid } from "@/db/schema";
 
-import { PyramidOption } from "@/actions/IndexActions/types";
-
 export async function getPlayerPyramids(
   userId: string
 ): Promise<PyramidOption[] | null> {

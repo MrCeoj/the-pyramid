@@ -2,7 +2,6 @@
 import { db } from "@/lib/drizzle";
 import { eq, or, and } from "drizzle-orm";
 import { match } from "@/db/schema";
-import { UnresolvedMatch } from "@/actions/matches/types";
 
 export async function getUnresolvedMatchesForTeam(
   teamId: number

@@ -3,7 +3,6 @@
 "use client";
 import { usePyramidStore } from "@/stores/usePyramidsStore";
 import { useCallback, useEffect } from "react";
-import { PyramidOption } from "@/actions/IndexActions/types";
 
 interface PyramidHydratorProps {
   pyramids: PyramidOption[];

@@ -1,7 +1,6 @@
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import ZustandSessionInitializer from "@/components/wrappers/ZustandSessionInitializer";
 import { PyramidHydrator } from "@/components/wrappers/PyramidHydrator";
-import { PyramidOption } from "@/actions/IndexActions/types";
 import PyramidSelector from "@/components/ui/PyramidSelector";
 
 export default function PlayerView({

@@ -1,7 +1,6 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { revalidatePath } from "next/cache";
-import { MatchCompletionResult } from "@/actions/matches/types";
 import {
   getMatchData,
   getPositions,

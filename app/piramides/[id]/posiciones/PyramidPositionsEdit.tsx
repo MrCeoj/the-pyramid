@@ -9,7 +9,6 @@ import {
 } from "@/actions/PositionActions";
 import toast from "react-hot-toast";
 import SetTeamModal from "./SetTeamModal";
-import { PyramidData } from "@/actions/IndexActions/types";
 import CellarRow from "./CellarRowEdit";
 
 interface PyramidPosition {

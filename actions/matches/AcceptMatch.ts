@@ -7,7 +7,6 @@ import {
   sendAcceptMail,
   sendCancelledBecauseAcceptedMail,
 } from "@/actions/MailActions";
-import { MatchResult } from "@/actions/matches/types";
 import {
   getBulkTeamsWithPlayers,
   getTeamWithPlayers,

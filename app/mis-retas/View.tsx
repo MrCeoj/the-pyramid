@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { History, Inbox, Target } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getUserMatches, acceptMatch, rejectMatch } from "@/actions/matches";
-import { MatchWithDetails } from "@/actions/matches/types";
 import toast from "react-hot-toast";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import { useSession } from "next-auth/react";

@@ -10,7 +10,6 @@ import {
   Trash2,
   AlertTriangle,
 } from "lucide-react";
-import { MatchWithDetails } from "@/actions/matches/types";
 import { useState } from "react";
 import { cancelMatch } from "@/actions/matches";
 import toast from "react-hot-toast";

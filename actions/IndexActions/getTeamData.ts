@@ -3,8 +3,6 @@ import { db } from "@/lib/drizzle";
 import { eq } from "drizzle-orm";
 import { team, profile, users, getTeamDisplayName } from "@/db/schema";
 
-import { Team } from "@/actions/IndexActions/types";
-
 export async function getTeamData(teamId: number): Promise<Team | null> {
   try {
     const teamData = await db
