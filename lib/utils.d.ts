@@ -8,3 +8,4 @@ export declare function formatDate(date: Date, options?: Intl.DateTimeFormatOpti
 export declare function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export declare function throttle<T extends (...args: any[]) => any>(func: T, limit: number): (...args: Parameters<T>) => void;
+export declare function getPreviousMonday(previous = true, date: Date = new Date()): Promise<Date>
