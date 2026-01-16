@@ -6,15 +6,8 @@ import { Button } from "@/components/lightswind/button";
 import { Card } from "@/components/lightswind/card";
 import { Input } from "@/components/lightswind/input";
 import { Label } from "@/components/lightswind/label";
-import { createAdminPassword, login } from "@/actions/LoginActions"
+import { createAdminPassword, login } from "@/actions/LoginActions";
 import toast from "react-hot-toast";
-
-interface User {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-}
 
 interface PasswordSetupFormProps {
   user: User;

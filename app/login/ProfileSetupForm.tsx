@@ -9,13 +9,6 @@ import { Label } from "@/components/lightswind/label";
 import { updateProfile, login } from "@/actions/LoginActions";
 import toast from "react-hot-toast";
 
-interface User {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-}
-
 interface ProfileSetupFormProps {
   user: User;
 }

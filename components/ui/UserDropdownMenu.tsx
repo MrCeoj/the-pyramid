@@ -18,7 +18,6 @@ import EditProfileModal from "@/components/ui/EditProfileModal";
 import {
   getProfileData,
   updateProfile,
-  UpdateProfileData,
 } from "@/actions/ProfileDataActions";
 import { getUserPendingMatchesCount } from "@/actions/IndexActions";
 import { useIsMobile } from "@/hooks/use-mobile";

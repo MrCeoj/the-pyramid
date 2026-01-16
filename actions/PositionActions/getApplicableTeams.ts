@@ -1,3 +1,4 @@
+"use server"
 import { category, pyramidCategory, team, users, profile, getTeamDisplayName } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { eq, inArray } from "drizzle-orm";

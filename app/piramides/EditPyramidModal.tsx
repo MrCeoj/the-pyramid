@@ -6,17 +6,6 @@ import { useRouter } from "next/navigation";
 import { updatePyramid, getCategories } from "@/actions/PyramidActions";
 import toast from "react-hot-toast";
 
-interface Pyramid {
-  id: number;
-  name: string;
-  description: string | null;
-  row_amount: number | null;
-  active: boolean;
-  categories: number[];
-  createdAt: Date | null;
-  updatedAt: Date | null;
-}
-
 interface EditPyramidModalProps {
   pyramid: Pyramid;
   isOpen: boolean;

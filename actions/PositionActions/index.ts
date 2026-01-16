@@ -1,3 +1,4 @@
+"use server"
 import { getApplicableTeams } from "./getApplicableTeams";
 import { getAvailableTeams } from "./getAvailableTeams";
 import { getCurrentTeamDurationInPosition } from "./getCurrentTeamDurationInPosition";

@@ -279,17 +279,6 @@ export async function deleteTeam(teamId: number) {
   }
 }
 
-export interface RiskyCheckResult {
-  success: boolean;
-  message: string;
-  teamsMarkedRisky: number;
-  emailsSent: number;
-  emailsFailed: number;
-  details?: {
-    riskyTeams: string[];
-    emailResults: unknown[];
-  };
-}
 
 export async function checkAndMarkRiskyTeams(
   pyramidId: number

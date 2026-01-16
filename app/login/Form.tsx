@@ -8,17 +8,7 @@ import { ProfileSetupForm } from "./ProfileSetupForm";
 import { PasswordSetupForm } from "./PasswordSetupForm";
 import SignupForm from "./SignupForm";
 
-type FormState = "email-only" | "password-only" | "setup" | "signup";
-
-interface UserData {
-  id: string;
-  name: string | null;
-  email: string | null;
-  image: string | null;
-  role: string;
-  needsProfileSetup: boolean;
-  needsRegistratino?: boolean;
-}
+export type FormState = "email-only" | "password-only" | "setup" | "signup";
 
 export default function LoginForm() {
   const isMobile = useIsMobile();

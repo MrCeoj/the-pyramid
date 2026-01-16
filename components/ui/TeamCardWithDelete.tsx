@@ -6,12 +6,6 @@ import { removeTeamFromPosition } from "@/actions/PositionActions";
 import toast from "react-hot-toast";
 import { createPortal } from "react-dom";
 
-interface Position {
-  id: number;
-  row: number;
-  col: number;
-  team: TeamWithPlayers | null;
-}
 
 interface TeamCardWithDeleteProps {
   data: Position;
