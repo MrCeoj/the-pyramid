@@ -290,30 +290,9 @@ export const positionHistory = pgTable("position_history", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-type Team = {
-  id: number;
-  displayName: string;
-  wins: number;
-  losses: number;
-  status: "winner" | "looser" | "idle" | "risky";
-  categoryId: number | null;
-  player1: {
-    id: string;
-    paternalSurname: string;
-    maternalSurname: string;
-    nickname?: string | null;
-  } | null;
-  player2: {
-    id: string;
-    paternalSurname: string;
-    maternalSurname: string;
-    nickname?: string | null;
-  } | null;
-};
-
 export function getTeamDisplayName(
-  player1: Team["player1"],
-  player2: Team["player2"]
+  player1: TeamWithPlayers["player1"],
+  player2: TeamWithPlayers["player2"]
 ): string {
   if (!player1?.id) player1 = null;
   if (!player2?.id) player2 = null;

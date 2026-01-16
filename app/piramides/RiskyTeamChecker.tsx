@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/lightswind/button";
 import { Loader2, AlertTriangle } from "lucide-react";
-import {
-  RiskyCheckResult,
-  checkAndMarkRiskyTeams,
-} from "@/actions/TeamsActions";
+import { checkAndMarkRiskyTeams } from "@/actions/TeamsActions";
 import toast from "react-hot-toast";
 
 export function RiskyTeamsChecker({ pyramidId }: { pyramidId: number }) {

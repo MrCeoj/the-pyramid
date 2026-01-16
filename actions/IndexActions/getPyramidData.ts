@@ -90,7 +90,7 @@ export async function getPyramidData(
             }
           : null;
 
-        const teamData: Team = {
+        const teamData: TeamWithPlayers = {
           id: pos.teamId,
           displayName: getTeamDisplayName(player1, player2),
           wins: pos.teamWins || 0,

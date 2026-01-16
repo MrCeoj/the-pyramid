@@ -1,3 +1,4 @@
+"use server"
 import { position } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { eq } from "drizzle-orm";

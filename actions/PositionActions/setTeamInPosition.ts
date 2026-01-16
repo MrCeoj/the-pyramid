@@ -1,3 +1,4 @@
+"use server"
 import { position, positionHistory } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { and, eq } from "drizzle-orm";

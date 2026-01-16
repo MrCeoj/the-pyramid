@@ -6,35 +6,6 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 
-export interface UpdateProfileData {
-  // Updated user fields for Mexican naming
-  paternalSurname?: string;
-  maternalSurname?: string;
-  email?: string;
-  image?: string;
-  nickname?: string;
-  avatarUrl?: string;
-
-  // Password fields (optional)
-  currentPassword?: string;
-  newPassword?: string;
-  confirmPassword?: string;
-}
-
-export interface ProfileData {
-  user: {
-    paternalSurname: string;
-    maternalSurname: string;
-    email: string | null;
-    role: "player" | "admin";
-    fullName: string; // Computed full name
-  };
-  profile: {
-    nickname: string | null;
-    avatarUrl: string | null;
-  } | null;
-}
-
 // Helper function to generate full name following Mexican convention
 function getFullName(paternalSurname: string, maternalSurname: string): string {
   return `${paternalSurname} ${maternalSurname}`;
@@ -44,7 +15,7 @@ function getFullName(paternalSurname: string, maternalSurname: string): string {
 function getDisplayName(
   paternalSurname: string,
   maternalSurname: string,
-  nickname?: string | null
+  nickname?: string | null,
 ): string {
   return nickname || getFullName(paternalSurname, maternalSurname);
 }
@@ -145,7 +116,6 @@ export async function updateProfile(data: UpdateProfileData) {
           throw new Error("Las nuevas contraseñas no coinciden.");
         }
 
-
         // Get current password hash
         const [user] = await tx
           .select({ passwordHash: users.passwordHash })
@@ -161,7 +131,7 @@ export async function updateProfile(data: UpdateProfileData) {
 
         const isMatch = await bcrypt.compare(
           data.currentPassword,
-          user.passwordHash
+          user.passwordHash,
         );
 
         if (!isMatch) {
@@ -172,12 +142,12 @@ export async function updateProfile(data: UpdateProfileData) {
 
         const sameAsBefore = await bcrypt.compare(
           data.newPassword,
-          user.passwordHash
+          user.passwordHash,
         );
 
         if (sameAsBefore) {
           throw new Error(
-            "La nueva contraseña no puede ser igual a la actual."
+            "La nueva contraseña no puede ser igual a la actual.",
           );
         }
 
@@ -249,7 +219,7 @@ export async function updateProfile(data: UpdateProfileData) {
 // New utility functions for the updated schema
 
 export async function getUserDisplayName(
-  userId: string
+  userId: string,
 ): Promise<string | null> {
   try {
     const userData = await db
@@ -271,7 +241,7 @@ export async function getUserDisplayName(
     return getDisplayName(
       user.paternalSurname,
       user.maternalSurname,
-      user.nickname
+      user.nickname,
     );
   } catch (error) {
     console.error("Error getting user display name:", error);
@@ -304,7 +274,7 @@ export async function getUserFullName(userId: string): Promise<string | null> {
 
 export async function searchUsersBySurname(
   searchTerm: string,
-  limit: number = 10
+  limit: number = 10,
 ) {
   try {
     // Search in both paternal and maternal surnames
@@ -323,8 +293,8 @@ export async function searchUsersBySurname(
         or(
           like(users.paternalSurname, `%${searchTerm}%`),
           like(users.maternalSurname, `%${searchTerm}%`),
-          like(profile.nickname, `%${searchTerm}%`)
-        )
+          like(profile.nickname, `%${searchTerm}%`),
+        ),
       )
       .limit(limit);
 
@@ -334,7 +304,7 @@ export async function searchUsersBySurname(
       displayName: getDisplayName(
         user.paternalSurname,
         user.maternalSurname,
-        user.nickname
+        user.nickname,
       ),
       email: user.email,
       role: user.role,
@@ -349,7 +319,7 @@ export async function searchUsersBySurname(
 // Validation helpers
 export async function validateMexicanName(
   paternalSurname: string,
-  maternalSurname: string
+  maternalSurname: string,
 ) {
   if (!paternalSurname || paternalSurname.trim().length < 2) {
     return "El apellido paterno debe tener al menos 2 caracteres.";

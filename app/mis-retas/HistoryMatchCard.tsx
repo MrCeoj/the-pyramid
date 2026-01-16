@@ -14,12 +14,7 @@ import { useState } from "react";
 import { cancelMatch } from "@/actions/matches";
 import toast from "react-hot-toast";
 
-interface HistoryMatchCardData {
-  match: MatchWithDetails;
-  handleCancelMatch: (matchId: number) => Promise<void>
-  userTeamId: number;
-  formatDate: (date: Date) => string;
-}
+
 
 const HistoryMatchCard = ({
   match,

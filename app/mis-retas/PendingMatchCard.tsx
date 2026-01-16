@@ -9,15 +9,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-interface PendingMatchCardData {
-  match: MatchWithDetails;
-  formatDate: (date: Date) => string;
-  handleRejectMatch: (matchId: number) => Promise<void>;
-  actionLoading: number;
-  handleAcceptMatch: (matchId: number) => Promise<void>;
-  userTeamId: number;
-  rejectedAmount: number;
-}
 
 const PendingMatchCard = ({
   match,

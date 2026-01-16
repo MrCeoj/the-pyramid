@@ -5,22 +5,6 @@ import { category, pyramid, pyramidCategory } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-interface CreatePyramidData {
-  name: string;
-  description: string;
-  row_amount: number;
-  active: boolean;
-  categories: number[];
-}
-
-interface UpdatePyramidData {
-  name: string;
-  description: string;
-  row_amount: number;
-  active: boolean;
-  categories: number[];
-}
-
 export async function createPyramid(data: CreatePyramidData) {
   try {
     await db.transaction(async (tx) => {
