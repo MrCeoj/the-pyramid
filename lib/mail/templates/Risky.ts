@@ -1,7 +1,4 @@
 
-
-
-
 export default function generateRiskyWarningEmailTemplate(
   mailData: RiskyWarningMailData
 ): string {

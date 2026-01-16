@@ -269,7 +269,7 @@ type MailData = {
   attacker: TeamWithPlayers;
   defender: TeamWithPlayers;
   pyramidId: number;
-  handicapPoints: number;
+  handicapPoints?: number;
   reason?: string
 }
 

@@ -13,7 +13,7 @@ import { eq, inArray } from "drizzle-orm";
 export async function sendChallengeMail(
   attacker: TeamWithPlayers,
   defender: TeamWithPlayers,
-  pyramidId: number
+  pyramidId: number,
 ) {
   try {
     if (!attacker || !defender || !pyramidId) {
@@ -24,7 +24,7 @@ export async function sendChallengeMail(
       (defender.categoryId ?? 0) - (attacker.categoryId ?? 0);
     const handicapPoints = Math.abs(categoryDiff) * 15;
 
-    const emailData = {
+    const emailData: MailData = {
       attacker,
       defender,
       pyramidId,
@@ -77,14 +77,14 @@ export async function sendChallengeMail(
 export async function sendRejectMail(
   attacker: TeamWithPlayers,
   defender: TeamWithPlayers,
-  pyramidId: number
+  pyramidId: number,
 ) {
   try {
     if (!attacker || !defender || !pyramidId) {
       return { error: "No se pudieron procesar los datos de la reta." };
     }
 
-    const emailData = {
+    const emailData: MailData = {
       attacker,
       defender,
       pyramidId,
@@ -141,7 +141,7 @@ export async function sendRejectMail(
 export async function sendAcceptMail(
   attacker: TeamWithPlayers,
   defender: TeamWithPlayers,
-  pyramidId: number
+  pyramidId: number,
 ) {
   try {
     if (!attacker || !defender || !pyramidId) {
@@ -152,7 +152,7 @@ export async function sendAcceptMail(
       (defender.categoryId ?? 0) - (attacker.categoryId ?? 0);
     const handicapPoints = Math.abs(categoryDiff) * 15;
 
-    const emailData = {
+    const emailData: MailData = {
       attacker,
       defender,
       pyramidId,
@@ -207,14 +207,14 @@ export async function sendCancelMail(
   attacker: TeamWithPlayers,
   defender: TeamWithPlayers,
   pyramidId: number,
-  reason?: string
+  reason?: string,
 ) {
   try {
     if (!attacker || !defender || !pyramidId) {
       return { error: "Missing required fields" };
     }
 
-    const emailData = {
+    const emailData: MailData = {
       attacker,
       defender,
       pyramidId,
@@ -264,14 +264,14 @@ export async function sendRiskyWarningMail(
   team: TeamWithPlayers,
   pyramidId: number,
   currentPosition?: number,
-  nextRowPosition?: number
+  nextRowPosition?: number,
 ) {
   try {
     if (!team || !pyramidId) {
       return { error: "Missing required fields" };
     }
 
-    const emailData = {
+    const emailData: RiskyWarningMailData = {
       team,
       pyramidId,
       currentPosition,
@@ -331,7 +331,7 @@ export async function sendCancelledBecauseAcceptedMail(
   recipients: TeamWithPlayers[],
   attacker: TeamWithPlayers,
   defender: TeamWithPlayers,
-  pyramidId: number
+  pyramidId: number,
 ) {
   try {
     if (!defender || !pyramidId) {
@@ -340,17 +340,17 @@ export async function sendCancelledBecauseAcceptedMail(
 
     const reason = `El equipo aceptó la invitación de ${getTeamDisplayName(
       attacker.player1,
-      attacker.player2
+      attacker.player2,
     )}, las demás invitaciones pendientes contra ${getTeamDisplayName(
       defender.player1,
-      defender.player2
+      defender.player2,
     )} fueron canceladas como consecuencia.`;
 
-    const emailData = {
+    const emailData:MailData = {
       attacker,
       defender,
       pyramidId,
-      reason
+      reason,
     };
 
     const htmlContent = generateCancelEmailTemplate(emailData);
