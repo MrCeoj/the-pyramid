@@ -1,11 +1,5 @@
 
 
-interface MailData {
-  attacker: TeamWithPlayers;
-  defender: TeamWithPlayers;
-  pyramidId: number;
-}
-
 export default function generateRejectEmailTemplate(
   emailData: MailData
 ): string {

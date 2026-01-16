@@ -14,13 +14,6 @@ import {
   CircleMinus,
 } from "lucide-react";
 
-interface Position {
-  id: number;
-  row: number;
-  col: number;
-  team: TeamWithPlayers | null;
-}
-
 interface TeamCardProps {
   data: Position;
   activityAllowed: boolean;

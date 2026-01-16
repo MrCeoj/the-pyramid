@@ -5,17 +5,6 @@ import { EditPyramidModal } from "./EditPyramidModal";
 import { useRouter } from "next/navigation";
 import { RiskyTeamsChecker } from "./RiskyTeamChecker";
 
-interface Pyramid {
-  id: number;
-  name: string;
-  description: string | null;
-  row_amount: number | null;
-  active: boolean;
-  categories: number[];
-  createdAt: Date | null;
-  updatedAt: Date | null;
-}
-
 interface PyramidCardProps {
   pyramid: Pyramid;
 }

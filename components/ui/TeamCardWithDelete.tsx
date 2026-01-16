@@ -6,7 +6,6 @@ import { removeTeamFromPosition } from "@/actions/PositionActions";
 import toast from "react-hot-toast";
 import { createPortal } from "react-dom";
 
-
 interface TeamCardWithDeleteProps {
   data: Position;
   pyramidId: number;

@@ -2,13 +2,6 @@
 import { Fa1, Fa2, Fa3, Fa4, Fa5 } from "react-icons/fa6";
 import { PiMedalBold } from "react-icons/pi";
 
-interface Position {
-  id: number;
-  row: number;
-  col: number;
-  team: TeamWithPlayers | null;
-}
-
 const TeamCard = ({ data }: { data: Position }) => {
   const getIcon = (category: number) => {
     switch (category) {

@@ -2,13 +2,6 @@ import TeamCardWithDelete from "@/components/ui/TeamCardWithDelete";
 import EmptySlot from "@/components/ui/EmptySlotEdit";
 import { useCenteredScroll } from "@/hooks/useCenteredScroll";
 
-interface Position {
-  id: number;
-  row: number;
-  col: number;
-  team: TeamWithPlayers | null;
-}
-
 const PyramidRow = ({
   handleSetTeam,
   pyramidId,

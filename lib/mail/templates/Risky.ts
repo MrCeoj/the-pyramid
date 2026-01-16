@@ -1,11 +1,6 @@
 
 
-interface RiskyWarningMailData {
-  team: TeamWithPlayers;
-  pyramidId: number;
-  currentPosition?: number;
-  nextRowPosition?: number;
-}
+
 
 export default function generateRiskyWarningEmailTemplate(
   mailData: RiskyWarningMailData

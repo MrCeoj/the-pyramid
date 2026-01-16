@@ -1,14 +1,8 @@
 
 
-interface ChallengeEmailData {
-  attacker: TeamWithPlayers;
-  defender: TeamWithPlayers;
-  pyramidId: number;
-  handicapPoints: number;
-}
 
 export default function generateChallengeEmailTemplate(
-  data: ChallengeEmailData
+  data: MailData
 ): string {
   const { attacker, defender, handicapPoints } = data;
   const categoryDiff = (defender.categoryId ?? 0) - (attacker.categoryId ?? 0);

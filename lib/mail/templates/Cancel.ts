@@ -1,11 +1,4 @@
 
-interface MailData {
-  attacker: TeamWithPlayers;
-  defender: TeamWithPlayers;
-  pyramidId: number;
-  reason?: string;
-}
-
 export default function generateCancelEmailTemplate(mailData: MailData): string {
   const { attacker, defender, reason } = mailData;
 

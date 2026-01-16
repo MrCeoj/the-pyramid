@@ -11,12 +11,6 @@ import toast from "react-hot-toast";
 import SetTeamModal from "./SetTeamModal";
 import CellarRow from "./CellarRowEdit";
 
-interface PyramidPosition {
-  id: number;
-  row: number;
-  col: number;
-  team: TeamWithPlayers | null;
-}
 
 interface SelectedPosition {
   pyramidId: number;

@@ -1,10 +1,5 @@
 
-interface MailData {
-  attacker: TeamWithPlayers;
-  defender: TeamWithPlayers;
-  pyramidId: number;
-  handicapPoints: number;
-}
+
 
 export default function generateAcceptEmailTemplate(mailData: MailData): string {
   const { attacker, defender, handicapPoints } = mailData;

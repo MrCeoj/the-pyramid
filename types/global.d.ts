@@ -254,3 +254,31 @@ type Pyramid = {
   createdAt: Date | null;
   updatedAt: Date | null;
 };
+
+type PyramidPosition = {
+  id: number;
+  row: number;
+  col: number;
+  team: TeamWithPlayers | null;
+};
+
+/**
+ * From MailActions/Accept
+ */
+type MailData = {
+  attacker: TeamWithPlayers;
+  defender: TeamWithPlayers;
+  pyramidId: number;
+  handicapPoints: number;
+  reason?: string
+}
+
+/**
+ * From MailActions/Risky
+ */
+type RiskyWarningMailData = {
+  team: TeamWithPlayers;
+  pyramidId: number;
+  currentPosition?: number;
+  nextRowPosition?: number;
+}

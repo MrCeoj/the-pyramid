@@ -4,26 +4,14 @@ import { useState, useEffect } from "react";
 import { useSessionStore } from "@/stores/sessionStore";
 import { toast } from "react-hot-toast";
 
-interface Profile {
-  nickname?: string;
-  avatarUrl?: string;
-}
-
-interface User {
-  paternalSurname?: string;
-  maternalSurname?: string;
-  email?: string;
-  image?: string;
-}
-
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave: (data: any) => Promise<void>;
   initialData?: {
-    user: User;
-    profile?: Profile;
+    user: Pick<ProfileData, 'user'>['user'];
+    profile?: Pick<ProfileData, "profile">['profile'];
   };
 }
 
@@ -77,7 +65,6 @@ export default function EditProfileModal({
         paternalSurname: initialData.user.paternalSurname || "",
         maternalSurname: initialData.user.maternalSurname || "",
         email: initialData.user.email || "",
-        image: initialData.user.image || "",
         nickname: initialData.profile?.nickname || "",
       }));
     }
@@ -110,7 +97,6 @@ export default function EditProfileModal({
       paternalSurname: initialData.user.paternalSurname || "",
       maternalSurname: initialData.user.maternalSurname || "",
       email: initialData.user.email || "",
-      image: initialData.user.image || "",
       nickname: initialData.profile?.nickname || "",
     };
 
