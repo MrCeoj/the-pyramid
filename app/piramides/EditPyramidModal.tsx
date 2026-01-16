@@ -1,9 +1,9 @@
 "use client";
-
 import { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { updatePyramid, getCategories } from "@/actions/PyramidActions";
+import { updatePyramid } from "@/actions/PyramidActions";
+import { getCategories } from "@/actions/TeamsActions";
 import toast from "react-hot-toast";
 
 interface EditPyramidModalProps {
