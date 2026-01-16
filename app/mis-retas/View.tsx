@@ -2,14 +2,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { History, Inbox, Target } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getUserMatches, acceptMatch, rejectMatch } from "@/actions/matches";
+import { getUserMatches, acceptMatch, rejectMatch, getRejectedAmount} from "@/actions/MatchesActions";
 import toast from "react-hot-toast";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import { useSession } from "next-auth/react";
 import PendingMatchCard from "./PendingMatchCard";
 import HistoryMatchCard from "./HistoryMatchCard";
 import { getUserTeamId } from "@/actions/IndexActions";
-import { getRejectedAmount } from "@/actions/matches";
 import { usePyramidStore } from "@/stores/usePyramidsStore";
 
 const MatchesPage = () => {

@@ -11,7 +11,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useState } from "react";
-import { cancelMatch } from "@/actions/matches";
+import { cancelMatch } from "@/actions/MatchesActions";
 import toast from "react-hot-toast";
 
 
