@@ -2,7 +2,6 @@
 import { db } from "@/lib/drizzle";
 import { eq, or, desc } from "drizzle-orm";
 import { match, pyramid } from "@/db/schema";
-import { TeamWithPlayers } from "@/actions/PositionActions";
 import { MatchWithDetails } from "@/actions/matches/types";
 import { getTeamWithPlayers, getUserTeamIds } from "@/actions/matches/TeamService";
 

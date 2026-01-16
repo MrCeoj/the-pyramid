@@ -1,4 +1,3 @@
-import { TeamWithPlayers } from "@/actions/PositionActions";
 
 interface MailData {
   attacker: TeamWithPlayers;

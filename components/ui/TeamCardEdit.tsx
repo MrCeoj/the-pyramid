@@ -1,7 +1,6 @@
 "use client";
 import { Fa1, Fa2, Fa3, Fa4, Fa5 } from "react-icons/fa6";
 import { PiMedalBold } from "react-icons/pi";
-import { TeamWithPlayers } from "@/actions/PositionActions";
 
 interface Position {
   id: number;

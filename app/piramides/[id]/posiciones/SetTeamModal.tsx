@@ -1,6 +1,5 @@
 import React from "react";
 import { X, Users, Trophy, AlertCircle } from "lucide-react";
-import { TeamWithPlayers } from "@/actions/PositionActions";
 import toast from "react-hot-toast";
 
 interface SetTeamModalProps {

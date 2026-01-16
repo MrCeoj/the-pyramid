@@ -5,7 +5,6 @@ import { useCenteredScroll } from "@/hooks/useCenteredScroll";
 import { useSessionStore } from "@/stores/sessionStore";
 import React, { useState, useCallback } from "react";
 import ChallengeModal from "@/components/ui/ChallengeModal";
-import { TeamWithPlayers } from "@/actions/PositionActions";
 import { useRouter } from "next/navigation";
 
 type PyramidPosition = {

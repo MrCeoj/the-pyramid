@@ -5,7 +5,6 @@ import TeamCard from "@/components/ui/TeamCardEdit";
 import { removeTeamFromPosition } from "@/actions/PositionActions";
 import toast from "react-hot-toast";
 import { createPortal } from "react-dom";
-import { TeamWithPlayers } from "@/actions/PositionActions";
 
 interface Position {
   id: number;

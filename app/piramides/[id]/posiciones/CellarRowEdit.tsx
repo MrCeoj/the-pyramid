@@ -1,7 +1,6 @@
 import TeamCardWithDelete from "@/components/ui/TeamCardWithDelete";
 import EmptySlot from "@/components/ui/EmptySlotEdit";
 import { useCenteredScroll } from "@/hooks/useCenteredScroll";
-import { TeamWithPlayers } from "@/actions/PositionActions";
 
 interface Position {
   id: number;

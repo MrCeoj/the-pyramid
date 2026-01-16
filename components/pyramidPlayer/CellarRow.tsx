@@ -1,7 +1,6 @@
 import EmptySlot from "@/components/ui/EmptySlot";
 import TeamCard from "@/components/ui/TeamCard";
 import { useCenteredScroll } from "@/hooks/useCenteredScroll";
-import { TeamWithPlayers } from "@/actions/PositionActions";
 
 type PyramidPosition = {
   id: number;

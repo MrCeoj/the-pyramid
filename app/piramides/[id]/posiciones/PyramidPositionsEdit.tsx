@@ -6,7 +6,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   setTeamInPosition,
   getApplicableTeams,
-  TeamWithPlayers,
 } from "@/actions/PositionActions";
 import toast from "react-hot-toast";
 import SetTeamModal from "./SetTeamModal";

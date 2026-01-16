@@ -3,7 +3,6 @@ import { db } from "@/lib/drizzle";
 import { eq, or, inArray } from "drizzle-orm";
 import { team, profile, users } from "@/db/schema";
 import { getTeamDisplayName } from "@/db/schema";
-import { TeamWithPlayers } from "@/actions/PositionActions";
 
 export async function getTeamWithPlayers(
   teamId: number

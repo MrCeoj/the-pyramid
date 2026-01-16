@@ -13,7 +13,6 @@ import {
   getTeamWithPlayers,
   getUserTeamIds,
 } from "@/actions/matches/TeamService";
-import { TeamWithPlayers } from "@/actions/PositionActions";
 
 export async function acceptMatch(
   matchId: number,

@@ -6,7 +6,6 @@ import { createPortal } from "react-dom";
 import { Swords } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { TeamWithPlayers } from "@/actions/PositionActions";
 import { useSession } from "next-auth/react";
 
 interface ChallengeModalProps {
