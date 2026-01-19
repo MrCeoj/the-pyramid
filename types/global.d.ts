@@ -38,8 +38,14 @@ type MatchWithDetails = {
   updatedAt: Date;
   pyramidId: number;
   pyramidName: string;
-  challengerTeam: TeamWithPlayers;
-  defenderTeam: TeamWithPlayers;
+  challengerTeam: TeamWithPlayers & {
+    currentRow?: number | null;
+    currentCol?: number | null;
+  };
+  defenderTeam: TeamWithPlayers & {
+    currentRow?: number | null;
+    currentCol?: number | null;
+  };
   winnerTeam?: TeamWithPlayers | null;
   evidenceUrl?: string | null;
 };
@@ -56,23 +62,6 @@ type UnresolvedMatch = {
   createdAt: Date;
 };
 
-/**
- *
- */
-type AcceptedMatchWithDetails = {
-  id: number;
-  pyramidId: number;
-  pyramidName: string;
-  challengerTeam: TeamWithPlayers & {
-    currentRow: number;
-    currentCol: number;
-  };
-  defenderTeam: TeamWithPlayers & {
-    currentRow: number;
-    currentCol: number;
-  };
-  createdAt: Date;
-};
 
 /**
  *
@@ -271,8 +260,8 @@ type MailData = {
   defender: TeamWithPlayers;
   pyramidId: number;
   handicapPoints?: number;
-  reason?: string
-}
+  reason?: string;
+};
 
 /**
  * From MailActions/Risky
@@ -282,7 +271,7 @@ type RiskyWarningMailData = {
   pyramidId: number;
   currentPosition?: number;
   nextRowPosition?: number;
-}
+};
 
 /**
  * From LoginActions
@@ -296,7 +285,6 @@ type CreateProfileData = {
   avatarUrl?: string | null;
   password?: string;
 };
-
 
 type CreateAdminPasswordData = {
   userId: string;
@@ -346,7 +334,6 @@ type UpdateUserData = {
     avatarUrl?: string;
   };
 };
-
 
 type Category = { id: number; name: string };
 

@@ -1,12 +1,12 @@
 "use server";
 import { db } from "@/lib/drizzle";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { match, pyramid, position } from "@/db/schema";
 import { getTeamWithPlayers } from "@/actions/MatchesActions/TeamService";
 
-export async function getAcceptedMatches(): Promise<
-  MatchWithDetails[]
-> {
+export default async function getPyramidMatches(
+  pyramidId: number,
+): Promise<MatchWithDetails[]> {
   try {
     const acceptedMatches = await db
       .select({
@@ -21,7 +21,7 @@ export async function getAcceptedMatches(): Promise<
       })
       .from(match)
       .innerJoin(pyramid, eq(match.pyramidId, pyramid.id))
-      .where(eq(match.status, "accepted"));
+      .where(eq(match.pyramidId, pyramidId)).orderBy(desc(match.updatedAt));
 
     const matchesWithDetails: MatchWithDetails[] = await Promise.all(
       acceptedMatches.map(async (m) => {
@@ -35,8 +35,8 @@ export async function getAcceptedMatches(): Promise<
               .where(
                 and(
                   eq(position.teamId, m.challengerTeamId),
-                  eq(position.pyramidId, m.pyramidId)
-                )
+                  eq(position.pyramidId, m.pyramidId),
+                ),
               )
               .limit(1),
             db
@@ -45,8 +45,8 @@ export async function getAcceptedMatches(): Promise<
               .where(
                 and(
                   eq(position.teamId, m.defenderTeamId),
-                  eq(position.pyramidId, m.pyramidId)
-                )
+                  eq(position.pyramidId, m.pyramidId),
+                ),
               )
               .limit(1),
           ]);
@@ -78,7 +78,7 @@ export async function getAcceptedMatches(): Promise<
           createdAt: m.createdAt!,
           updatedAt: m.updatedAt!,
         };
-      })
+      }),
     );
 
     return matchesWithDetails;
