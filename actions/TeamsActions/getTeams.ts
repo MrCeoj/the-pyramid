@@ -51,20 +51,21 @@ export async function getTeams(): Promise<TeamWithPlayers[]> {
       .leftJoin(profile2, eq(user2.id, profile2.userId));
 
     const structuredTeams = teamsData.map((row) => {
-      const player1: TeamWithPlayers["player1"] | null = {
+      const player1: TeamWithPlayers["player1"] | null = row.user1?.id ? {
         id: row.user1!.id,
         paternalSurname: row.user1!.paternalSurname,
         maternalSurname: row.user1!.maternalSurname,
         email: row.user1?.maternalSurname,
         nickname: row.profile1?.nickname,
-      };
-      const player2: TeamWithPlayers["player2"] | null = {
+      } : null;
+
+      const player2: TeamWithPlayers["player2"] | null = row.user2?.id ?  {
         id: row.user2!.id,
         paternalSurname: row.user2!.paternalSurname,
         maternalSurname: row.user2!.maternalSurname,
         email: row.user2?.maternalSurname,
         nickname: row.profile2?.nickname,
-      };
+      } : null;
 
       const displayName = getTeamDisplayName(
         player1

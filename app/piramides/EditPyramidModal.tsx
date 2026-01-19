@@ -74,11 +74,14 @@ export function EditPyramidModal({
     setError("");
 
     try {
-      await updatePyramid(pyramid.id, formData);
+      const res = await updatePyramid(pyramid.id, formData);
+      if (!res.success) {
+        setError(res.error);
+        return;
+      }
       onClose();
       router.refresh();
     } catch (err) {
-      console.log(err);
       setError("Error al actualizar la pirámide");
     } finally {
       setIsLoading(false);

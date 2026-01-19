@@ -25,7 +25,7 @@ export default function PyramidDisplay({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showInactiveModal, setShowInactiveModal] = useState(false);
   const [unresolvedMatches, setUnresolvedMatches] = useState<UnresolvedMatch[]>(
-    []
+    [],
   );
   const [cellarTeam, setCellarTeam] = useState<PyramidPosition>({
     id: 123,
@@ -33,7 +33,7 @@ export default function PyramidDisplay({
     col: 1,
     team: null,
   });
-  const {session} = useSessionStore()
+  const { session } = useSessionStore();
 
   const fetchUnresolvedMatches = useCallback(async () => {
     if (!userTeamId) return;
@@ -50,15 +50,13 @@ export default function PyramidDisplay({
   }, [userTeamId]);
 
   useEffect(() => {
-    const role = session?.user.role
+    const role = session?.user.role;
 
-    if (data.active === false && role === 'player') {
+    if (data.active === false && role === "player") {
       setShowInactiveModal(true);
     } else {
       setShowInactiveModal(false);
     }
-
-    
   }, [data.active, session]);
 
   useEffect(() => {
@@ -76,7 +74,7 @@ export default function PyramidDisplay({
         col: pos.col,
         team: pos.team as TeamWithPlayers | null,
       })),
-    [data.positions]
+    [data.positions],
   );
 
   const rows = useMemo(() => {
@@ -91,6 +89,7 @@ export default function PyramidDisplay({
       };
       rowsMap[pos.row].push(pyramidPos);
     });
+    console.log(rowsMap)
     return rowsMap;
   }, [data.positions]);
 
@@ -110,7 +109,7 @@ export default function PyramidDisplay({
                 col: match.col,
                 team: match.team as TeamWithPlayers | null,
               }
-            : { id: -1 * (row * 100 + col), row, col, team: null }
+            : { id: -1 * (row * 100 + col), row, col, team: null },
         );
       }
       rowsMap[row] = filled;
@@ -165,7 +164,7 @@ export default function PyramidDisplay({
                 unresolvedMatches={unresolvedMatches}
                 userTeamId={userTeamId}
                 active={data.active}
-                pyramidId={data.pyramid_id!}
+                pyramidId={data.pyramid_id}
                 className={`flex gap-4 p-4 justify-start min-w-max overflow-x-scroll scroll-smooth 
                   no-scrollbar items-center snap-x rounded-t-2xl border-2 border-slate-400/40 
                   border-dashed bg-indor-black/80 ${
@@ -180,7 +179,7 @@ export default function PyramidDisplay({
       <div className="mb-5">
         <CellarRow
           userTeamId={userTeamId}
-          position={cellarTeam!}
+          position={cellarTeam}
           active={data.active}
           isFirst={true}
           isLast={true}

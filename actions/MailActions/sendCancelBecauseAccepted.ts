@@ -35,8 +35,8 @@ export async function sendCancelledBecauseAcceptedMail(
     const allEmails: string[] = [];
 
     recipients.map((t) => {
-      if (t.player1) allEmails.push(t.player1.email!);
-      if (t.player2) allEmails.push(t.player2.email!);
+      if (t.player1 && t.player1.email) allEmails.push(t.player1.email);
+      if (t.player2 && t.player2.email) allEmails.push(t.player2.email);
     });
 
     if (allEmails.length === 0) {
@@ -47,7 +47,7 @@ export async function sendCancelledBecauseAcceptedMail(
     }
 
     const mailOptions = {
-      from: process.env.FROM_RETAS!,
+      from: process.env.FROM_RETAS,
       to: allEmails,
       subject: `🚫 Reta cancelada. ${attacker.displayName} vs ${defender.displayName}`,
       html: htmlContent,

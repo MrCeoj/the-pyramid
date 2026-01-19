@@ -206,7 +206,7 @@ const TeamManagement = () => {
   const PlayerDisplay = ({ player }: { player: TeamWithPlayers["player1"] }) =>
     player ? (
       <div className="font-medium">
-        {player.nickname || `${player.paternalSurname.toLowerCase() + " " + player.maternalSurname.toLowerCase()}`}
+        {player.nickname || `${player.paternalSurname + " " + player.maternalSurname}`}
         <div className="text-sm text-gray-400">{player.email}</div>
       </div>
     ) : (
@@ -294,12 +294,12 @@ const TeamManagement = () => {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 max-h-[70vh] overflow-scroll p-2 border-t border-b border-indor-brown-light/20">
             {filteredTeams.map((teamData) => {
               const assignedPlayerIds = teams
-                .flatMap((t) => [t.player1!.id, t.player2!.id])
+                .flatMap((t) => [t.player1?.id, t.player2?.id])
                 .filter(Boolean);
 
               const currentTeamPlayers = [
-                teamData.player1!.id,
-                teamData.player2!.id,
+                teamData.player1?.id,
+                teamData.player2?.id,
               ].filter(Boolean);
 
               const availablePlayersForEdit = allPlayers.filter(

@@ -31,7 +31,7 @@ export default function RootLayout({
             color1="#2c2c2c"
             color2="#f48a34"
             backdropBlurAmount="lg"
-            className="fixed h-full w-full z-0"
+            className="fixed h-full w-full -z-40"
           />
           <div className="relative w-full h-full">{children}</div>
         </body>

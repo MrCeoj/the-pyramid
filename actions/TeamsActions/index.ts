@@ -1,3 +1,4 @@
+import getCategoriesInPyramid from "./categoriesInPyramid";
 import { checkAndMarkRiskyTeams } from "./checkAndMarkRiskyTeams";
 import { createTeam } from "./createTeam";
 import { deleteTeam } from "./deleteTeam";
@@ -8,6 +9,7 @@ import { updateTeam } from "./updateTeam";
 import { updateTeamPlayers } from "./updateTeamPlayers";
 
 export {
+  getCategoriesInPyramid,
   checkAndMarkRiskyTeams,
   createTeam,
   deleteTeam,

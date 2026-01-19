@@ -1,11 +1,13 @@
-"use server"
+"use server";
 import { db } from "@/lib/drizzle";
 import { pyramid, pyramidCategory } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { getCategoriesInPyramid } from "../TeamsActions";
 
+type updatePyramidProps = { success: true } | { success: false; error: string };
 
-export async function updatePyramid(id: number, data: UpdatePyramidData) {
+export async function updatePyramid(id: number, data: UpdatePyramidData): Promise<updatePyramidProps> {
   try {
     await db.transaction(async (tx) => {
       // Update main pyramid row
@@ -31,8 +33,14 @@ export async function updatePyramid(id: number, data: UpdatePyramidData) {
       const incoming = new Set(data.categories);
       const existing = new Set(catsInPyr);
 
+      console.log("incoming", incoming, "existing", existing);
+
       const toAdd = [...incoming].filter((cat) => !existing.has(cat));
-      const toRemove = [...existing].filter((cat) => !incoming.has(cat));
+      const toRemove = new Set(
+        [...existing].filter((cat) => !incoming.has(cat)),
+      );
+
+      console.log("toadd", toAdd, "toremove", toRemove);
 
       if (toAdd.length > 0) {
         await tx.insert(pyramidCategory).values(
@@ -41,15 +49,33 @@ export async function updatePyramid(id: number, data: UpdatePyramidData) {
             categoryId: cat,
             createdAt: new Date(),
             updatedAt: new Date(),
-          }))
+          })),
         );
       }
 
-      if (toRemove.length > 0) {
+      if (toRemove.size > 0) {
+        const catsInPyr = await getCategoriesInPyramid(id, tx);
+        if (!catsInPyr.success)
+          throw new Error("Error al comprobar las categorías existentes");
+
+        const usedCategories = new Set(catsInPyr.cats);
+
+        const hasConflict = [...toRemove].some((cat) =>
+          usedCategories.has(cat),
+        );
+
+        if (hasConflict) {
+          throw new Error(
+            "Existen equipos con alguna categoría que querías eliminar.",
+          );
+        }
         await tx
           .delete(pyramidCategory)
           .where(
-            and(eq(pyramidCategory, id), inArray(pyramidCategory, toRemove))
+            and(
+              eq(pyramidCategory.pyramidId, id),
+              inArray(pyramidCategory.categoryId, Array.from(toRemove)),
+            ),
           );
       }
     });
@@ -58,7 +84,12 @@ export async function updatePyramid(id: number, data: UpdatePyramidData) {
     revalidatePath("/");
     return { success: true };
   } catch (error) {
-    console.error("Error updating pyramid:", error);
-    throw new Error("Failed to update pyramid");
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Hubo un error inesperado, inténtalo de nuevo más tarde.",
+    };
   }
 }
