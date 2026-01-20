@@ -1,18 +1,15 @@
 "use client";
 import {
-  Star,
-  StarOff,
-  CheckCircle,
-  Ban,
-  AlertCircle,
-  Clock,
+  Trophy,
   Crown,
-  Trash2,
-  AlertTriangle,
+  CheckCircle,
+  MapPin,
+  Calendar,
+  ClipboardClock,
+  X,
+  XCircle,
+  Ban,
 } from "lucide-react";
-import { useState } from "react";
-import { cancelMatch } from "@/actions/MatchesActions";
-import toast from "react-hot-toast";
 
 const HistoryMatchCard = ({
   match,
@@ -20,234 +17,262 @@ const HistoryMatchCard = ({
   formatDate,
   userTeamId,
 }: HistoryMatchCardData) => {
-  const [cancelModalOpen, setCancelModalOpen] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
+  const defenderWon = match.winnerTeam?.id === match.defenderTeam.id;
+  const attackerWon = match.winnerTeam?.id === match.challengerTeam.id;
   const isWinner = match.winnerTeam?.id === userTeamId;
 
-  const getStatusInfo = (status: string) => {
-    switch (status) {
-      case "played":
-        return {
-          icon: isWinner ? (
-            <Star className={"text-green-600"} size={16} />
-          ) : (
-            <StarOff className={"text-red-500"} size={16} />
-          ),
-          labelColor: isWinner ? "text-green-500" : "text-red-500",
-          card: isWinner
-            ? "from-indor-black to-green-800/60 border-green-800/80"
-            : "from-indor-black to-red-800/70 border-red-500",
+  type VisualStatus = MatchStatus | "played_won" | "played_lost";
 
-          label: isWinner ? "Ganado" : "Perdido",
-        };
-      case "accepted":
-        return {
-          icon: <CheckCircle className="text-blue-400" size={16} />,
-          label: "Aceptado",
-          card: "from-blue-900/30 to-blue-700/20 border-blue-500/40",
-          labelColor: "text-blue-400",
-        };
-      case "rejected":
-        return {
-          icon: <Ban className="text-red-500" size={16} />,
-          label: "Rechazado",
-          card: "from-rose-900/30 to-red-900/70 border-red-500/40",
-          labelColor: "text-red-500",
-        };
-      case "cancelled":
-        return {
-          icon: <AlertCircle className="text-gray-400" size={16} />,
-          label: "Cancelado",
-          card: "from-gray-800/40 to-gray-700/20 border-gray-500/40",
-          labelColor: "text-gray-400",
-        };
-      default:
-        return {
-          icon: <Clock className="text-orange-400" size={16} />,
-          label: "Pendiente de respuesta",
-          card: "from-orange-900/30 to-orange-700/20 border-orange-500/40",
-          labelColor: "text-orange-400",
-        };
+  const visualStatus: VisualStatus =
+    match.status === "played"
+      ? isWinner
+        ? "played_won"
+        : "played_lost"
+      : match.status;
+
+  const statusConfig: Record<
+    VisualStatus,
+    {
+      title: string;
+      icon: React.ReactNode;
+      iconBg: string;
+      iconColor: string;
+      glow: string;
     }
+  > = {
+    pending: {
+      title: "Reta Pendiente",
+      icon: <ClipboardClock size={20} />,
+      iconBg: "bg-orange-600/20",
+      iconColor: "text-orange-400",
+      glow: "from-orange-500/30",
+    },
+    accepted: {
+      title: "Reta Aceptada",
+      icon: <CheckCircle size={20} />,
+      iconBg: "bg-green-600/20",
+      iconColor: "text-green-400",
+      glow: "from-green-500/30",
+    },
+
+    played: {
+      title: "Reta Jugada",
+      icon: <Trophy size={20} />,
+      iconBg: "bg-yellow-600/20",
+      iconColor: "text-yellow-400",
+      glow: "from-yellow-500/30",
+    },
+
+    /* 🟢 WON */
+    played_won: {
+      title: "Victoria",
+      icon: <Trophy size={20} />,
+      iconBg: "bg-green-600/20",
+      iconColor: "text-green-400",
+      glow: "from-green-500/40 via-emerald-400/20",
+    },
+
+    /* 🔴 LOST */
+    played_lost: {
+      title: "Derrota",
+      icon: <XCircle size={20} />,
+      iconBg: "bg-red-600/20",
+      iconColor: "text-red-400",
+      glow: "from-red-500/40 via-rose-400/20",
+    },
+
+    rejected: {
+      title: "Reta Rechazada",
+      icon: <XCircle size={20} />,
+      iconBg: "bg-red-600/20",
+      iconColor: "text-red-400",
+      glow: "from-red-500/30",
+    },
+    cancelled: {
+      title: "Reta Cancelada",
+      icon: <Ban size={20} />,
+      iconBg: "bg-slate-600/20",
+      iconColor: "text-slate-400",
+      glow: "from-white/20",
+    },
   };
-
-  const pleaseCancelMatch = async () => {
-    setCancelling(true);
-    await cancelMatch(match.id)
-      .then(() => {
-        toast.success("Reta cancelada exitosamente");
-        setCancelModalOpen(false);
-        setCancelling(false);
-      })
-      .catch((err) => {
-        console.log(err);
-        toast.error("Hubo un problema al cancelar la reta, inténtalo de nuevo");
-      }).finally(() => handleCancelMatch(match.id));
-  };
-
-  const statusInfo = getStatusInfo(match.status);
-  const hasWinner = match.winnerTeam && match.status === "played";
-
-  const getTeamStyles = (teamId: number) => {
-    const isWinnerTeam = hasWinner && match.winnerTeam?.id === teamId;
-    const isUserWin = isWinner;
-
-    if (!hasWinner) {
-      return {
-        container: "flex-1 text-center",
-        content: "text-white",
-        name: "font-semibold",
-        category: "text-sm text-slate-300",
-      };
-    }
-
-    return {
-      container: `flex-1 text-center relative ${isWinnerTeam ? "z-10" : ""}`,
-      content: isWinnerTeam
-        ? `bg-gradient-to-br animate-pulse ${
-            isUserWin
-              ? "from-green-500/20 via-emerald-500/10 to-green-600/20 border border-green-500/30"
-              : "from-red-500/20 via-rose-500/10 to-red-600/20 border border-red-500/30"
-          } rounded-xl p-4 backdrop-blur-sm shadow-lg ${
-            isUserWin ? "shadow-yellow-500/20" : "shadow-yellow-500/20"
-          } transform scale-105 transition-all duration-300`
-        : "text-white opacity-75",
-      name: isWinnerTeam
-        ? `font-bold ${
-            isUserWin ? "text-green-400" : "text-red-300"
-          } drop-shadow-lg text-lg`
-        : "font-semibold",
-      category: isWinnerTeam
-        ? `text-sm ${isUserWin ? "text-green-200/80" : "text-red-200/80"}`
-        : "text-sm text-slate-300",
-    };
-  };
-
-  const challengerStyles = getTeamStyles(match.challengerTeam.id);
-  const defenderStyles = getTeamStyles(match.defenderTeam.id);
 
   return (
-    <>
+    <div className="relative h-fit bg-slate-800/50 md:max-w-xl max-w-84 w-full self-center backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+      {/* Status glow */}
       <div
-        className={`bg-gradient-to-tr backdrop-blur-md flex flex-col justify-between rounded-xl p-6 transition-all lg:max-w-2/5 lg:min-w-2/5 duration-300 border ${statusInfo.card}`}
-      >
-        {/* Status row */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            {statusInfo.icon}
-            <span className={`font-medium ${statusInfo.labelColor}`}>
-              {statusInfo.label}
+        className={`
+          pointer-events-none
+          absolute -top-24 -left-24
+          w-64 h-64
+          rounded-full
+          blur-3xl
+          bg-gradient-to-br
+          ${statusConfig[visualStatus].glow}
+          to-transparent
+        `}
+      />
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3 w-full">
+          <div
+            className={`p-2 rounded-lg ${statusConfig[visualStatus].iconBg}`}
+          >
+            <span className={statusConfig[visualStatus].iconColor}>
+              {statusConfig[visualStatus].icon}
             </span>
           </div>
-          <span className="text-sm text-white">
-            {formatDate(match.updatedAt)}
-          </span>
-        </div>
-        {match.status === "accepted" && (
-          <div
-            onClick={() => setCancelModalOpen(true)}
-            className="absolute bottom-4 right-5 text-red-200 rounded-full border border-red-900 bg-red-500 p-1.5 opacity-100 md:opacity-70 cursor-pointer hover:opacity-100"
-          >
-            <Trash2 size={20} strokeWidth={2} />
-          </div>
-        )}
-
-        {/* Teams */}
-        <div className="flex items-center gap-4 mb-4">
-          <div className={challengerStyles.container}>
-            <div className={challengerStyles.content}>
-              {hasWinner &&
-                match.winnerTeam?.id === match.challengerTeam.id && (
-                  <div className="flex justify-center mb-2">
-                    <Crown className="text-yellow-400" size={20} />
-                  </div>
-                )}
-              <h4 className={challengerStyles.name}>
-                {match.challengerTeam.displayName}
-              </h4>
-              <p className={challengerStyles.category}>
-                Cat. {match.challengerTeam.categoryId}
-              </p>
-            </div>
-          </div>
-
-          <div className="text-lg text-white font-bold px-2">VS</div>
-
-          <div className={defenderStyles.container}>
-            <div className={defenderStyles.content}>
-              {hasWinner && match.winnerTeam?.id === match.defenderTeam.id && (
-                <div className="flex justify-center mb-2">
-                  <Crown
-                    className="text-yellow-400 animate-pulse text-shadow-lg text-shadow-amber-400"
-                    size={20}
-                  />
-                </div>
-              )}
-              <h4 className={defenderStyles.name}>
-                {match.defenderTeam.displayName}
-              </h4>
-              <p className={defenderStyles.category}>
-                Cat. {match.defenderTeam.categoryId}
-              </p>
-            </div>
+          <div className="w-full">
+            <h3 className="font-bold text-white">
+              {statusConfig[visualStatus].title}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-400">{match.pyramidName}</p>
           </div>
         </div>
-
-        {/* Pyramid info */}
-        <div className="text-center text-md text-white/80 mt-2">
-          {match.pyramidName}
+        <div className="text-slate-400 flex justify-end items-center gap-1 w-full">
+          <Calendar size={14} />
+          <span className="text-xs sm:text-sm w-fit">{formatDate(match.updatedAt)}</span>
         </div>
       </div>
-      {/* Mobile modal with warning/punishment styling */}
-      {cancelModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-100">
-          <div className="bg-gradient-to-br from-red-900/40 to-red-950/50 border-2 border-red-500/60 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl shadow-red-500/30">
-            {/* Warning Icon */}
-            <div className="flex items-center justify-center mb-4">
-              <div className="bg-red-500/20 rounded-full p-3 border border-red-500/40">
-                <AlertTriangle className="w-6 h-6 text-red-400" />
+
+      {/* Teams Battle Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+        {/* Challenger Team */}
+        <div
+          className={`
+            relative p-4 rounded-xl md:col-span-2 border-2 transition-all duration-300 cursor-pointer
+            ${
+              attackerWon
+                ? "bg-gradient-to-r from-orange-900/30 to-red-900/30 border-orange-500 shadow-orange-500/20 shadow-lg"
+                : "bg-slate-700/30 border-slate-600/50 hover:border-orange-400/50"
+            }
+          `}
+        >
+          <div className="w-full text-left">
+            {/* Team Role Badge */}
+            <div className="flex items-center justify-between mb-3">
+              <span className="px-2 py-1 bg-orange-600/20 text-orange-300 text-xs font-medium rounded-full border border-orange-500/30">
+                Atacante
+              </span>
+              {attackerWon && <Crown className="text-yellow-400" size={20} />}
+            </div>
+
+            {/* Team Info */}
+            <h4 className="font-bold text-lg text-white mb-2">
+              {match.challengerTeam.displayName}
+            </h4>
+
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <MapPin className="text-slate-400" size={14} />
+                <span className="text-slate-300">
+                  Fila {match.challengerTeam.currentRow}, Col{" "}
+                  {match.challengerTeam.currentCol}
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-emerald-400">
+                  {match.challengerTeam.wins}W
+                </span>
+                <span className="text-red-400">
+                  {match.challengerTeam.losses}L
+                </span>
+                <span className="text-purple-400">
+                  Cat. {match.challengerTeam.categoryId}
+                </span>
               </div>
             </div>
+          </div>
+        </div>
 
-            <h2 className="text-lg font-bold text-red-300 mb-2 text-center">
-              Estás por cancelar una reta
-            </h2>
+        {/* VS Section */}
+        <div className="flex flex-col items-center justify-center">
+          <div className="text-4xl font-bold text-orange-400 mb-2">VS</div>
+        </div>
 
-            <span className="text-sm text-red-200 text-center flex flex-col items-center">
-              ¿Estás seguro de cancelar la reta entre{" "}
-              <strong>
-                {match.challengerTeam.displayName} VS{" "}
-                {match.defenderTeam.displayName}?
+        {/* Defender Team */}
+        <div
+          className={`
+            relative p-4 rounded-xl md:col-span-2 border-2 transition-all duration-300 cursor-pointer
+            ${
+              defenderWon
+                ? "bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-500 shadow-blue-500/20 shadow-lg"
+                : "bg-slate-700/30 border-slate-600/50 hover:border-blue-400/50"
+            }
+          `}
+        >
+          <div className="w-full text-left">
+            {/* Team Role Badge */}
+            <div className="flex items-center justify-between mb-3">
+              <span className="px-2 py-1 bg-blue-600/20 text-blue-300 text-xs font-medium rounded-full border border-blue-500/30">
+                Defensor
+              </span>
+              {defenderWon && <Crown className="text-yellow-400" size={20} />}
+            </div>
+
+            {/* Team Info */}
+            <h4 className="font-bold text-lg text-white mb-2">
+              {match.defenderTeam.displayName}
+            </h4>
+
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <MapPin className="text-slate-400" size={14} />
+                <span className="text-slate-300">
+                  Fila {match.defenderTeam.currentRow}, Col{" "}
+                  {match.defenderTeam.currentCol}
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-emerald-400">
+                  {match.defenderTeam.wins}W
+                </span>
+                <span className="text-red-400">
+                  {match.defenderTeam.losses}L
+                </span>
+                <span className="text-purple-400">
+                  Cat. {match.defenderTeam.categoryId}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Winner Selection Info */}
+      {match.winnerTeam && (
+        <div className="bg-slate-700/30 p-4 rounded-lg mb-4">
+          <div className="flex items-center gap-2 text-sm">
+            <Trophy className="text-yellow-400" size={16} />
+            <span className="text-white">
+              Ganadores:{" "}
+              <strong className="text-yellow-300">
+                {match.winnerTeam.id === match.challengerTeam.id
+                  ? match.challengerTeam.displayName
+                  : match.defenderTeam.displayName}
               </strong>
             </span>
-
-            <div className="text-center mt-5 text-xs text-red-300/80 mb-4">
-              ⚠️ Esta acción no se podrá deshacer
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                disabled={cancelling}
-                onClick={pleaseCancelMatch}
-                className="w-full px-4 py-3 bg-red-600/80 hover:bg-red-600 text-white rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg shadow-red-600/20 border border-red-500/50 disabled:cursor-not-allowed disabled:opacity-20"
-              >
-                Cancelar la reta
-              </button>
-              <button
-                disabled={cancelling}
-                onClick={() => setCancelModalOpen(false)}
-                className="w-full px-4 py-3 bg-gray-600/80 hover:bg-gray-600 text-sm text-white rounded-lg font-semibold transition-all duration-200 transform active:scale-95 shadow-lg shadow-red-600/20 border border-slate-500/50 disabled:opacity-20 disabled:cursor-not-allowed"
-              >
-                Cambié de opinión
-              </button>
-            </div>
           </div>
         </div>
       )}
-    </>
+
+      {/* Action Buttons */}
+      {(match.status === "accepted" || match.status === "pending") && (
+        <div className="flex gap-3">
+          {/* Cancel button */}
+          <button
+            onClick={() => handleCancelMatch(match.id)}
+            className="max-h-16 text-red-400 hover:text-red-300 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 hover:border-red-500/50 group p-4 text-xs sm:text-sm lg:text-base rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2"
+            title="Cancelar reta"
+          >
+            <X className="" size={16} />
+            <span>Cancelar Match</span>
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 
 export default HistoryMatchCard;
-
-
