@@ -27,14 +27,14 @@ export async function getPositions(pyramidId: number, teamIds: number[]) {
     })
     .from(position)
     .where(
-      and(eq(position.pyramidId, pyramidId), inArray(position.teamId, teamIds))
+      and(eq(position.pyramidId, pyramidId), inArray(position.teamId, teamIds)),
     );
 }
 
 export async function updateMatchStatus(
   tx: DbTransaction,
   matchId: number,
-  winnerTeamId: number
+  winnerTeamId: number,
 ) {
   await tx
     .update(match)
@@ -49,7 +49,7 @@ export async function updateMatchStatus(
 export async function updateTeamsAfterMatch(
   tx: DbTransaction,
   winnerTeamId: number,
-  loserTeamId: number
+  loserTeamId: number,
 ) {
   await tx
     .update(team)
@@ -77,72 +77,6 @@ export async function updateTeamsAfterMatch(
     .where(eq(team.id, loserTeamId));
 }
 
-export async function swapPositionsWithCellarIfNeeded(
-  tx: DbTransaction,
-  pyramidId: number,
-  looserTeamId: number
-) {
-  const [{ loosingStreak }] = await tx
-    .select({ loosingStreak: team.loosingStreak })
-    .from(team)
-    .where(eq(team.id, looserTeamId))
-    .limit(1);
-
-  if (!loosingStreak) return;
-
-  if (loosingStreak < 3) return;
-
-  const [{ cellarTeamId }] = await tx
-    .select({ cellarTeamId: position.teamId })
-    .from(position)
-    .where(eq(position.row, 8))
-    .limit(1);
-
-  if (typeof cellarTeamId !== "number") return;
-
-  const [looserCurrentPos] = await tx
-    .select()
-    .from(position)
-    .where(
-      and(eq(position.teamId, looserTeamId), eq(position.pyramidId, pyramidId))
-    );
-
-  await tx
-    .update(team)
-    .set({ lastResult: "down" })
-    .where(eq(team.id, looserTeamId));
-
-  await tx
-    .update(team)
-    .set({ lastResult: "up" })
-    .where(eq(team.id, cellarTeamId));
-
-  await tx
-    .update(position)
-    .set({ row: -1, col: -1 })
-    .where(
-      and(eq(position.teamId, looserTeamId), eq(position.pyramidId, pyramidId))
-    );
-
-  await tx
-    .update(position)
-    .set({
-      row: looserCurrentPos.row,
-      col: looserCurrentPos.col,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(eq(position.teamId, cellarTeamId), eq(position.pyramidId, pyramidId))
-    );
-
-  await tx
-    .update(position)
-    .set({ row: 8, col: 1, updatedAt: new Date() })
-    .where(
-      and(eq(position.teamId, looserTeamId), eq(position.pyramidId, pyramidId))
-    );
-}
-
 export async function swapPositionsIfNeeded(
   tx: DbTransaction,
   { pyramidId, matchId }: { pyramidId: number; matchId: number },
@@ -154,7 +88,7 @@ export async function swapPositionsIfNeeded(
     winnerCurrentPos: { row: number; col: number };
     loserCurrentPos: { row: number; col: number };
   },
-  shouldSwapPositions: boolean
+  shouldSwapPositions: boolean,
 ) {
   if (!shouldSwapPositions) {
     await tx
@@ -168,7 +102,7 @@ export async function swapPositionsIfNeeded(
     .update(position)
     .set({ row: -1, col: -1 })
     .where(
-      and(eq(position.teamId, winnerTeamId), eq(position.pyramidId, pyramidId))
+      and(eq(position.teamId, winnerTeamId), eq(position.pyramidId, pyramidId)),
     );
 
   await tx
@@ -179,7 +113,7 @@ export async function swapPositionsIfNeeded(
       updatedAt: new Date(),
     })
     .where(
-      and(eq(position.teamId, loserTeamId), eq(position.pyramidId, pyramidId))
+      and(eq(position.teamId, loserTeamId), eq(position.pyramidId, pyramidId)),
     );
 
   await tx
@@ -190,7 +124,7 @@ export async function swapPositionsIfNeeded(
       updatedAt: new Date(),
     })
     .where(
-      and(eq(position.teamId, winnerTeamId), eq(position.pyramidId, pyramidId))
+      and(eq(position.teamId, winnerTeamId), eq(position.pyramidId, pyramidId)),
     );
 
   await tx
@@ -223,7 +157,7 @@ export async function evaluateMatchesAfterResult(
   tx: DbTransaction,
   pyramidId: number,
   winnerTeamId: number,
-  loserTeamId: number
+  loserTeamId: number,
 ) {
   const activeMatches = await tx
     .select({
@@ -238,9 +172,9 @@ export async function evaluateMatchesAfterResult(
         inArray(match.status, ["accepted", "pending"]),
         or(
           inArray(match.challengerTeamId, [winnerTeamId, loserTeamId]),
-          inArray(match.defenderTeamId, [winnerTeamId, loserTeamId])
-        )
-      )
+          inArray(match.defenderTeamId, [winnerTeamId, loserTeamId]),
+        ),
+      ),
     );
 
   if (!activeMatches.length) return;
@@ -248,15 +182,15 @@ export async function evaluateMatchesAfterResult(
   // 2. Collect all unique teamIds involved
   const involvedTeamIds = Array.from(
     new Set(
-      activeMatches.flatMap((m) => [m.challengerTeamId, m.defenderTeamId])
-    )
+      activeMatches.flatMap((m) => [m.challengerTeamId, m.defenderTeamId]),
+    ),
   );
 
   // 3. Fetch their current positions
   const teamPositions = await getPositions(pyramidId, involvedTeamIds);
 
   const positionMap = Object.fromEntries(
-    teamPositions.map((p) => [p.teamId, { row: p.row, col: p.col }])
+    teamPositions.map((p) => [p.teamId, { row: p.row, col: p.col }]),
   );
 
   // 4. Check if the match is still valid

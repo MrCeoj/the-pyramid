@@ -52,7 +52,7 @@ const AdminMatchesPage = () => {
           </h1>
         </div>
 
-        <div className="flex flex-wrap mb-6 justify-between items-start">
+        <div className="flex flex-wrap mb-6 gap-2 justify-between items-start">
           <MatchStatusFilter />
           <MatchPyramidFilter />
           <MatchDateFilter />

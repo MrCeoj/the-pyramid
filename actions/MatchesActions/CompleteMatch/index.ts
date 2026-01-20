@@ -8,18 +8,17 @@ import {
   updateMatchStatus,
   swapPositionsIfNeeded,
   evaluateMatchesAfterResult,
-  swapPositionsWithCellarIfNeeded,
 } from "./helpers";
 
 export async function completeMatch(
   matchId: number,
-  winnerTeamId: number
+  winnerTeamId: number,
 ): Promise<MatchCompletionResult> {
   try {
     const matchData = await getMatchData(matchId);
     if (!matchData) return { success: false, message: "Match no encontrado" };
 
-    if (matchData.status !== "accepted") {
+    if (matchData.status !== "accepted" && matchData.status !== "pending" ) {
       return {
         success: false,
         message: "Solo se pueden completar matches aceptados",
@@ -35,10 +34,10 @@ export async function completeMatch(
       defenderTeamId,
     ]);
     const winnerCurrentPos = positions.find(
-      (p: { teamId: number }) => p.teamId === winnerTeamId
+      (p: { teamId: number }) => p.teamId === winnerTeamId,
     );
     const loserCurrentPos = positions.find(
-      (p: { teamId: number }) => p.teamId === loserTeamId
+      (p: { teamId: number }) => p.teamId === loserTeamId,
     );
 
     if (!winnerCurrentPos || !loserCurrentPos)
@@ -57,21 +56,19 @@ export async function completeMatch(
 
       await updateTeamsAfterMatch(tx, winnerTeamId, loserTeamId);
 
-        await swapPositionsIfNeeded(
-          tx,
-          { pyramidId, matchId },
-          { winnerTeamId, loserTeamId },
-          { winnerCurrentPos, loserCurrentPos },
-          shouldSwapPositions
-        );
-
-      await swapPositionsWithCellarIfNeeded(tx, pyramidId, loserTeamId);
+      await swapPositionsIfNeeded(
+        tx,
+        { pyramidId, matchId },
+        { winnerTeamId, loserTeamId },
+        { winnerCurrentPos, loserCurrentPos },
+        shouldSwapPositions,
+      );
 
       await evaluateMatchesAfterResult(
         tx,
         pyramidId,
         winnerTeamId,
-        loserTeamId
+        loserTeamId,
       );
     });
 

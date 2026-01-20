@@ -1,10 +1,17 @@
-"use server"
-import { category, pyramidCategory, team, users, profile, getTeamDisplayName } from "@/db/schema";
+"use server";
+import {
+  category,
+  pyramidCategory,
+  team,
+  users,
+  profile,
+  getTeamDisplayName,
+} from "@/db/schema";
 import { db } from "@/lib/drizzle";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, or } from "drizzle-orm";
 
 export async function getApplicableTeams(
-  pyramidId: number
+  pyramidId: number,
 ): Promise<TeamWithPlayers[]> {
   try {
     // Get categories for this pyramid
@@ -35,13 +42,16 @@ export async function getApplicableTeams(
         player1PaternalSurname: users.paternalSurname,
         player1MaternalSurname: users.maternalSurname,
         player1Nickname: profile.nickname,
+        player2PaternalSurname: users.paternalSurname,
+        player2MaternalSurname: users.maternalSurname,
+        player2Nickname: profile.nickname,
       })
       .from(team)
       .where(inArray(team.categoryId, categoryIds))
-      .innerJoin(users, eq(team.player1Id, users.id))
-      .innerJoin(profile, eq(users.id, profile.userId));
+      .leftJoin(users, eq(team.player1Id, users.id))
+      .leftJoin(profile, eq(users.id, profile.userId));
 
-    const teams: TeamWithPlayers[] = await Promise.all(
+    const teams: TeamWithPlayers[] = (await Promise.all(
       teamsData.map(async (teamData) => {
         const player2Data = await db
           .select({
@@ -50,22 +60,24 @@ export async function getApplicableTeams(
             nickname: profile.nickname,
           })
           .from(users)
-          .where(eq(users.id, teamData.player2Id!)) // <-- non-null assertion
+          .where(eq(users.id, teamData.player2Id!))
           .leftJoin(profile, eq(users.id, profile.userId))
           .limit(1);
 
-        const player1 = {
-          id: teamData.player1Id!,
-          paternalSurname: teamData.player1PaternalSurname,
-          maternalSurname: teamData.player1MaternalSurname,
-          nickname: teamData.player1Nickname,
-        };
+        const player1 = teamData.player1Id
+          ? {
+              id: teamData.player1Id,
+              paternalSurname: teamData.player1PaternalSurname ?? "",
+              maternalSurname: teamData.player1MaternalSurname ?? "",
+              nickname: teamData.player1Nickname ?? undefined,
+            }
+          : null;
 
         const player2 = {
           id: teamData.player2Id!,
-          paternalSurname: player2Data[0]?.paternalSurname || "",
-          maternalSurname: player2Data[0]?.maternalSurname || "",
-          nickname: player2Data[0]?.nickname,
+          paternalSurname: player2Data[0].paternalSurname ?? "",
+          maternalSurname: player2Data[0].maternalSurname ?? "",
+          nickname: player2Data[0].nickname,
         };
 
         return {
@@ -81,8 +93,8 @@ export async function getApplicableTeams(
           player1,
           player2,
         };
-      })
-    );
+      }),
+    ));
 
     return teams;
   } catch (error) {

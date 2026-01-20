@@ -30,42 +30,68 @@ const MatchCard = ({ match }: { match: MatchWithDetails }) => {
       icon: React.ReactNode;
       iconBg: string;
       iconColor: string;
+      glow: string;
     }
   > = {
     pending: {
       title: "Reta Pendiente",
       icon: <ClipboardClock size={20} />,
-      iconBg: "bg-yellow-600/20",
-      iconColor: "text-yellow-400",
+      iconBg: "bg-orange-600/20",
+      iconColor: "text-orange-400",
+      glow: "from-orange-500/30",
     },
     accepted: {
       title: "Reta Aceptada",
       icon: <CheckCircle size={20} />,
       iconBg: "bg-green-600/20",
       iconColor: "text-green-400",
+      glow: "from-green-500/30",
     },
     played: {
       title: "Reta Jugada",
       icon: <Trophy size={20} />,
-      iconBg: "bg-blue-600/20",
-      iconColor: "text-blue-400",
+      iconBg: "bg-yellow-600/20",
+      iconColor: "text-yellow-400",
+      glow: "from-yellow-500/30",
     },
     rejected: {
       title: "Reta Rechazada",
       icon: <XCircle size={20} />,
       iconBg: "bg-red-600/20",
       iconColor: "text-red-400",
+      glow: "from-red-500/30",
     },
     cancelled: {
       title: "Reta Cancelada",
       icon: <Ban size={20} />,
       iconBg: "bg-slate-600/20",
       iconColor: "text-slate-400",
+      glow: "from-white/30",
     },
   };
 
+  const defenderSelected = selectedWinner[match.id] === match.defenderTeam.id;
+  const attackerSelected = selectedWinner[match.id] === match.challengerTeam.id;
+
+  const defenderWon = match.winnerTeam?.id === match.defenderTeam.id;
+  const attackerWon = match.winnerTeam?.id === match.challengerTeam.id;
+
   return (
-    <div className="h-fit bg-slate-800/50 md:max-w-xl max-w-84 w-full self-center backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+    <div className="relative h-fit bg-slate-800/50 md:max-w-xl max-w-84 w-full self-center backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+      {/* Status glow */}
+      <div
+        className={`
+          pointer-events-none
+          absolute -top-24 -left-24
+          w-64 h-64
+          rounded-full
+          blur-3xl
+          bg-gradient-to-br
+          ${statusConfig[match.status].glow}
+          to-transparent
+        `}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -84,20 +110,12 @@ const MatchCard = ({ match }: { match: MatchWithDetails }) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-sm text-slate-400 flex items-center gap-1">
-              <Calendar size={14} />
+          <div className="text-slate-400 flex items-center gap-1">
+            <Calendar size={14} />
+            <span className="text-[0.6rem] md:text-sm">
               {formatDate(match.createdAt)}
-            </div>
+            </span>
           </div>
-          {/* Cancel button */}
-          <button
-            disabled={cancelingMatch === match.id}
-            className="p-2 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 hover:border-red-500/50 rounded-lg transition-all duration-200 group"
-            title="Cancelar reta"
-          >
-            <X className="text-red-400 group-hover:text-red-300" size={16} />
-          </button>
         </div>
       </div>
 
@@ -109,7 +127,7 @@ const MatchCard = ({ match }: { match: MatchWithDetails }) => {
           className={`
             relative p-4 rounded-xl md:col-span-2 border-2 transition-all duration-300 cursor-pointer
             ${
-              selectedWinner[match.id] === match.challengerTeam.id
+              attackerSelected || attackerWon
                 ? "bg-gradient-to-r from-orange-900/30 to-red-900/30 border-orange-500 shadow-orange-500/20 shadow-lg"
                 : "bg-slate-700/30 border-slate-600/50 hover:border-orange-400/50"
             }
@@ -121,7 +139,7 @@ const MatchCard = ({ match }: { match: MatchWithDetails }) => {
               <span className="px-2 py-1 bg-orange-600/20 text-orange-300 text-xs font-medium rounded-full border border-orange-500/30">
                 Atacante
               </span>
-              {selectedWinner[match.id] === match.challengerTeam.id && (
+              {(attackerSelected || attackerWon) && (
                 <Crown className="text-yellow-400" size={20} />
               )}
             </div>
@@ -176,7 +194,7 @@ const MatchCard = ({ match }: { match: MatchWithDetails }) => {
           className={`
             relative p-4 rounded-xl md:col-span-2 border-2 transition-all duration-300 cursor-pointer
             ${
-              selectedWinner[match.id] === match.defenderTeam.id
+              defenderSelected || defenderWon
                 ? "bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-500 shadow-blue-500/20 shadow-lg"
                 : "bg-slate-700/30 border-slate-600/50 hover:border-blue-400/50"
             }
@@ -188,7 +206,7 @@ const MatchCard = ({ match }: { match: MatchWithDetails }) => {
               <span className="px-2 py-1 bg-blue-600/20 text-blue-300 text-xs font-medium rounded-full border border-blue-500/30">
                 Defensor
               </span>
-              {selectedWinner[match.id] === match.defenderTeam.id && (
+              {(defenderSelected || defenderWon) && (
                 <Crown className="text-yellow-400" size={20} />
               )}
             </div>
@@ -242,11 +260,22 @@ const MatchCard = ({ match }: { match: MatchWithDetails }) => {
       {/* Action Buttons */}
       {(match.status === "accepted" || match.status === "pending") && (
         <div className="flex gap-3">
+          {/* Cancel button */}
+          <button
+            disabled={cancelingMatch === match.id}
+            className="max-h-16 text-red-400 hover:text-red-300 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 hover:border-red-500/50 group p-4 text-xs sm:text-sm lg:text-base rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2"
+            title="Cancelar reta"
+          >
+            <X className="" size={16} />
+            <span className="hidden lg:block">Cancelar Match</span>
+          </button>
+
+          {/* Complete button */}
           <button
             onClick={() => complete(match.id)}
             disabled={!selectedWinner[match.id] || completingMatch === match.id}
             className={`
-            flex-1 px-6 py-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2
+             flex-1 px-6 py-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 text-xs sm:text-sm lg:text-base
             ${
               selectedWinner[match.id]
                 ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-lg hover:shadow-green-500/25"

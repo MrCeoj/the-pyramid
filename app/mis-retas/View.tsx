@@ -10,6 +10,7 @@ import PendingMatchCard from "./PendingMatchCard";
 import HistoryMatchCard from "./HistoryMatchCard";
 import { getUserTeamId } from "@/actions/IndexActions";
 import { usePyramidStore } from "@/stores/usePyramidsStore";
+import { formatDate } from "@/lib/utils";
 
 const MatchesPage = () => {
   const { data } = useSession();
@@ -30,11 +31,11 @@ const MatchesPage = () => {
     const amount = await getRejectedAmount(userTeamId);
     if (amount === null || amount === undefined)
       throw new Error(
-        "Error al conseguir cantidad de partidas rechazadas. Null"
+        "Error al conseguir cantidad de partidas rechazadas"
       );
     if (typeof amount !== "number")
       throw new Error(
-        "Error al conseguir cantidad de partidas rechazadas. Error"
+        "Error al conseguir cantidad de partidas rechazadas"
       );
 
     setRejectedAmount(amount);
@@ -125,18 +126,6 @@ const MatchesPage = () => {
     }
   };
 
-  // Memoize the formatDate function
-  const formatDate = useMemo(() => {
-    return (date: Date) => {
-      return new Intl.DateTimeFormat("es-ES", {
-        day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(new Date(date));
-    };
-  }, []);
-
   if (loading && !pendingMatches.length && !matchHistory.length) {
     return (
       <div className="min-h-screen bg-indor-black/80 flex items-center justify-center">
@@ -164,8 +153,8 @@ const MatchesPage = () => {
 
         {/* Pyramid filter */}
         <div className="max-w-6xl mb-6 flex justify-end">
-          <div className="max-w-sm flex items-center justify-end gap-3">
-            <label className="text-white text-sm whitespace-nowrap">
+          <div className="max-w-sm flex flex-wrap items-center justify-end gap-3">
+            <label className="text-white text-sm">
               Filtrar por pirámide:
             </label>
             <select
@@ -175,7 +164,7 @@ const MatchesPage = () => {
                   e.target.value === "" ? null : Number(e.target.value)
                 )
               }
-              className="flex-1 bg-indor-black border border-indor-brown text-white max-w-xs min-w-xs rounded-lg px-3 py-2 text-sm"
+              className="flex-1 bg-indor-black border border-indor-brown text-white w-fit rounded-lg px-3 py-2 text-sm"
             >
               <option value="">Todas</option>
               {pyramids.map((pyramid) => (
