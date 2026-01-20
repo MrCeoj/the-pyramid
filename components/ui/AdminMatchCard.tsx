@@ -6,11 +6,15 @@ import {
   CheckCircle,
   MapPin,
   Calendar,
+  ClipboardClock,
   X,
+  XCircle,
+  Ban,
 } from "lucide-react";
 import { useAdminMatchesStore } from "@/stores/useAdminMatchesStore";
+import { formatDate } from "@/lib/utils";
 
-export const MatchCard = ({ match }: { match: MatchWithDetails }) => {
+const MatchCard = ({ match }: { match: MatchWithDetails }) => {
   const {
     cancelingMatch,
     selectedWinner,
@@ -19,25 +23,63 @@ export const MatchCard = ({ match }: { match: MatchWithDetails }) => {
     complete,
   } = useAdminMatchesStore();
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(date));
+  const statusConfig: Record<
+    MatchStatus,
+    {
+      title: string;
+      icon: React.ReactNode;
+      iconBg: string;
+      iconColor: string;
+    }
+  > = {
+    pending: {
+      title: "Reta Pendiente",
+      icon: <ClipboardClock size={20} />,
+      iconBg: "bg-yellow-600/20",
+      iconColor: "text-yellow-400",
+    },
+    accepted: {
+      title: "Reta Aceptada",
+      icon: <CheckCircle size={20} />,
+      iconBg: "bg-green-600/20",
+      iconColor: "text-green-400",
+    },
+    played: {
+      title: "Reta Jugada",
+      icon: <Trophy size={20} />,
+      iconBg: "bg-blue-600/20",
+      iconColor: "text-blue-400",
+    },
+    rejected: {
+      title: "Reta Rechazada",
+      icon: <XCircle size={20} />,
+      iconBg: "bg-red-600/20",
+      iconColor: "text-red-400",
+    },
+    cancelled: {
+      title: "Reta Cancelada",
+      icon: <Ban size={20} />,
+      iconBg: "bg-slate-600/20",
+      iconColor: "text-slate-400",
+    },
   };
 
   return (
-    <div className="bg-slate-800/50 max-w-6xl w-84 md:w-auto self-center backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+    <div className="h-fit bg-slate-800/50 md:max-w-xl max-w-84 w-full self-center backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-green-600/20 rounded-lg">
-            <CheckCircle className="text-green-400" size={20} />
+          <div
+            className={`p-2 rounded-lg ${statusConfig[match.status].iconBg}`}
+          >
+            <span className={statusConfig[match.status].iconColor}>
+              {statusConfig[match.status].icon}
+            </span>
           </div>
           <div>
-            <h3 className="font-bold text-white">Reta Aceptada</h3>
+            <h3 className="font-bold text-white">
+              {statusConfig[match.status].title}
+            </h3>
             <p className="text-sm text-slate-400">{match.pyramidName}</p>
           </div>
         </div>
@@ -60,11 +102,12 @@ export const MatchCard = ({ match }: { match: MatchWithDetails }) => {
       </div>
 
       {/* Teams Battle Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
         {/* Challenger Team */}
-        <div
+        <button
+          onClick={() => selectWinner(match.id, match.challengerTeam.id)}
           className={`
-            relative p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer
+            relative p-4 rounded-xl md:col-span-2 border-2 transition-all duration-300 cursor-pointer
             ${
               selectedWinner[match.id] === match.challengerTeam.id
                 ? "bg-gradient-to-r from-orange-900/30 to-red-900/30 border-orange-500 shadow-orange-500/20 shadow-lg"
@@ -72,10 +115,7 @@ export const MatchCard = ({ match }: { match: MatchWithDetails }) => {
             }
           `}
         >
-          <button
-            onClick={() => selectWinner(match.id, match.challengerTeam.id)}
-            className="w-full text-left"
-          >
+          <div className="w-full text-left">
             {/* Team Role Badge */}
             <div className="flex items-center justify-between mb-3">
               <span className="px-2 py-1 bg-orange-600/20 text-orange-300 text-xs font-medium rounded-full border border-orange-500/30">
@@ -111,8 +151,8 @@ export const MatchCard = ({ match }: { match: MatchWithDetails }) => {
                 </span>
               </div>
             </div>
-          </button>
-        </div>
+          </div>
+        </button>
 
         {/* VS Section */}
         <div className="flex flex-col items-center justify-center">
@@ -131,9 +171,10 @@ export const MatchCard = ({ match }: { match: MatchWithDetails }) => {
         </div>
 
         {/* Defender Team */}
-        <div
+        <button
+          onClick={() => selectWinner(match.id, match.defenderTeam.id)}
           className={`
-            relative p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer
+            relative p-4 rounded-xl md:col-span-2 border-2 transition-all duration-300 cursor-pointer
             ${
               selectedWinner[match.id] === match.defenderTeam.id
                 ? "bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-500 shadow-blue-500/20 shadow-lg"
@@ -141,10 +182,7 @@ export const MatchCard = ({ match }: { match: MatchWithDetails }) => {
             }
           `}
         >
-          <button
-            onClick={() => selectWinner(match.id, match.defenderTeam.id)}
-            className="w-full text-left"
-          >
+          <div className="w-full text-left">
             {/* Team Role Badge */}
             <div className="flex items-center justify-between mb-3">
               <span className="px-2 py-1 bg-blue-600/20 text-blue-300 text-xs font-medium rounded-full border border-blue-500/30">
@@ -180,8 +218,8 @@ export const MatchCard = ({ match }: { match: MatchWithDetails }) => {
                 </span>
               </div>
             </div>
-          </button>
-        </div>
+          </div>
+        </button>
       </div>
 
       {/* Winner Selection Info */}
@@ -202,30 +240,34 @@ export const MatchCard = ({ match }: { match: MatchWithDetails }) => {
       )}
 
       {/* Action Buttons */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => complete(match.id)}
-          disabled={!selectedWinner[match.id] || completingMatch === match.id}
-          className={`
-              flex-1 px-6 py-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2
-              ${
-                selectedWinner[match.id]
-                  ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-lg hover:shadow-green-500/25"
-                  : "bg-slate-600/50 text-slate-400 cursor-not-allowed"
-              }
+      {(match.status === "accepted" || match.status === "pending") && (
+        <div className="flex gap-3">
+          <button
+            onClick={() => complete(match.id)}
+            disabled={!selectedWinner[match.id] || completingMatch === match.id}
+            className={`
+            flex-1 px-6 py-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2
+            ${
+              selectedWinner[match.id]
+                ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-lg hover:shadow-green-500/25"
+                : "bg-slate-600/50 text-slate-400 cursor-not-allowed"
+            }
               disabled:opacity-50
-            `}
-        >
-          {completingMatch === match.id && !match.winnerTeam ? (
-            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-          ) : (
-            <>
-              <CheckCircle size={18} />
-              <span>Completar Match</span>
-            </>
-          )}
-        </button>
-      </div>
+              `}
+          >
+            {completingMatch === match.id ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            ) : (
+              <>
+                <CheckCircle size={18} />
+                <span>Completar Match</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
+
+export default MatchCard;

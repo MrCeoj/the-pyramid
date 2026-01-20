@@ -15,13 +15,15 @@ export default async function getPyramidMatches(
         status: match.status,
         challengerTeamId: match.challengerTeamId,
         defenderTeamId: match.defenderTeamId,
+        winnerTeam: match.winnerTeamId,
         createdAt: match.createdAt,
         updatedAt: match.updatedAt,
         pyramidName: pyramid.name,
       })
       .from(match)
       .innerJoin(pyramid, eq(match.pyramidId, pyramid.id))
-      .where(eq(match.pyramidId, pyramidId)).orderBy(desc(match.updatedAt));
+      .where(eq(match.pyramidId, pyramidId))
+      .orderBy(desc(match.updatedAt));
 
     const matchesWithDetails: MatchWithDetails[] = await Promise.all(
       acceptedMatches.map(async (m) => {
@@ -75,6 +77,19 @@ export default async function getPyramidMatches(
             currentRow: defenderPos[0].row,
             currentCol: defenderPos[0].col,
           },
+          winnerTeam: !!m.winnerTeam
+            ? m.winnerTeam == m.defenderTeamId
+              ? {
+                  ...defenderTeam,
+                  currentRow: defenderPos[0].row,
+                  currentCol: defenderPos[0].col,
+                }
+              : {
+                  ...challengerTeam,
+                  currentRow: challengerPos[0].row,
+                  currentCol: challengerPos[0].col,
+                }
+            : null,
           createdAt: m.createdAt!,
           updatedAt: m.updatedAt!,
         };

@@ -1,3 +1,7 @@
+type MatchStatus = "pending" | "accepted" | "played" | "rejected" | "cancelled";
+type TeamStatus = "winner" | "looser" | "idle" | "risky";
+type TeamLastResult = "up" | "down" | "stayed" | "none";
+
 /**
  * From PositionActions, the most descriptive TeamWithPlayers type
  */
@@ -6,12 +10,12 @@ type TeamWithPlayers = {
   displayName: string;
   wins: number;
   losses: number;
-  status: "winner" | "looser" | "idle" | "risky";
+  status: TeamStatus;
   categoryId: number | null;
   categoryName: string | null;
   defendable?: boolean;
   loosingStreak: number;
-  lastResult: "up" | "down" | "stayed" | "none";
+  lastResult: TeamLastResult;
   player1: {
     id: string;
     paternalSurname: string;
@@ -33,7 +37,7 @@ type TeamWithPlayers = {
  */
 type MatchWithDetails = {
   id: number;
-  status: "pending" | "accepted" | "played" | "rejected" | "cancelled";
+  status: MatchStatus;
   createdAt: Date;
   updatedAt: Date;
   pyramidId: number;
@@ -61,7 +65,6 @@ type UnresolvedMatch = {
   status: "pending" | "accepted";
   createdAt: Date;
 };
-
 
 /**
  *
@@ -344,3 +347,20 @@ type Player = {
   nickname: string | null;
   email: string | null;
 };
+
+/**
+ * Represents a date filter configuration for querying data by date.
+ *
+ * @property {"day" | "range" | null} mode - The filtering mode: "day" for a specific date, "range" for a date range, or null for no filter
+ * @property {string | null} day - A specific date in YYYY-MM-DD format when mode is "day"
+ * @property {string | null} from - The start date in YYYY-MM-DD format when mode is "range"
+ * @property {string | null} to - The end date in YYYY-MM-DD format when mode is "range"
+ */
+type DateFilter = {
+  mode: "day" | "range" | null;
+  day: string | null;
+  from: string | null;
+  to: string | null;
+};
+
+type MatchStatusMap = Record<MatchStatus, string>;

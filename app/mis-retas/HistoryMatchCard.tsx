@@ -14,8 +14,6 @@ import { useState } from "react";
 import { cancelMatch } from "@/actions/MatchesActions";
 import toast from "react-hot-toast";
 
-
-
 const HistoryMatchCard = ({
   match,
   handleCancelMatch,

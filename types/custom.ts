@@ -19,4 +19,10 @@ export const LoginSchema = object({
   }),
 });
 
-
+export const matchStatusES: MatchStatusMap = {
+  pending: "Pendiente",
+  accepted: "Aceptado",
+  played: "Jugado",
+  rejected: "Rechazado",
+  cancelled: "Cancelado",
+};
