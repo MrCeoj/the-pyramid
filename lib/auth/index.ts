@@ -148,9 +148,6 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
 
   events: {
     async signIn({ user, account, isNewUser }) {
-      console.log(
-        `Usuario ${user.email} inicio sesion con ${account?.provider}`
-      );
       if (isNewUser && user.id) {
         try {
           const existingProfile = await db

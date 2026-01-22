@@ -127,12 +127,16 @@ const HistoryMatchCard = ({
             <h3 className="font-bold text-white">
               {statusConfig[visualStatus].title}
             </h3>
-            <p className="text-xs sm:text-sm text-slate-400">{match.pyramidName}</p>
+            <p className="text-xs sm:text-sm text-slate-400">
+              {match.pyramidName}
+            </p>
           </div>
         </div>
         <div className="text-slate-400 flex justify-end items-center gap-1 w-full">
           <Calendar size={14} />
-          <span className="text-xs sm:text-sm w-fit">{formatDate(match.updatedAt)}</span>
+          <span className="text-xs sm:text-sm w-fit">
+            {formatDate(match.updatedAt)}
+          </span>
         </div>
       </div>
 
@@ -164,6 +168,8 @@ const HistoryMatchCard = ({
             </h4>
 
             <div className="space-y-2 text-sm">
+
+              {match.status !== "rejected" && (
               <div className="flex items-center gap-2">
                 <MapPin className="text-slate-400" size={14} />
                 <span className="text-slate-300">
@@ -171,6 +177,7 @@ const HistoryMatchCard = ({
                   {match.challengerTeam.currentCol}
                 </span>
               </div>
+              )}
               <div className="flex items-center gap-4">
                 <span className="text-emerald-400">
                   {match.challengerTeam.wins}W
@@ -194,7 +201,7 @@ const HistoryMatchCard = ({
         {/* Defender Team */}
         <div
           className={`
-            relative p-4 rounded-xl md:col-span-2 border-2 transition-all duration-300 cursor-pointer
+            relative p-4 rounded-xl md:col-span-2 border-2 transition-all duration-300
             ${
               defenderWon
                 ? "bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-500 shadow-blue-500/20 shadow-lg"
@@ -216,14 +223,17 @@ const HistoryMatchCard = ({
               {match.defenderTeam.displayName}
             </h4>
 
+            {/* Position infor */}
             <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <MapPin className="text-slate-400" size={14} />
-                <span className="text-slate-300">
-                  Fila {match.defenderTeam.currentRow}, Col{" "}
-                  {match.defenderTeam.currentCol}
-                </span>
-              </div>
+              {match.status !== "rejected" && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="text-slate-400" size={14} />
+                  <span className="text-slate-300">
+                    Fila {match.defenderTeam.currentRow}, Col{" "}
+                    {match.defenderTeam.currentCol}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center gap-4">
                 <span className="text-emerald-400">
                   {match.defenderTeam.wins}W
@@ -259,7 +269,7 @@ const HistoryMatchCard = ({
 
       {/* Action Buttons */}
       {(match.status === "accepted" || match.status === "pending") && (
-        <div className="flex gap-3">
+        <div className="flex justify-end gap-3">
           {/* Cancel button */}
           <button
             onClick={() => handleCancelMatch(match.id)}
@@ -267,7 +277,7 @@ const HistoryMatchCard = ({
             title="Cancelar reta"
           >
             <X className="" size={16} />
-            <span>Cancelar Match</span>
+            <span>Cancelar Reta</span>
           </button>
         </div>
       )}

@@ -196,7 +196,6 @@ export async function getLongestReigningTeam(pyramidId: number) {
   const result = await db.execute<TopTeamResult>(query);
 
   if (result.length === 0) {
-    console.log("No team has reached the top of this pyramid yet.");
     return null;
   }
 
@@ -220,10 +219,6 @@ export async function getLongestReigningTeam(pyramidId: number) {
         }
       : null
   );
-
-  console.log(`The longest reigning team is: ${displayName}`);
-  console.log(`Total time at the top:`, topTeamData.total_duration);
-
   const parsedDuration = parsePostgreSQLInterval(topTeamData.total_duration);
 
   return {

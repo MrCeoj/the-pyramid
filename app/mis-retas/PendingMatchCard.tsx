@@ -6,9 +6,9 @@ import {
   Zap,
   AlertTriangle,
   TrendingUp,
+  MapPin,
 } from "lucide-react";
 import { useState } from "react";
-
 
 const PendingMatchCard = ({
   match,
@@ -73,14 +73,29 @@ const PendingMatchCard = ({
 
   return (
     <>
-      <div className="bg-gradient-to-r from-orange-900/20 via-red-900/10 to-gray-900/20 backdrop-blur-md border-2 border-orange-500/30 rounded-xl p-6 shadow-lg hover:shadow-orange-500/20 transition-all duration-300">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Sword className="text-orange-400" size={20} />
-            <h3 className="font-bold text-white">¡Nuevo Desafío!</h3>
+      <div className="relative h-fit bg-slate-800/50 md:max-w-xl max-w-84 w-full self-center backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+        <div
+          className="
+          pointer-events-none
+          absolute -top-24 -left-24
+          w-64 h-64
+          rounded-full
+          blur-3xl
+          bg-gradient-to-br from-orange-500/30 to-transparent
+        "
+        />
+
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-orange-600/20">
+              <Sword className="text-orange-400" size={20} />
+            </div>
+            <div>
+              <h3 className="font-bold text-white">Nuevo desafío</h3>
+              <p className="text-xs text-slate-400">{match.pyramidName}</p>
+            </div>
           </div>
-          <span className="text-sm text-slate-400">
+          <span className="text-slate-400 text-sm">
             {formatDate(match.createdAt)}
           </span>
         </div>
@@ -95,33 +110,98 @@ const PendingMatchCard = ({
               {handicapInfo.type === "advantage"
                 ? "¡Tienes ventaja!"
                 : handicapInfo.type === "warning"
-                ? "Desafío mayor"
-                : "Partida equilibrada"}
+                  ? "Desafío mayor"
+                  : "Partida equilibrada"}
             </span>
           </div>
           <p className="text-sm text-slate-200">{handicapInfo.message}</p>
         </div>
 
         {/* Teams */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex-1 text-center bg-slate-800/50 border border-gray-600/40 p-3 rounded-lg">
-            <h4 className="font-semibold text-white">
-              {match.challengerTeam.displayName}
-            </h4>
-            <p className="text-sm text-slate-400">
-              Categoría {match.challengerTeam.categoryId}
-            </p>
-            <span className="text-xs text-orange-300">Retador</span>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+          {/* Attacker Team */}
+          <div className="relative p-4 rounded-xl md:col-span-2 border-2 transition-all duration-300 bg-slate-700/30 border-slate-600/50 hover:border-orange-400/50">
+            <div className="w-full text-left">
+              {/* Team Role Badge */}
+              <div className="flex items-center justify-between mb-3">
+                <span className="px-2 py-1 bg-orange-600/20 text-orange-300 text-xs font-medium rounded-full border border-orange-500/30">
+                  Atacante
+                </span>
+              </div>
+
+              {/* Team Info */}
+              <h4 className="font-bold text-lg text-white mb-2">
+                {match.challengerTeam.displayName}
+              </h4>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <MapPin className="text-slate-400" size={14} />
+                  <span className="text-slate-300">
+                    Fila {match.challengerTeam.currentRow}, Col{" "}
+                    {match.challengerTeam.currentCol}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-emerald-400">
+                    {match.challengerTeam.wins}W
+                  </span>
+                  <span className="text-red-400">
+                    {match.challengerTeam.losses}L
+                  </span>
+                  <span className="text-purple-400">
+                    Cat. {match.challengerTeam.categoryId}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-2xl text-orange-400">VS</div>
-          <div className="flex-1 text-center bg-blue-900/20 p-3 rounded-lg border border-blue-500/30">
-            <h4 className="font-semibold text-white">
-              {match.defenderTeam.displayName}
-            </h4>
-            <p className="text-sm text-slate-400">
-              Categoría {match.defenderTeam.categoryId}
-            </p>
-            <span className="text-xs text-blue-300">Tu equipo</span>
+
+          {/* VS Section */}
+          <div className="flex flex-col items-center justify-center">
+            <div className="text-4xl font-bold text-orange-400 mb-2">VS</div>
+          </div>
+
+          {/* Defender Team */}
+          <div
+            className="
+            relative p-4 rounded-xl md:col-span-2 border-2 transition-all duration-300
+            bg-slate-700/30 border-slate-600/50 hover:border-blue-400/50"
+          >
+            <div className="w-full text-left">
+              {/* Team Role Badge */}
+              <div className="flex items-center justify-between mb-3">
+                <span className="px-2 py-1 bg-blue-600/20 text-blue-300 text-xs font-medium rounded-full border border-blue-500/30">
+                  Defensor
+                </span>
+              </div>
+
+              {/* Team Info */}
+              <h4 className="font-bold text-lg text-white mb-2">
+                {match.defenderTeam.displayName}
+              </h4>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <MapPin className="text-slate-400" size={14} />
+                  <span className="text-slate-300">
+                    Fila {match.defenderTeam.currentRow}, Col{" "}
+                    {match.defenderTeam.currentCol}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-emerald-400">
+                    {match.defenderTeam.wins}W
+                  </span>
+                  <span className="text-red-400">
+                    {match.defenderTeam.losses}L
+                  </span>
+                  <span className="text-purple-400">
+                    Cat. {match.defenderTeam.categoryId}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -217,7 +297,8 @@ const PendingMatchCard = ({
 
             <div className="bg-red-950/30 border border-red-600/30 rounded-lg p-3 mb-4">
               <p className="text-sm text-red-200 text-center">
-                Solo puedes rechazar hasta 2 partidos si no has participado en la semana.
+                Solo puedes rechazar hasta 2 partidos si no has participado en
+                la semana.
               </p>
             </div>
 

@@ -43,8 +43,6 @@ export async function getCurrentTeamDurationInPosition(teamId: number) {
   const totalHours = days * 24 + hours;
   const format = formatDuration(days, hours, minutes);
 
-  console.log(`Time since they took the top:`, format);
-
   return {
     totalDays: days,
     totalHours,

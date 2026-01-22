@@ -33,14 +33,10 @@ export async function updatePyramid(id: number, data: UpdatePyramidData): Promis
       const incoming = new Set(data.categories);
       const existing = new Set(catsInPyr);
 
-      console.log("incoming", incoming, "existing", existing);
-
       const toAdd = [...incoming].filter((cat) => !existing.has(cat));
       const toRemove = new Set(
         [...existing].filter((cat) => !incoming.has(cat)),
       );
-
-      console.log("toadd", toAdd, "toremove", toRemove);
 
       if (toAdd.length > 0) {
         await tx.insert(pyramidCategory).values(

@@ -55,7 +55,6 @@ export default function UserDropdownMenu() {
 
     try {
       const result = await processExpiredMatches(session.user.id);
-      console.log(result)
       if (result && result.success && result.expired > 0) {
         setIsExpiredMatchesModalOpen(true);
       }

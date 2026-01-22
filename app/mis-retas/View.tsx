@@ -177,7 +177,7 @@ const MatchesPage = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-indor-black border-2 max-w-[95%] min-w-[80%] self-center border-black rounded-xl mb-8">
+        <div className="flex bg-indor-black border-2 max-w-dvw min-w-[80%] self-center border-black rounded-xl mb-8">
           <button
             onClick={() => setActiveTab("pending")}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -218,7 +218,7 @@ const MatchesPage = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
-              className="space-y-6"
+              className="space-y-6 flex flex-col"
             >
               {filteredPendingMatches.length > 0 ? (
                 filteredPendingMatches.map((match) => (
