@@ -54,7 +54,7 @@ export async function completeMatch(
     await db.transaction(async (tx) => {
       await updateMatchStatus(tx, matchId, winnerTeamId);
 
-      await updateTeamsAfterMatch(tx, winnerTeamId, loserTeamId);
+      await updateTeamsAfterMatch(tx, winnerTeamId, loserTeamId, pyramidId);
 
       await swapPositionsIfNeeded(
         tx,

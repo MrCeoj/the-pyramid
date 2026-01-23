@@ -4,7 +4,10 @@ import { position, match } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { getPreviousMonday } from "@/lib/utils";
 
-export default async function getRejectedAmount(teamId: number) {
+export default async function getRejectedAmount(
+  teamId: number,
+  pyramidId: number,
+) {
   try {
     const prevMonday = await getPreviousMonday();
     const currMonday = await getPreviousMonday(false);
@@ -18,11 +21,11 @@ export default async function getRejectedAmount(teamId: number) {
         and(
           or(
             eq(match.challengerTeamId, teamId),
-            eq(match.defenderTeamId, teamId)
+            eq(match.defenderTeamId, teamId),
           ),
           gte(match.updatedAt, prevMonday),
-          eq(match.status, "played")
-        )
+          eq(match.status, "played"),
+        ),
       );
 
     let matchesPlayed = prevWeekMatchesCount.count ?? 0;
@@ -40,11 +43,12 @@ export default async function getRejectedAmount(teamId: number) {
         and(
           or(
             eq(match.challengerTeamId, teamId),
-            eq(match.defenderTeamId, teamId)
+            eq(match.defenderTeamId, teamId),
           ),
+          eq(match.pyramidId, pyramidId),
           gte(match.updatedAt, currMonday),
-          eq(match.status, "played")
-        )
+          eq(match.status, "played"),
+        ),
       );
 
     matchesPlayed = currWeekMatchesCount.count ?? 0;
@@ -56,7 +60,9 @@ export default async function getRejectedAmount(teamId: number) {
     const teamData = await db
       .select({ rejected: position.amountRejected })
       .from(position)
-      .where(eq(position.teamId, teamId))
+      .where(
+        and(eq(position.pyramidId, pyramidId), eq(position.teamId, teamId)),
+      )
       .limit(1);
 
     if (!teamData.length) {

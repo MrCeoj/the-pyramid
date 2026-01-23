@@ -13,10 +13,10 @@ import getRejectedAmount from "./GetRejectedAmount";
 
 export async function rejectMatch(
   matchId: number,
-  userId: string
+  userId: string,
 ): Promise<MatchResult> {
   try {
-    const matchArr = await db
+    const [matchData] = await db
       .select({
         defenderTeamId: match.defenderTeamId,
         attackerTeamId: match.challengerTeamId,
@@ -27,11 +27,9 @@ export async function rejectMatch(
       .where(eq(match.id, matchId))
       .limit(1);
 
-    if (!matchArr.length) {
+    if (!matchData) {
       return { success: false, message: "Desafío no encontrado" };
     }
-
-    const matchData = matchArr[0];
 
     if (matchData.status !== "pending") {
       return { success: false, message: "Este desafío ya no está pendiente" };
@@ -55,11 +53,11 @@ export async function rejectMatch(
         and(
           or(
             eq(match.defenderTeamId, matchData.defenderTeamId),
-            eq(match.challengerTeamId, matchData.defenderTeamId)
+            eq(match.challengerTeamId, matchData.defenderTeamId),
           ),
           gte(match.updatedAt, monday),
-          eq(match.status, "played")
-        )
+          eq(match.status, "played"),
+        ),
       );
 
     const playedMatchesThisWeek = matchCountResult[0]?.count ?? 0;
@@ -68,15 +66,18 @@ export async function rejectMatch(
 
     // Only check rejected count if no match played this week
     if (playedMatchesThisWeek < 2) {
-      const amount = await getRejectedAmount(matchData.defenderTeamId);
+      const amount = await getRejectedAmount(
+        matchData.defenderTeamId,
+        matchData.pyramidId,
+      );
 
       if (amount === null || amount === undefined)
         throw new Error(
-          "Error al conseguir cantidad de partidas rechazadas. Null"
+          "Error al conseguir cantidad de partidas rechazadas. Null",
         );
       if (typeof amount !== "number")
         throw new Error(
-          "Error al conseguir cantidad de partidas rechazadas. Error"
+          "Error al conseguir cantidad de partidas rechazadas. Error",
         );
 
       rejectedMatches = amount;
@@ -113,7 +114,12 @@ export async function rejectMatch(
         .set({
           amountRejected: playedMatchesThisWeek >= 2 ? 0 : rejectedMatches + 1,
         })
-        .where(eq(position.teamId, matchData.defenderTeamId));
+        .where(
+          and(
+            eq(position.pyramidId, matchData.pyramidId),
+            eq(position.teamId, matchData.defenderTeamId),
+          ),
+        );
     });
 
     if (attacker && defender && playedMatchesThisWeek < 2) {

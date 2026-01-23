@@ -50,6 +50,7 @@ export async function updateTeamsAfterMatch(
   tx: DbTransaction,
   winnerTeamId: number,
   loserTeamId: number,
+  pyramidId: number,
 ) {
   await tx
     .update(position)
@@ -62,7 +63,12 @@ export async function updateTeamsAfterMatch(
       status: "winner",
       updatedAt: new Date(),
     })
-    .where(inArray(position.teamId, [winnerTeamId, loserTeamId]));
+    .where(
+      and(
+        eq(position.pyramidId, pyramidId),
+        inArray(position.teamId, [winnerTeamId, loserTeamId]),
+      ),
+    );
 
   await tx
     .update(position)
@@ -74,7 +80,7 @@ export async function updateTeamsAfterMatch(
       status: "loser",
       updatedAt: new Date(),
     })
-    .where(eq(team.id, loserTeamId));
+    .where(and(eq(position.pyramidId, pyramidId),eq(team.id, loserTeamId)));
 }
 
 export async function swapPositionsIfNeeded(

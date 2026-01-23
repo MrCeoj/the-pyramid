@@ -15,12 +15,12 @@ import {
 
 export async function acceptMatch(
   matchId: number,
-  userId: string
+  userId: string,
 ): Promise<MatchResult> {
   try {
     return await db.transaction(async (tx) => {
       // 1. Get all necessary match info at once
-      const matchArr = await tx
+      const [currentMatch] = await tx
         .select({
           status: match.status,
           defenderTeamId: match.defenderTeamId,
@@ -31,11 +31,9 @@ export async function acceptMatch(
         .where(eq(match.id, matchId))
         .limit(1);
 
-      if (!matchArr.length) {
+      if (!currentMatch) {
         return { success: false, message: "Desafío no encontrado" };
       }
-
-      const currentMatch = matchArr[0];
 
       if (currentMatch.status !== "pending") {
         return { success: false, message: "Este desafío ya no está pendiente" };
@@ -66,7 +64,7 @@ export async function acceptMatch(
 
       if (!attacker || !defender) {
         throw new Error(
-          "No se pudieron obtener los datos completos de los equipos."
+          "No se pudieron obtener los datos completos de los equipos.",
         );
       }
 
@@ -75,10 +73,13 @@ export async function acceptMatch(
         .update(position)
         .set({ defendable: true })
         .where(
-          inArray(position.teamId, [
-            currentMatch.defenderTeamId,
-            currentMatch.attackerTeamId,
-          ])
+          and(
+            eq(position.pyramidId, match.pyramidId),
+            inArray(position.teamId, [
+              currentMatch.defenderTeamId,
+              currentMatch.attackerTeamId,
+            ]),
+          ),
         );
 
       const affectedMatches = await tx
@@ -95,9 +96,9 @@ export async function acceptMatch(
               eq(match.defenderTeamId, currentMatch.defenderTeamId),
               eq(match.defenderTeamId, currentMatch.attackerTeamId),
               eq(match.challengerTeamId, currentMatch.defenderTeamId),
-              eq(match.challengerTeamId, currentMatch.attackerTeamId)
-            )
-          )
+              eq(match.challengerTeamId, currentMatch.attackerTeamId),
+            ),
+          ),
         );
 
       const matchesIds = new Set<number>();
@@ -114,11 +115,11 @@ export async function acceptMatch(
       teamsIds.delete(currentMatch.defenderTeamId);
 
       const cancelledTeams = await getBulkTeamsWithPlayers(
-        Array.from(teamsIds)
+        Array.from(teamsIds),
       );
 
       const validRecipients = cancelledTeams.filter(
-        Boolean
+        Boolean,
       ) as TeamWithPlayers[];
 
       await tx
@@ -129,7 +130,12 @@ export async function acceptMatch(
       await tx
         .update(position)
         .set({ amountRejected: 0 })
-        .where(eq(position.teamId, defender.id));
+        .where(
+          and(
+            eq(position.pyramidId, match.pyramidId),
+            eq(position.teamId, defender.id),
+          ),
+        );
 
       await sendAcceptMail(attacker, defender, currentMatch.pyramidId);
       if (validRecipients.length > 0) {
@@ -137,7 +143,7 @@ export async function acceptMatch(
           validRecipients,
           attacker,
           defender,
-          currentMatch.pyramidId
+          currentMatch.pyramidId,
         );
       }
 

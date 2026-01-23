@@ -34,8 +34,8 @@ export async function processExpiredMatches(userId: string) {
           and(
             eq(match.status, "pending"),
             eq(match.defenderTeamId, teamId),
-            lt(match.createdAt, new Date(Date.now() - 48 * 60 * 60 * 1000))
-          )
+            lt(match.createdAt, new Date(Date.now() - 48 * 60 * 60 * 1000)),
+          ),
         );
 
       if (expired.length <= 0) {
@@ -53,9 +53,9 @@ export async function processExpiredMatches(userId: string) {
             gte(match.updatedAt, twoWeeksAgoMonday),
             or(
               eq(match.challengerTeamId, teamId),
-              eq(match.defenderTeamId, teamId)
-            )
-          )
+              eq(match.defenderTeamId, teamId),
+            ),
+          ),
         );
 
       const recentCount = recentMatches.length;
@@ -78,7 +78,9 @@ export async function processExpiredMatches(userId: string) {
         .select({ id: pyramid.id, rowAmount: pyramid.row_amount })
         .from(position)
         .leftJoin(pyramid, eq(pyramid.id, position.pyramidId))
-        .where(eq(position.teamId, teamId))
+        .where(
+          and(eq(position.pyramidId, pyramid.id), eq(position.teamId, teamId)),
+        )
         .limit(1);
 
       if (!pyramidInfo || !pyramidInfo.id)
@@ -104,8 +106,8 @@ export async function processExpiredMatches(userId: string) {
         .where(
           and(
             eq(position.pyramidId, pyramidInfo.id),
-            eq(position.teamId, teamId)
-          )
+            eq(position.teamId, teamId),
+          ),
         )
         .limit(1);
 
@@ -132,8 +134,8 @@ export async function processExpiredMatches(userId: string) {
             and(
               eq(position.pyramidId, pyramidInfo.id),
               eq(position.row, nextPos.row),
-              eq(position.col, nextPos.col)
-            )
+              eq(position.col, nextPos.col),
+            ),
           )
           .limit(1);
 
@@ -144,8 +146,8 @@ export async function processExpiredMatches(userId: string) {
             .where(
               and(
                 eq(position.pyramidId, pyramidInfo.id),
-                eq(position.teamId, teamId)
-              )
+                eq(position.teamId, teamId),
+              ),
             );
 
           await tx
@@ -154,8 +156,8 @@ export async function processExpiredMatches(userId: string) {
             .where(
               and(
                 eq(position.pyramidId, pyramidInfo.id),
-                eq(position.teamId, nextTeam.teamId)
-              )
+                eq(position.teamId, nextTeam.teamId),
+              ),
             );
 
           await tx
@@ -164,19 +166,29 @@ export async function processExpiredMatches(userId: string) {
             .where(
               and(
                 eq(position.pyramidId, pyramidInfo.id),
-                eq(position.teamId, teamId)
-              )
+                eq(position.teamId, teamId),
+              ),
             );
 
           await tx
             .update(position)
             .set({ lastResult: "down" })
-            .where(eq(position.teamId, teamId));
+            .where(
+              and(
+                eq(position.pyramidId, pyramidInfo.id),
+                eq(position.teamId, teamId),
+              ),
+            );
 
           await tx
             .update(position)
             .set({ lastResult: "up" })
-            .where(eq(position.teamId, nextTeam.id));
+            .where(
+              and(
+                eq(position.pyramidId, pyramidInfo.id),
+                eq(position.teamId, nextTeam.id),
+              ),
+            );
 
           await tx.insert(positionHistory).values([
             {

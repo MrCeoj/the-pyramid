@@ -28,7 +28,7 @@ export async function setTeamInPosition(
     }
 
     // Check if position already exists
-    const existingPosition = await db
+    const [existingPosition] = await db
       .select()
       .from(position)
       .where(
@@ -43,9 +43,9 @@ export async function setTeamInPosition(
     let displacedTeamId: number | null = null;
 
     await db.transaction(async (tx) => {
-      if (existingPosition.length > 0) {
+      if (!!existingPosition) {
         // Store the displaced team info for history
-        displacedTeamId = existingPosition[0].teamId;
+        displacedTeamId = existingPosition.teamId;
 
         // Record the displacement/removal of the old team
         await tx.insert(positionHistory).values({
@@ -71,7 +71,7 @@ export async function setTeamInPosition(
             teamId,
             updatedAt: new Date(),
           })
-          .where(eq(position.id, existingPosition[0].id))
+          .where(eq(position.id, existingPosition.id))
           .returning();
 
         if (result.length === 0) {

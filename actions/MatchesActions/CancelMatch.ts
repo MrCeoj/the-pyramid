@@ -1,6 +1,6 @@
 "use server";
 import { db } from "@/lib/drizzle";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, and } from "drizzle-orm";
 import { match, position } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { sendCancelMail } from "@/actions/MailActions";
@@ -34,7 +34,12 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
       await tx
         .update(position)
         .set({ defendable: false })
-        .where(inArray(position.teamId, involvedTeams));
+        .where(
+          and(
+            eq(position.pyramidId, match.pyramidId),
+            inArray(position.teamId, involvedTeams),
+          ),
+        );
 
       await tx
         .update(match)
@@ -51,7 +56,7 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
 
       if (!attacker || !defender) {
         throw new Error(
-          "No se pudieron obtener los datos completos de los equipos."
+          "No se pudieron obtener los datos completos de los equipos.",
         );
       }
 
@@ -59,7 +64,7 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
 
       revalidatePath("/mis-retas");
       revalidatePath("/retas");
-      revalidatePath("/")
+      revalidatePath("/");
 
       return {
         success: true,
