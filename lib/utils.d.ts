@@ -10,3 +10,4 @@ export declare function debounce<T extends (...args: any[]) => any>(func: T, wai
 export declare function throttle<T extends (...args: any[]) => any>(func: T, limit: number): (...args: Parameters<T>) => void;
 export declare function getPreviousMonday(previous = true, date: Date = new Date()): Promise<Date>
 export declare function getUserDisplayName(paternalSurname: string, maternalSurname: string, nickname?: string | null): string
+export declare function getTeamDisplayName(player1: TeamWithPlayers["player1"], player2: TeamWithPlayers["player2"]): string
