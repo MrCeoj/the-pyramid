@@ -74,7 +74,7 @@ export async function acceptMatch(
         .set({ defendable: true })
         .where(
           and(
-            eq(position.pyramidId, match.pyramidId),
+            eq(position.pyramidId, currentMatch.pyramidId),
             inArray(position.teamId, [
               currentMatch.defenderTeamId,
               currentMatch.attackerTeamId,
@@ -132,7 +132,7 @@ export async function acceptMatch(
         .set({ amountRejected: 0 })
         .where(
           and(
-            eq(position.pyramidId, match.pyramidId),
+            eq(position.pyramidId, currentMatch.pyramidId),
             eq(position.teamId, defender.id),
           ),
         );
