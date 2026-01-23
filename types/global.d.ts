@@ -1,5 +1,13 @@
-type MatchStatus = "pending" | "accepted" | "played" | "rejected" | "cancelled";
-type TeamStatus = "winner" | "looser" | "idle" | "risky";
+type MatchStatus =
+  | "pending"
+  | "accepted"
+  | "rejected"
+  | "cancelled"
+  | "voided"
+  | "scoring"
+  | "scored"
+  | "played";
+type TeamStatus = "winner" | "loser" | "idle" | "risky";
 type TeamLastResult = "up" | "down" | "stayed" | "none";
 
 /**
@@ -14,7 +22,7 @@ type TeamWithPlayers = {
   categoryId: number | null;
   categoryName: string | null;
   defendable?: boolean;
-  loosingStreak: number;
+  losingStreak: number;
   lastResult: TeamLastResult;
   player1: {
     id: string;
@@ -51,7 +59,6 @@ type MatchWithDetails = {
     currentCol?: number | null;
   };
   winnerTeam?: TeamWithPlayers | null;
-  evidenceUrl?: string | null;
 };
 
 /**

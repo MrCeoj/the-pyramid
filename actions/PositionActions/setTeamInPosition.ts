@@ -1,4 +1,4 @@
-"use server"
+"use server";
 import { position, positionHistory } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { and, eq } from "drizzle-orm";
@@ -8,7 +8,7 @@ export async function setTeamInPosition(
   pyramidId: number,
   teamId: number,
   row: number,
-  col: number
+  col: number,
 ) {
   try {
     // Check if team is already positioned in this pyramid
@@ -16,7 +16,7 @@ export async function setTeamInPosition(
       .select()
       .from(position)
       .where(
-        and(eq(position.pyramidId, pyramidId), eq(position.teamId, teamId))
+        and(eq(position.pyramidId, pyramidId), eq(position.teamId, teamId)),
       )
       .limit(1);
 
@@ -35,8 +35,8 @@ export async function setTeamInPosition(
         and(
           eq(position.pyramidId, pyramidId),
           eq(position.row, row),
-          eq(position.col, col)
-        )
+          eq(position.col, col),
+        ),
       )
       .limit(1);
 

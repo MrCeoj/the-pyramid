@@ -29,7 +29,7 @@ const SetTeamModal = ({
     switch (status) {
       case "winner":
         return "text-green-800 bg-green-200";
-      case "looser":
+      case "loser":
         return "text-red-800 bg-red-200";
       case "risky":
         return "text-yellow-800 bg-yellow-200";
@@ -54,7 +54,7 @@ const SetTeamModal = ({
     switch(status){
         case "winner":
             return "Ganador"
-        case "looser":
+        case "loser":
             return "Perdedor"
         case "idle":
             return "Activo"

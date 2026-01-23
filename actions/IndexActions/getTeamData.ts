@@ -1,23 +1,25 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { eq } from "drizzle-orm";
-import { team, profile, users, getTeamDisplayName } from "@/db/schema";
+import { getTeamDisplayName } from "@/lib/utils";
+import { team, profile, users, position } from "@/db/schema";
 
 export async function getTeamData(teamId: number): Promise<TeamWithPlayers | null> {
   try {
     const teamData = await db
       .select({
         id: team.id,
-        wins: team.wins,
-        losses: team.losses,
-        status: team.status,
-        loosingStreak: team.loosingStreak,
-        lastResult: team.lastResult,
+        wins: position.wins,
+        losses: position.losses,
+        status: position.status,
+        losingStreak: position.losingStreak,
+        lastResult: position.lastResult,
         categoryId: team.categoryId,
         player1Id: team.player1Id,
         player2Id: team.player2Id,
       })
       .from(team)
+      .innerJoin(position, eq(team.id, position.teamId))
       .where(eq(team.id, teamId))
       .limit(1);
 
@@ -79,7 +81,7 @@ export async function getTeamData(teamId: number): Promise<TeamWithPlayers | nul
       wins: teamData[0].wins || 0,
       losses: teamData[0].losses || 0,
       status: teamData[0].status || "idle",
-      loosingStreak: teamData[0].loosingStreak || 0,
+      losingStreak: teamData[0].losingStreak || 0,
       lastResult: teamData[0].lastResult || "none",
       categoryId: teamData[0].categoryId,
       categoryName: null,

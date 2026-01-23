@@ -21,8 +21,7 @@ export async function createTeam(data: {
       .values({
         player1Id: data.player1Id || null,
         player2Id: data.player2Id || null,
-        categoryId: data.categoryId,
-        status: "idle",
+        categoryId: data.categoryId
       })
       .returning();
 

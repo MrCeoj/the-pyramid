@@ -1,9 +1,9 @@
 "use server"
 
-import { category, users, profile, team } from "@/db/schema";
+import { category, users, profile, team, position} from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { eq, aliasedTable } from "drizzle-orm";
-import { getTeamDisplayName } from "@/db/schema";
+import { getTeamDisplayName } from "@/lib/utils";
 
 /**
  * Fetches all teams with their associated players, profiles, and categories.
@@ -19,11 +19,11 @@ export async function getTeams(): Promise<TeamWithPlayers[]> {
       .select({
         team: {
           id: team.id,
-          wins: team.wins,
-          losses: team.losses,
-          status: team.status,
-          loosingStreak: team.loosingStreak,
-          lastResult: team.lastResult,
+          wins: position.wins,
+          losses: position.losses,
+          status: position.status,
+          losingStreak: position.losingStreak,
+          lastResult: position.lastResult,
         },
         category,
         user1: {
@@ -44,6 +44,7 @@ export async function getTeams(): Promise<TeamWithPlayers[]> {
         },
       })
       .from(team)
+      .innerJoin(position, eq(position.teamId, team.id))
       .leftJoin(category, eq(team.categoryId, category.id))
       .leftJoin(user1, eq(team.player1Id, user1.id))
       .leftJoin(profile1, eq(user1.id, profile1.userId))
@@ -93,7 +94,7 @@ export async function getTeams(): Promise<TeamWithPlayers[]> {
         status: row.team.status!,
         categoryId: row.category!.id,
         categoryName: row.category!.name,
-        loosingStreak: row.team.loosingStreak!,
+        losingStreak: row.team.losingStreak!,
         lastResult: row.team.lastResult!,
         team: row.team,
         player1: player1,

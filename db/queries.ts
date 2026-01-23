@@ -1,6 +1,6 @@
 import { db } from "@/lib/drizzle"; // Your Drizzle instance
 import { sql } from "drizzle-orm";
-import { getTeamDisplayName } from "@/db/schema"; // Import your helper function
+import { getTeamDisplayName } from "@/lib/utils"; // Import your helper function
 
 type TopTeamResult = {
   team_id: number;

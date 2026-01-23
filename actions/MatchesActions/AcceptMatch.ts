@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { eq, and, or, inArray } from "drizzle-orm";
-import { match, team } from "@/db/schema";
+import { match, position } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import {
   sendAcceptMail,
@@ -72,10 +72,10 @@ export async function acceptMatch(
 
       // Mark both teams as defendable
       await tx
-        .update(team)
+        .update(position)
         .set({ defendable: true })
         .where(
-          inArray(team.id, [
+          inArray(position.teamId, [
             currentMatch.defenderTeamId,
             currentMatch.attackerTeamId,
           ])
@@ -127,9 +127,9 @@ export async function acceptMatch(
         .where(inArray(match.id, Array.from(matchesIds)));
 
       await tx
-        .update(team)
+        .update(position)
         .set({ amountRejected: 0 })
-        .where(eq(team.id, defender.id));
+        .where(eq(position.teamId, defender.id));
 
       await sendAcceptMail(attacker, defender, currentMatch.pyramidId);
       if (validRecipients.length > 0) {

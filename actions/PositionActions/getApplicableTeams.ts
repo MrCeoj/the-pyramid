@@ -3,12 +3,13 @@ import {
   category,
   pyramidCategory,
   team,
+  position,
   users,
-  profile,
-  getTeamDisplayName,
+  profile
 } from "@/db/schema";
+import { getTeamDisplayName } from "@/lib/utils";
 import { db } from "@/lib/drizzle";
-import { eq, inArray, or } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 export async function getApplicableTeams(
   pyramidId: number,
@@ -31,12 +32,12 @@ export async function getApplicableTeams(
     const teamsData = await db
       .select({
         id: team.id,
-        wins: team.wins,
-        losses: team.losses,
-        status: team.status,
+        wins: position.wins,
+        losses: position.losses,
+        status: position.status,
         categoryId: team.categoryId,
-        loosingStreak: team.loosingStreak,
-        lastResult: team.lastResult,
+        losingStreak: position.losingStreak,
+        lastResult: position.lastResult,
         player1Id: team.player1Id,
         player2Id: team.player2Id,
         player1PaternalSurname: users.paternalSurname,
@@ -86,7 +87,7 @@ export async function getApplicableTeams(
           wins: teamData.wins || 0,
           losses: teamData.losses || 0,
           status: teamData.status || "idle",
-          loosingStreak: teamData.loosingStreak || 0,
+          losingStreak: teamData.losingStreak || 0,
           lastResult: teamData.lastResult || "none",
           categoryId: teamData.categoryId,
           categoryName: null,

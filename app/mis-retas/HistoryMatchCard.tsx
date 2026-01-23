@@ -95,6 +95,27 @@ const HistoryMatchCard = ({
       iconColor: "text-slate-400",
       glow: "from-white/20",
     },
+    voided: {
+      title: "Reta Anulada",
+      icon: <Ban size={20} />,
+      iconBg: "bg-slate-600/20",
+      iconColor: "text-slate-400",
+      glow: "from-white/20",
+    },
+    scored: {
+      title: "Terminada",
+      icon: <Ban size={20} />,
+      iconBg: "bg-slate-600/20",
+      iconColor: "text-slate-400",
+      glow: "from-white/20",
+    },
+    scoring: {
+      title: "Anotando Puntaje...",
+      icon: <Ban size={20} />,
+      iconBg: "bg-slate-600/20",
+      iconColor: "text-slate-400",
+      glow: "from-white/20",
+    },
   };
 
   return (
@@ -168,15 +189,14 @@ const HistoryMatchCard = ({
             </h4>
 
             <div className="space-y-2 text-sm">
-
               {match.status !== "rejected" && (
-              <div className="flex items-center gap-2">
-                <MapPin className="text-slate-400" size={14} />
-                <span className="text-slate-300">
-                  Fila {match.challengerTeam.currentRow}, Col{" "}
-                  {match.challengerTeam.currentCol}
-                </span>
-              </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="text-slate-400" size={14} />
+                  <span className="text-slate-300">
+                    Fila {match.challengerTeam.currentRow}, Col{" "}
+                    {match.challengerTeam.currentCol}
+                  </span>
+                </div>
               )}
               <div className="flex items-center gap-4">
                 <span className="text-emerald-400">

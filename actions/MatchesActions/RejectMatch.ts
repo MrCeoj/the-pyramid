@@ -1,6 +1,6 @@
 "use server";
 import { eq, and, or, gte, sql } from "drizzle-orm";
-import { match, team } from "@/db/schema";
+import { match, position } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { revalidatePath } from "next/cache";
 import { sendRejectMail } from "@/actions/MailActions";
@@ -109,11 +109,11 @@ export async function rejectMatch(
         .where(eq(match.id, matchId));
 
       await tx
-        .update(team)
+        .update(position)
         .set({
           amountRejected: playedMatchesThisWeek >= 2 ? 0 : rejectedMatches + 1,
         })
-        .where(eq(team.id, matchData.defenderTeamId));
+        .where(eq(position.teamId, matchData.defenderTeamId));
     });
 
     if (attacker && defender && playedMatchesThisWeek < 2) {

@@ -127,6 +127,13 @@
       "when": 1760637949676,
       "tag": "0017_watery_the_stranger",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1769193348817,
+      "tag": "0018_sparkling_the_phantom",
+      "breakpoints": true
     }
   ]
 }

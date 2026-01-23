@@ -21,12 +21,8 @@ const EditTeamForm = ({
 }) => {
   const [formData, setFormData] = useState({
     categoryId: teamData.categoryId,
-    status: teamData.status || "idle",
     player1Id: teamData.player1?.id || "",
     player2Id: teamData.player2?.id || "",
-    defended: teamData.defendable || false,
-    lastResult: teamData.lastResult || "stayed",
-    loosingStreak: teamData.loosingStreak || 0,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -47,30 +43,16 @@ const EditTeamForm = ({
     originalData: TeamWithPlayers,
     updatedData: {
       categoryId: number | null;
-      status: "idle" | "risky" | "winner" | "looser";
       player1Id: string;
       player2Id: string;
-      defended: boolean;
-      lastResult: "up" | "down" | "stayed" | "none";
-      loosingStreak: number;
     },
   ) => {
     const promises = [];
 
-    if (
-      originalData.categoryId !== updatedData.categoryId ||
-      originalData.status !== updatedData.status ||
-      originalData.lastResult !== updatedData.lastResult ||
-      originalData.defendable !== updatedData.defended ||
-      originalData.loosingStreak !== updatedData.loosingStreak
-    ) {
+    if (originalData.categoryId !== updatedData.categoryId) {
       promises.push(
         updateTeam(teamId, {
           categoryId: updatedData.categoryId!,
-          status: updatedData.status,
-          lastResult: updatedData.lastResult,
-          defendable: updatedData.defended,
-          loosingStreak: updatedData.loosingStreak,
         }),
       );
     }
@@ -146,101 +128,6 @@ const EditTeamForm = ({
               ))}
             </select>
           </div>
-
-          {/* Losing streak */}
-          <div className="w-1/2">
-            <label className="block mb-1 text-sm font-medium text-white">
-              Racha de derrotas
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={formData.loosingStreak}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "");
-                setFormData({
-                  ...formData,
-                  loosingStreak: value === "" ? 0 : Number(value),
-                });
-              }}
-              onFocus={(e) => {
-                if (e.target.value === "0") {
-                  e.target.select();
-                }
-              }}
-              className="w-full px-3 py-2 text-white border border-gray-600 rounded-md bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indor-orange"
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-between">
-          {/* Status */}
-          <div className="w-5/12">
-            <label className="block mb-1 text-sm font-medium text-white">
-              Estado actual
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  status: e.target.value as
-                    | "looser"
-                    | "winner"
-                    | "idle"
-                    | "risky",
-                })
-              }
-              className="w-full px-3 py-2 text-white border border-gray-600 rounded-md bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indor-orange"
-            >
-              <option value="idle">Neutral</option>
-              <option value="winner">Ganador</option>
-              <option value="looser">Perdedor</option>
-              <option value="risky">En riesgo</option>
-            </select>
-          </div>
-
-          {/* Last result */}
-          <div className="w-1/2">
-            <label className="block mb-1 text-sm font-medium text-white">
-              Último movimiento
-            </label>
-            <select
-              value={formData.lastResult}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  lastResult: e.target.value as
-                    | "up"
-                    | "down"
-                    | "stayed"
-                    | "none",
-                })
-              }
-              className="w-full px-3 py-2 text-white border border-gray-600 rounded-md bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indor-orange"
-            >
-              <option value="up">Subió</option>
-              <option value="down">Bajó</option>
-              <option value="stayed">Se mantuvo</option>
-              <option value="none">Ninguno</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Defended checkbox */}
-        <div className="flex items-center gap-2 pt-2 px-1.5 w-full">
-          <input
-            type="checkbox"
-            id="defended"
-            checked={formData.defended}
-            onChange={(e) =>
-              setFormData({ ...formData, defended: e.target.checked })
-            }
-            className="w-5 h-5 border-gray-600 focus:ring-indor-orange accent-emerald-600"
-          />
-          <label htmlFor="defended" className="text-md font-medium text-white">
-            Con escudo
-          </label>
         </div>
       </div>
       {/* Buttons */}

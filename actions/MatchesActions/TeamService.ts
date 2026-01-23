@@ -1,8 +1,8 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { eq, or, inArray } from "drizzle-orm";
-import { team, profile, users } from "@/db/schema";
-import { getTeamDisplayName } from "@/db/schema";
+import { team, profile, users, position } from "@/db/schema";
+import { getTeamDisplayName } from "@/lib/utils";
 
 export async function getTeamWithPlayers(
   teamId: number,
@@ -11,16 +11,17 @@ export async function getTeamWithPlayers(
     const [teamRecord] = await db
       .select({
         id: team.id,
-        wins: team.wins,
-        losses: team.losses,
-        status: team.status,
-        loosingStreak: team.loosingStreak,
-        lastResult: team.lastResult,
+        wins: position.wins,
+        losses: position.losses,
+        status: position.status,
+        losingStreak: position.losingStreak,
+        lastResult: position.lastResult,
         categoryId: team.categoryId,
         player1Id: team.player1Id,
         player2Id: team.player2Id,
       })
       .from(team)
+      .innerJoin(position, eq(position.teamId, teamId))
       .where(eq(team.id, teamId))
       .limit(1);
 
@@ -111,7 +112,7 @@ export async function getTeamWithPlayers(
       wins: teamRecord.wins || 0,
       losses: teamRecord.losses || 0,
       status: teamRecord.status || "idle",
-      loosingStreak: teamRecord.loosingStreak || 0,
+      losingStreak: teamRecord.losingStreak || 0,
       lastResult: teamRecord.lastResult || "none",
       categoryId: teamRecord.categoryId,
       categoryName: null,
@@ -132,14 +133,15 @@ export async function getBulkTeamsWithPlayers(
   const teamRecords = await db
     .select({
       id: team.id,
-      wins: team.wins,
-      losses: team.losses,
-      status: team.status,
+      wins: position.wins,
+      losses: position.losses,
+      status: position.status,
       categoryId: team.categoryId,
       player1Id: team.player1Id,
       player2Id: team.player2Id,
     })
     .from(team)
+    .innerJoin(position, eq(position.teamId, team.id))
     .where(inArray(team.id, teamIds));
 
   if (!teamRecords.length) return [];

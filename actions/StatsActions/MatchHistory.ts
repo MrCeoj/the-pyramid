@@ -3,7 +3,7 @@
 import { db } from "@/lib/drizzle";
 import { match, team, users, profile } from "@/db/schema";
 import { eq, and, isNotNull, inArray } from "drizzle-orm";
-import { getTeamDisplayName } from "@/db/schema";
+import { getTeamDisplayName } from "@/lib/utils";
 
 type MatchHistoryItem = {
   matchId: number;

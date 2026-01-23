@@ -221,7 +221,7 @@ export const position = pgTable(
     col: integer("col").notNull(),
     wins: integer("wins").default(0),
     losses: integer("losses").default(0),
-    score: integer("score").notNull(),
+    score: integer("score").notNull().default(0),
     amountRejected: integer("amount_rejected").default(0),
     amountAccepted: integer("amount_accepted").default(0),
     losingStreak: integer("losing_streak").default(0),

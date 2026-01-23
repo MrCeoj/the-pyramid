@@ -8,21 +8,28 @@ import {
   primaryKey,
   uniqueIndex,
   pgEnum,
+  jsonb,
+  check,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import { AdapterAccountType } from "@auth/core/adapters";
+import { sql } from "drizzle-orm";
 
 export const matchStatus = pgEnum("match_status", [
   "pending",
   "accepted",
-  "played",
   "rejected",
   "cancelled",
+  "voided",
+  "scoring",
+  "scored",
+  "played",
 ]);
 
 export const roles = pgEnum("role", ["player", "admin"]);
 
 export const teamStatus = pgEnum("team_status", [
-  "looser",
+  "loser",
   "winner",
   "idle",
   "risky",
@@ -32,8 +39,8 @@ export const teamLastResult = pgEnum("team_last_result", [
   "up",
   "down",
   "stayed",
-  "none"
-])
+  "none",
+]);
 
 export const users = pgTable("users", {
   id: text("id")
@@ -72,7 +79,7 @@ export const accounts = pgTable(
         columns: [account.provider, account.providerAccountId],
       }),
     },
-  ]
+  ],
 );
 
 export const sessions = pgTable("sessions", {
@@ -96,7 +103,7 @@ export const verificationTokens = pgTable(
         columns: [verificationToken.identifier, verificationToken.token],
       }),
     },
-  ]
+  ],
 );
 
 export const authenticators = pgTable(
@@ -119,7 +126,7 @@ export const authenticators = pgTable(
         columns: [authenticator.userId, authenticator.credentialID],
       }),
     },
-  ]
+  ],
 );
 
 // 1. Pyramid table
@@ -155,9 +162,11 @@ export const pyramidCategory = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
-  (t) => ({
-    pk: primaryKey({ columns: [t.pyramidId, t.categoryId] }),
-  })
+  (t) => [
+    {
+      pk: primaryKey({ columns: [t.pyramidId, t.categoryId] }),
+    },
+  ],
 );
 
 // 4. Team table
@@ -175,23 +184,13 @@ export const team = pgTable(
     player2Id: text("player2_id").references(() => users.id, {
       onDelete: "cascade",
     }),
-    wins: integer("wins").default(0),
-    losses: integer("losses").default(0),
-    amountRejected: integer("amount_rejected").default(0),
-    loosingStreak: integer("loosing_streak").default(0),
-    status: teamStatus("status").default("idle"),
-    lastResult: teamLastResult("last_result").default("none"),
-    defendable: boolean("defendable").default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
-  (t) => ({
+  (t) => [
     // Ensure a team can't have the same player twice
-    uniquePlayers: uniqueIndex("unique_team_players").on(
-      t.player1Id,
-      t.player2Id
-    ),
-  })
+    uniqueIndex("unique_team_players").on(t.player1Id, t.player2Id),
+  ],
 );
 
 // 5. Profile table
@@ -220,40 +219,98 @@ export const position = pgTable(
       .references(() => team.id, { onDelete: "cascade" }),
     row: integer("row").notNull(),
     col: integer("col").notNull(),
+    wins: integer("wins").default(0),
+    losses: integer("losses").default(0),
+    score: integer("score").notNull().default(0),
+    amountRejected: integer("amount_rejected").default(0),
+    amountAccepted: integer("amount_accepted").default(0),
+    losingStreak: integer("losing_streak").default(0),
+    winningStreak: integer("winning_streak").default(0),
+    status: teamStatus("status").default("idle"),
+    lastResult: teamLastResult("last_result").default("none"),
+    defendable: boolean("defendable").default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
-  (t) => ({
-    uniquePyramidRowCol: uniqueIndex("unique_pyramid_row_col").on(
-      t.pyramidId,
-      t.row,
-      t.col
-    ),
-    uniquePyramidTeam: uniqueIndex("unique_pyramid_team").on(
-      t.pyramidId,
-      t.teamId
-    ),
-  })
+  (t) => [
+    uniqueIndex("unique_pyramid_row_col").on(t.pyramidId, t.row, t.col),
+    uniqueIndex("unique_pyramid_team").on(t.pyramidId, t.teamId),
+  ],
 );
 
-// 7. Updated Match table with notification system
-export const match = pgTable("match", {
-  id: serial("id").primaryKey(),
-  pyramidId: integer("pyramid_id")
-    .notNull()
-    .references(() => pyramid.id, { onDelete: "cascade" }),
-  challengerTeamId: integer("challenger_team_id")
-    .notNull()
-    .references(() => team.id),
-  defenderTeamId: integer("defender_team_id")
-    .notNull()
-    .references(() => team.id),
-  winnerTeamId: integer("winner_team_id").references(() => team.id),
-  evidenceUrl: text("evidence_url"),
-  status: matchStatus("status").notNull().default("pending"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+export const match = pgTable(
+  "match",
+  {
+    id: serial("id").primaryKey(),
+    pyramidId: integer("pyramid_id")
+      .notNull()
+      .references(() => pyramid.id, { onDelete: "cascade" }),
+    challengerTeamId: integer("challenger_team_id")
+      .notNull()
+      .references(() => team.id),
+    defenderTeamId: integer("defender_team_id")
+      .notNull()
+      .references(() => team.id),
+    winnerTeamId: integer("winner_team_id").references(() => team.id),
+    status: matchStatus("status").notNull().default("pending"),
+    scoringStartedAt: timestamp("scoring_started_at", {
+      withTimezone: true,
+    }),
+    scoringDeadlineAt: timestamp("scoring_deadline_at", {
+      withTimezone: true,
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (m) => [
+    foreignKey({
+      columns: [m.pyramidId, m.challengerTeamId],
+      foreignColumns: [position.pyramidId, position.teamId],
+    }),
+    foreignKey({
+      columns: [m.pyramidId, m.defenderTeamId],
+      foreignColumns: [position.pyramidId, position.teamId],
+    }),
+  ],
+);
+
+export const matchScores = pgTable(
+  "match_scores",
+  {
+    id: serial("id").primaryKey(),
+
+    matchId: integer("match_id")
+      .notNull()
+      .unique()
+      .references(() => match.id, { onDelete: "cascade" }),
+
+    defenderTeamId: integer("defender_team_id")
+      .notNull()
+      .references(() => team.id),
+
+    attackerTeamId: integer("attacker_team_id")
+      .notNull()
+      .references(() => team.id),
+    scores: jsonb("scores").notNull(),
+    submittedByTeamId: integer("submitted_by_team_id")
+      .notNull()
+      .references(() => team.id),
+    defenderTeamAgreed: boolean("defender_team_agreed")
+      .notNull()
+      .default(false),
+    attackerTeamAgreed: boolean("attacker_team_agreed")
+      .notNull()
+      .default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (ms) => [
+    check(
+      "submited_by_match_team",
+      sql`${ms.submittedByTeamId}=${ms.attackerTeamId} or ${ms.submittedByTeamId}=${ms.defenderTeamId}`,
+    ),
+  ],
+);
 
 export const positionHistory = pgTable("position_history", {
   id: serial("id").primaryKey(),
@@ -289,36 +346,3 @@ export const positionHistory = pgTable("position_history", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
-
-export function getTeamDisplayName(
-  player1: TeamWithPlayers["player1"],
-  player2: TeamWithPlayers["player2"]
-): string {
-  if (!player1?.id) player1 = null;
-  if (!player2?.id) player2 = null;
-  if (!player1 && !player2) return "Equipo vacío";
-  if (!player1) {
-    return player2?.nickname
-      ? `"${player2?.nickname}" ${player2?.maternalSurname}`
-      : `${player2?.paternalSurname} ${player2?.maternalSurname}`;
-  }
-  if (!player2) {
-    return player1?.nickname
-      ? `"${player1?.nickname}" ${player1?.maternalSurname}`
-      : `${player1?.paternalSurname} ${player1?.maternalSurname}`;
-  }
-
-  if (player1?.nickname && player2?.nickname)
-    return `${player1.nickname} & ${player2.nickname}`;
-  if (player1?.nickname && player2)
-    return `${player1.nickname} & ${player2.paternalSurname}`;
-  if (player1 && player2?.nickname)
-    return `${player1.paternalSurname} & ${player2.nickname}`;
-  if (player1 && player2)
-    return `${player1.paternalSurname} & ${player2.paternalSurname}`;
-  if (player1 && !player2)
-    return `${player1.paternalSurname} ${player1.maternalSurname}`;
-  if (player2 && !player1)
-    return `${player2.paternalSurname} ${player2.maternalSurname}`;
-  return "Equipo vacío";
-}

@@ -52,26 +52,26 @@ export async function updateTeamsAfterMatch(
   loserTeamId: number,
 ) {
   await tx
-    .update(team)
-    .set({ amountRejected: 0, defendable: false })
-    .where(inArray(team.id, [winnerTeamId, loserTeamId]));
-
-  await tx
-    .update(team)
+    .update(position)
     .set({
-      wins: sql`${team.wins} + 1`,
-      loosingStreak: 0,
+      amountRejected: 0,
+      defendable: false,
+      wins: sql`${position.wins} + 1`,
+      losingStreak: 0,
+      winningStreak: sql`${position.winningStreak} + 1`,
       status: "winner",
       updatedAt: new Date(),
     })
-    .where(eq(team.id, winnerTeamId));
+    .where(inArray(position.teamId, [winnerTeamId, loserTeamId]));
 
   await tx
-    .update(team)
+    .update(position)
     .set({
-      losses: sql`${team.losses} + 1`,
-      loosingStreak: sql`${team.loosingStreak} + 1`,
-      status: "looser",
+      losses: sql`${position.losses} + 1`,
+      defendable: false,
+      losingStreak: sql`${position.losingStreak} + 1`,
+      winningStreak: 0,
+      status: "loser",
       updatedAt: new Date(),
     })
     .where(eq(team.id, loserTeamId));
@@ -92,50 +92,52 @@ export async function swapPositionsIfNeeded(
 ) {
   if (!shouldSwapPositions) {
     await tx
-      .update(team)
-      .set({ lastResult: "stayed" })
-      .where(inArray(team.id, [winnerTeamId, loserTeamId]));
+      .update(position)
+      .set({
+        lastResult: "stayed",
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(position.pyramidId, pyramidId),
+          inArray(position.teamId, [winnerTeamId, loserTeamId]),
+        ),
+      );
     return;
   }
 
   await tx
     .update(position)
-    .set({ row: -1, col: -1 })
-    .where(
-      and(eq(position.teamId, winnerTeamId), eq(position.pyramidId, pyramidId)),
-    );
-
-  await tx
-    .update(position)
     .set({
-      row: winnerCurrentPos.row,
-      col: winnerCurrentPos.col,
+      row: sql`
+        CASE
+          WHEN ${position.teamId} = ${winnerTeamId} THEN ${loserCurrentPos.row}
+          WHEN ${position.teamId} = ${loserTeamId} THEN ${winnerCurrentPos.row}
+          ELSE ${position.row}
+        END
+      `,
+      col: sql`
+        CASE
+          WHEN ${position.teamId} = ${winnerTeamId} THEN ${loserCurrentPos.col}
+          WHEN ${position.teamId} = ${loserTeamId} THEN ${winnerCurrentPos.col}
+          ELSE ${position.col}
+        END
+      `,
+      lastResult: sql`
+        CASE
+          WHEN ${position.teamId} = ${winnerTeamId} THEN 'up'
+          WHEN ${position.teamId} = ${loserTeamId} THEN 'down'
+          ELSE ${position.lastResult}
+        END
+      `,
       updatedAt: new Date(),
     })
     .where(
-      and(eq(position.teamId, loserTeamId), eq(position.pyramidId, pyramidId)),
+      and(
+        eq(position.pyramidId, pyramidId),
+        inArray(position.teamId, [winnerTeamId, loserTeamId]),
+      ),
     );
-
-  await tx
-    .update(position)
-    .set({
-      row: loserCurrentPos.row,
-      col: loserCurrentPos.col,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(eq(position.teamId, winnerTeamId), eq(position.pyramidId, pyramidId)),
-    );
-
-  await tx
-    .update(team)
-    .set({ lastResult: "up" })
-    .where(eq(team.id, winnerTeamId));
-
-  await tx
-    .update(team)
-    .set({ lastResult: "down" })
-    .where(eq(team.id, loserTeamId));
 
   await tx.insert(positionHistory).values({
     pyramidId,

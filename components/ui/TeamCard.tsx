@@ -79,7 +79,7 @@ const TeamCard = ({
   }, [getTopDate]);
 
   const statusColors: Record<TeamWithPlayers["status"], string> = {
-    looser: "bg-red-500/10 border-red-500/40 hover:border-red-500/60",
+    loser: "bg-red-500/10 border-red-500/40 hover:border-red-500/60",
     winner: "bg-green-500/10 border-green-500/40 hover:border-green-500/60",
     idle: "bg-slate-500/5 border-slate-400/30 hover:border-slate-400/50",
     risky: "bg-orange-500/10 border-orange-500/40 hover:border-orange-500/60",
@@ -91,7 +91,7 @@ const TeamCard = ({
   };
 
   const statusAccents: Record<TeamWithPlayers["status"], string> = {
-    looser: "bg-red-500",
+    loser: "bg-red-500",
     winner: "bg-green-500",
     idle: "bg-slate-400",
     risky: "bg-orange-500",
@@ -214,7 +214,7 @@ const TeamCard = ({
           } backdrop-blur-sm snap-center ${getCardAnimation()} ${
             isActuallyChallengable ? "cursor-pointer border-dashed" : ""
           }
-          ${data.team.loosingStreak! >= 2 ? "animate-losing-glow" : ""}
+          ${data.team.losingStreak! >= 2 ? "animate-losing-glow" : ""}
           `}
         >
           {/* Status indicator */}
@@ -277,7 +277,7 @@ const TeamCard = ({
           {/* Win/Loss stats */}
           <div
             className={`flex justify-evenly gap-3 items-center w-full text-xs ${
-              data.team.loosingStreak! >= 2 ? "animate-pulse" : ""
+              data.team.losingStreak! >= 2 ? "animate-pulse" : ""
             }`}
           >
             <div className="flex self-center items-center">

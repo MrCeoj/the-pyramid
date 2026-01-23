@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { eq, inArray } from "drizzle-orm";
-import { match, team } from "@/db/schema";
+import { match, position } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { sendCancelMail } from "@/actions/MailActions";
 import { getTeamWithPlayers } from "@/actions/MatchesActions/TeamService";
@@ -32,9 +32,9 @@ export async function cancelMatch(matchId: number): Promise<MatchResult> {
       ];
 
       await tx
-        .update(team)
+        .update(position)
         .set({ defendable: false })
-        .where(inArray(team.id, involvedTeams));
+        .where(inArray(position.teamId, involvedTeams));
 
       await tx
         .update(match)

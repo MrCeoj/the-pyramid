@@ -1,7 +1,7 @@
 "use server";
 import { transporter } from "@/lib/mail";
 import { generateCancelEmailTemplate } from "@/lib/mail/templates";
-import { getTeamDisplayName } from "@/db/schema";
+import { getTeamDisplayName } from "@/lib/utils";
 
 export async function sendCancelledBecauseAcceptedMail(
   recipients: TeamWithPlayers[],

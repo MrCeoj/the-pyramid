@@ -3,7 +3,7 @@
 import { db } from "@/lib/drizzle";
 import { match, team, users, profile } from "@/db/schema";
 import { sql, desc, eq } from "drizzle-orm";
-import { getTeamDisplayName } from "@/db/schema";
+import { getTeamDisplayName } from "@/lib/utils";
 
 export async function GetMostDisputedTeam(pyramidId: number) {
   const result = await db

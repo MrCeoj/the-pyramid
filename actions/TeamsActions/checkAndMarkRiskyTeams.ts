@@ -6,7 +6,6 @@ import { getTeamWithPlayers } from "@/actions/MatchesActions/TeamService";
 import { eq, and, gte, or, inArray, lt, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import {
-  team,
   position,
   pyramid,
   match,
@@ -146,12 +145,12 @@ export async function checkAndMarkRiskyTeams(
 
     // Step 4: Mark inactive teams as "risky"
     await db
-      .update(team)
+      .update(position)
       .set({
         status: "risky",
         updatedAt: new Date(),
       })
-      .where(inArray(team.id, inactiveTeamIds));
+      .where(inArray(position.teamId, inactiveTeamIds));
 
     // Step 5: Get full team data and send warning emails
     const emailResults = [];

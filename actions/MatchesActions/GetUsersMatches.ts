@@ -30,7 +30,6 @@ export async function getUserMatches(userId: string): Promise<{
         challengerTeamId: match.challengerTeamId,
         defenderTeamId: match.defenderTeamId,
         winnerTeamId: match.winnerTeamId,
-        evidenceUrl: match.evidenceUrl,
         pyramidName: pyramid.name,
       })
       .from(match)
@@ -148,7 +147,6 @@ export async function getUserMatches(userId: string): Promise<{
         winnerTeam: m.winnerTeamId
           ? (teamInfoMap.get(m.winnerTeamId) ?? null)
           : null,
-        evidenceUrl: m.evidenceUrl,
       };
     });
 

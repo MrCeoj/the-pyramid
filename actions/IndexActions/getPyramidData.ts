@@ -1,13 +1,13 @@
 "use server";
 import { db } from "@/lib/drizzle";
 import { eq, isNull } from "drizzle-orm";
+import { getTeamDisplayName } from "@/lib/utils";
 import {
   position,
   team,
   pyramid,
   profile,
   users,
-  getTeamDisplayName,
 } from "@/db/schema";
 
 export async function getPyramidData(
@@ -38,13 +38,13 @@ export async function getPyramidData(
         row: position.row,
         col: position.col,
         teamId: team.id,
-        teamWins: team.wins,
-        teamLosses: team.losses,
-        teamStatus: team.status,
+        teamWins: position.wins,
+        teamLosses: position.losses,
+        teamStatus: position.status,
         teamCategoryId: team.categoryId,
-        teamLoosingStreak: team.loosingStreak,
-        teamLastResult: team.lastResult,
-        defendable: team.defendable,
+        teamLosingStreak: position.losingStreak,
+        teamLastResult: position.lastResult,
+        defendable: position.defendable,
         player1Id: team.player1Id,
         player2Id: team.player2Id,
         player1PaternalSurname: users.paternalSurname,
@@ -96,7 +96,7 @@ export async function getPyramidData(
           wins: pos.teamWins || 0,
           losses: pos.teamLosses || 0,
           status: pos.teamStatus || "idle",
-          loosingStreak: pos.teamLoosingStreak || 0,
+          losingStreak: pos.teamLosingStreak || 0,
           lastResult: pos.teamLastResult || "none",
           categoryId: pos.teamCategoryId,
           categoryName: null,

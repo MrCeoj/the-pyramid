@@ -18,11 +18,3 @@ export const LoginSchema = object({
     message: "Contraseña requerida.",
   }),
 });
-
-export const matchStatusES: MatchStatusMap = {
-  pending: "Pendiente",
-  accepted: "Aceptado",
-  played: "Jugado",
-  rejected: "Rechazado",
-  cancelled: "Cancelado",
-};

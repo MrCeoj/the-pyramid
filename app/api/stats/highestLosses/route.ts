@@ -1,17 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/lib/drizzle";
-import { team } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import { position, team } from "@/db/schema";
+import { desc, eq } from "drizzle-orm";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const body = await req.json()
     const highestLosses = await db
       .select({
         teamId: team.id,
-        losses: team.losses,
+        losses: position.losses,
       })
       .from(team)
-      .orderBy(desc(team.losses))
+      .innerJoin(position, eq(position.teamId, team.id))
+      .where(eq(position.pyramidId, body.pyramidId))
+      .orderBy(desc(position.losses))
       .limit(3);
 
     return NextResponse.json(highestLosses);

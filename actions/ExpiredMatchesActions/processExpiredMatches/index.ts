@@ -169,14 +169,14 @@ export async function processExpiredMatches(userId: string) {
             );
 
           await tx
-            .update(team)
+            .update(position)
             .set({ lastResult: "down" })
-            .where(eq(team.id, teamId));
+            .where(eq(position.teamId, teamId));
 
           await tx
-            .update(team)
+            .update(position)
             .set({ lastResult: "up" })
-            .where(eq(team.id, nextTeam.id));
+            .where(eq(position.teamId, nextTeam.id));
 
           await tx.insert(positionHistory).values([
             {

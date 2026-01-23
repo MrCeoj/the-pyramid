@@ -1,6 +1,6 @@
 "use server";
 import { eq, and, or, gte, sql } from "drizzle-orm";
-import { team, match } from "@/db/schema";
+import { position, match } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { getPreviousMonday } from "@/lib/utils";
 
@@ -54,9 +54,9 @@ export default async function getRejectedAmount(teamId: number) {
     }
 
     const teamData = await db
-      .select({ rejected: team.amountRejected })
-      .from(team)
-      .where(eq(team.id, teamId))
+      .select({ rejected: position.amountRejected })
+      .from(position)
+      .where(eq(position.teamId, teamId))
       .limit(1);
 
     if (!teamData.length) {

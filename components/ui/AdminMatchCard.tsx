@@ -68,6 +68,27 @@ const MatchCard = ({ match }: { match: MatchWithDetails }) => {
       iconColor: "text-slate-400",
       glow: "from-white/30",
     },
+    voided: {
+      title: "Reta Cancelada",
+      icon: <Ban size={20} />,
+      iconBg: "bg-slate-600/20",
+      iconColor: "text-slate-400",
+      glow: "from-white/30",
+    },
+    scoring: {
+      title: "Reta Cancelada",
+      icon: <Ban size={20} />,
+      iconBg: "bg-slate-600/20",
+      iconColor: "text-slate-400",
+      glow: "from-white/30",
+    },
+    scored: {
+      title: "Reta Cancelada",
+      icon: <Ban size={20} />,
+      iconBg: "bg-slate-600/20",
+      iconColor: "text-slate-400",
+      glow: "from-white/30",
+    },
   };
 
   const defenderSelected = selectedWinner[match.id] === match.defenderTeam.id;
