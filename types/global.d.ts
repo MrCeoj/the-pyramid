@@ -23,6 +23,8 @@ type TeamWithPlayers = {
   categoryName: string | null;
   defendable?: boolean;
   losingStreak: number;
+  winningStreak: number;
+  score: number;
   lastResult: TeamLastResult;
   player1: {
     id: string;

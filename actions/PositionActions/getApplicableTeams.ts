@@ -5,17 +5,16 @@ import {
   team,
   position,
   users,
-  profile
+  profile,
 } from "@/db/schema";
 import { getTeamDisplayName } from "@/lib/utils";
 import { db } from "@/lib/drizzle";
-import { eq, inArray } from "drizzle-orm";
+import { inArray, eq, sql, aliasedTable } from "drizzle-orm";
 
 export async function getApplicableTeams(
   pyramidId: number,
 ): Promise<TeamWithPlayers[]> {
   try {
-    // Get categories for this pyramid
     const categories = await db
       .select({ id: category.id })
       .from(category)
@@ -28,74 +27,87 @@ export async function getApplicableTeams(
       return [];
     }
 
-    // Get teams in those categories with player data
+    const p1 = aliasedTable(users, "p1");
+    const p2 = aliasedTable(users, "p2");
+    const p1Profile = aliasedTable(profile, "p1Profile");
+    const p2Profile = aliasedTable(profile, "p2Profile");
+
     const teamsData = await db
       .select({
         id: team.id,
-        wins: position.wins,
-        losses: position.losses,
-        status: position.status,
+        wins: sql<number>`COALESCE(SUM(${position.wins}), 0)`,
+        losses: sql<number>`COALESCE(SUM(${position.losses}), 0)`,
         categoryId: team.categoryId,
-        losingStreak: position.losingStreak,
-        lastResult: position.lastResult,
+        score: sql<number>`COALESCE(SUM(${position.score}), 0)`,
+        losingStreak: sql<number>`COALESCE(MAX(${position.losingStreak}), 0)`,
+        winningStreak: sql<number>`COALESCE(MAX(${position.winningStreak}), 0)`,
         player1Id: team.player1Id,
         player2Id: team.player2Id,
-        player1PaternalSurname: users.paternalSurname,
-        player1MaternalSurname: users.maternalSurname,
-        player1Nickname: profile.nickname,
-        player2PaternalSurname: users.paternalSurname,
-        player2MaternalSurname: users.maternalSurname,
-        player2Nickname: profile.nickname,
+        player1PaternalSurname: p1.paternalSurname,
+        player1MaternalSurname: p1.maternalSurname,
+        player1Nickname: p1Profile.nickname,
+        player2PaternalSurname: p2.paternalSurname,
+        player2MaternalSurname: p2.maternalSurname,
+        player2Nickname: p2Profile.nickname,
       })
       .from(team)
+      .leftJoin(position, eq(position.teamId, team.id))
+      .leftJoin(p1, eq(p1.id, team.player1Id))
+      .leftJoin(p1Profile, eq(p1.id, p1Profile.userId))
+      .leftJoin(p2, eq(p2.id, team.player2Id))
+      .leftJoin(p2Profile, eq(p2.id, p2Profile.userId))
       .where(inArray(team.categoryId, categoryIds))
-      .leftJoin(users, eq(team.player1Id, users.id))
-      .leftJoin(profile, eq(users.id, profile.userId));
+      .groupBy(
+        team.id,
+        team.categoryId,
+        team.player1Id,
+        team.player2Id,
+        p1.paternalSurname,
+        p1.maternalSurname,
+        p1Profile.nickname,
+        p2.paternalSurname,
+        p2.maternalSurname,
+        p2Profile.nickname,
+      );
 
-    const teams: TeamWithPlayers[] = (await Promise.all(
-      teamsData.map(async (teamData) => {
-        const player2Data = await db
-          .select({
-            paternalSurname: users.paternalSurname,
-            maternalSurname: users.maternalSurname,
-            nickname: profile.nickname,
-          })
-          .from(users)
-          .where(eq(users.id, teamData.player2Id!))
-          .leftJoin(profile, eq(users.id, profile.userId))
-          .limit(1);
+    console.log(teamsData.length);
 
-        const player1 = teamData.player1Id
+    const teams: TeamWithPlayers[] = teamsData.map((teamData) => {
+      const [player1, player2] = [
+        !!teamData.player1Id
           ? {
               id: teamData.player1Id,
-              paternalSurname: teamData.player1PaternalSurname ?? "",
-              maternalSurname: teamData.player1MaternalSurname ?? "",
-              nickname: teamData.player1Nickname ?? undefined,
+              paternalSurname: teamData.player1PaternalSurname!,
+              maternalSurname: teamData.player1MaternalSurname!,
+              nickname: teamData.player1Nickname,
             }
-          : null;
+          : null,
+        !!teamData.player2Id
+          ? {
+              id: teamData.player2Id,
+              paternalSurname: teamData.player2PaternalSurname!,
+              maternalSurname: teamData.player2MaternalSurname!,
+              nickname: teamData.player2Nickname,
+            }
+          : null,
+      ];
 
-        const player2 = {
-          id: teamData.player2Id!,
-          paternalSurname: player2Data[0].paternalSurname ?? "",
-          maternalSurname: player2Data[0].maternalSurname ?? "",
-          nickname: player2Data[0].nickname,
-        };
-
-        return {
-          id: teamData.id,
-          displayName: getTeamDisplayName(player1, player2),
-          wins: teamData.wins || 0,
-          losses: teamData.losses || 0,
-          status: teamData.status || "idle",
-          losingStreak: teamData.losingStreak || 0,
-          lastResult: teamData.lastResult || "none",
-          categoryId: teamData.categoryId,
-          categoryName: null,
-          player1,
-          player2,
-        };
-      }),
-    ));
+      return {
+        id: teamData.id,
+        displayName: getTeamDisplayName(player1, player2),
+        wins: teamData.wins,
+        losses: teamData.losses,
+        status: "idle",
+        losingStreak: teamData.losingStreak,
+        winningStreak: teamData.winningStreak,
+        score: teamData.score,
+        lastResult: "none",
+        categoryId: teamData.categoryId,
+        categoryName: null,
+        player1,
+        player2,
+      };
+    });
 
     return teams;
   } catch (error) {

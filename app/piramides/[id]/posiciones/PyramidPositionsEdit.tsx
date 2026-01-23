@@ -11,7 +11,6 @@ import toast from "react-hot-toast";
 import SetTeamModal from "./SetTeamModal";
 import CellarRow from "./CellarRowEdit";
 
-
 interface SelectedPosition {
   pyramidId: number;
   row: number;
@@ -22,7 +21,7 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
   const [applicableTeams, setApplicableTeams] = useState<TeamWithPlayers[]>([]);
   const [cellarTeam, setCellarTeam] = useState<PyramidPosition>({
     id: 123,
-    row: 8,
+    row: data.row_amount + 1,
     col: 1,
     team: null,
   });
@@ -43,7 +42,7 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
         const existingInPyramid = data.positions.map(({ team }) => team?.id);
 
         const filteredTeams = teams.filter(
-          (team) => !existingInPyramid.includes(team.id)
+          (team) => !existingInPyramid.includes(team.id),
         );
 
         setApplicableTeams(filteredTeams);
@@ -89,7 +88,7 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
         selectedPosition.pyramidId,
         team.id,
         selectedPosition.row,
-        selectedPosition.col
+        selectedPosition.col,
       );
 
       if (!result.success) {
@@ -135,8 +134,10 @@ export default function PyramidDisplay({ data }: { data: PyramidData }) {
   }
 
   useEffect(() => {
-    if (!rows[8]) setCellarTeam({ id: 123, row: 8, col: 1, team: null });
-    if (rows[8] && rows[8].length > 0) setCellarTeam(rows[8][0]);
+    if (!rows[data.row_amount + 1])
+      setCellarTeam({ id: 123, row: data.row_amount + 1, col: 1, team: null });
+    if (rows[data.row_amount + 1] && rows[data.row_amount + 1].length > 0)
+      setCellarTeam(rows[data.row_amount + 1][0]);
   }, [rows]);
 
   return (

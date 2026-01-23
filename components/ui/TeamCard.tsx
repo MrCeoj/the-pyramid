@@ -1,9 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { Fa1, Fa2, Fa3, Fa4, Fa5 } from "react-icons/fa6";
-import {
-  getCurrentTeamDurationInPosition,
-} from "@/actions/PositionActions";
+import { getCurrentTeamDurationInPosition } from "@/actions/PositionActions";
 import {
   Sword,
   Crown,
@@ -62,15 +60,17 @@ const TeamCard = ({
       if (!isTop) return;
       if (!data.team) return;
 
-      console.log(data.team.lastResult);
-
       const time = await getCurrentTeamDurationInPosition(data.team.id);
-      if (!time) return;
+
+      if (!time) {
+        setTopDate(" ... algún tiempo");
+        return;
+      }
 
       setTopDate(time.format);
     } catch (error) {
       console.error("Error al calcular la duración del top", error);
-      setTopDate("... algún tiempo");
+      setTopDate(" ... algún tiempo");
     }
   }, [data.team, isTop]);
 
@@ -159,24 +159,24 @@ const TeamCard = ({
         color: isTop
           ? "text-yellow-300"
           : isPlayer
-          ? "text-red-300"
-          : "text-red-400",
+            ? "text-red-300"
+            : "text-red-400",
       },
       up: {
         icon: ArrowBigUpDash,
         color: isTop
           ? "text-yellow-300"
           : isPlayer
-          ? "text-green-300"
-          : "text-green-400",
+            ? "text-green-300"
+            : "text-green-400",
       },
       stayed: {
         icon: CircleMinus,
         color: isTop
           ? "text-yellow-300"
           : isPlayer
-          ? "text-slate-200"
-          : "text-slate-300",
+            ? "text-slate-200"
+            : "text-slate-300",
       },
     };
 
@@ -263,10 +263,10 @@ const TeamCard = ({
                   data.team.categoryId === 1
                     ? "bg-gradient-to-bl from-yellow-300 via-amber-200 to-yellow-400 text-slate-900"
                     : data.team.categoryId === 2
-                    ? "bg-gradient-to-bl from-gray-300 via-slate-200 to-gray-400 text-slate-900"
-                    : data.team.categoryId === 3
-                    ? "bg-gradient-to-bl from-amber-700 via-orange-500 to-amber-800 text-white"
-                    : "bg-gradient-to-bl from-amber-400 via-amber-300 to-amber-500 text-slate-800"
+                      ? "bg-gradient-to-bl from-gray-300 via-slate-200 to-gray-400 text-slate-900"
+                      : data.team.categoryId === 3
+                        ? "bg-gradient-to-bl from-amber-700 via-orange-500 to-amber-800 text-white"
+                        : "bg-gradient-to-bl from-amber-400 via-amber-300 to-amber-500 text-slate-800"
                 } rounded-full w-6 h-6 flex items-center justify-center font-bold`}
               >
                 {getIcon(data.team.categoryId!)}
@@ -286,8 +286,8 @@ const TeamCard = ({
                   isTop
                     ? "text-green-300"
                     : isPlayer
-                    ? "text-green-300"
-                    : "text-green-400"
+                      ? "text-green-300"
+                      : "text-green-400"
                 }`}
               >
                 W
@@ -311,8 +311,8 @@ const TeamCard = ({
                   isTop
                     ? "text-red-300"
                     : isPlayer
-                    ? "text-red-300"
-                    : "text-red-400"
+                      ? "text-red-300"
+                      : "text-red-400"
                 }`}
               >
                 L

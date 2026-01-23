@@ -2,8 +2,6 @@ import TeamCardWithDelete from "@/components/ui/TeamCardWithDelete";
 import EmptySlot from "@/components/ui/EmptySlotEdit";
 import { useCenteredScroll } from "@/hooks/useCenteredScroll";
 
-
-
 const CellarRow = ({
   handleSetTeam,
   pyramidId,
