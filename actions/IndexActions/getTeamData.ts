@@ -4,15 +4,19 @@ import { eq } from "drizzle-orm";
 import { getTeamDisplayName } from "@/lib/utils";
 import { team, profile, users, position } from "@/db/schema";
 
-export async function getTeamData(teamId: number): Promise<TeamWithPlayers | null> {
+export async function getTeamData(
+  teamId: number,
+): Promise<TeamWithPlayers | null> {
   try {
-    const teamData = await db
+    const [teamData] = await db
       .select({
         id: team.id,
         wins: position.wins,
         losses: position.losses,
+        score: position.score,
         status: position.status,
         losingStreak: position.losingStreak,
+        winningStreak: position.winningStreak,
         lastResult: position.lastResult,
         categoryId: team.categoryId,
         player1Id: team.player1Id,
@@ -23,11 +27,11 @@ export async function getTeamData(teamId: number): Promise<TeamWithPlayers | nul
       .where(eq(team.id, teamId))
       .limit(1);
 
-    if (!teamData.length) {
+    if (!teamData) {
       return null;
     }
 
-    if (!teamData[0].player1Id || !teamData[0].player2Id) {
+    if (!teamData.player1Id || !teamData.player2Id) {
       return null;
     }
 
@@ -41,7 +45,7 @@ export async function getTeamData(teamId: number): Promise<TeamWithPlayers | nul
         })
         .from(users)
         .leftJoin(profile, eq(users.id, profile.userId))
-        .where(eq(users.id, teamData[0].player1Id)),
+        .where(eq(users.id, teamData.player1Id)),
       db
         .select({
           paternalSurname: users.paternalSurname,
@@ -50,14 +54,14 @@ export async function getTeamData(teamId: number): Promise<TeamWithPlayers | nul
         })
         .from(users)
         .leftJoin(profile, eq(users.id, profile.userId))
-        .where(eq(users.id, teamData[0].player2Id)),
+        .where(eq(users.id, teamData.player2Id)),
     ]);
 
     if (!player1Data.length || !player2Data.length) {
       return null;
     }
-    const player1Id = teamData[0].player1Id;
-    const player2Id = teamData[0].player2Id;
+    const player1Id = teamData.player1Id;
+    const player2Id = teamData.player2Id;
 
     if (!player1Id || !player2Id) return null; // Ensure IDs are not null
 
@@ -76,14 +80,16 @@ export async function getTeamData(teamId: number): Promise<TeamWithPlayers | nul
     };
 
     return {
-      id: teamData[0].id,
+      id: teamData.id,
       displayName: getTeamDisplayName(player1, player2),
-      wins: teamData[0].wins || 0,
-      losses: teamData[0].losses || 0,
-      status: teamData[0].status || "idle",
-      losingStreak: teamData[0].losingStreak || 0,
-      lastResult: teamData[0].lastResult || "none",
-      categoryId: teamData[0].categoryId,
+      wins: teamData.wins || 0,
+      losses: teamData.losses || 0,
+      score: teamData.score || 0,
+      status: teamData.status || "idle",
+      losingStreak: teamData.losingStreak || 0,
+      winningStreak: teamData.winningStreak || 0,
+      lastResult: teamData.lastResult || "none",
+      categoryId: teamData.categoryId,
       categoryName: null,
       player1,
       player2,

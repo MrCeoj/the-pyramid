@@ -2,7 +2,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { History, Inbox, Target } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getUserMatches, acceptMatch, rejectMatch, getRejectedAmount} from "@/actions/MatchesActions";
+import {
+  getUserMatches,
+  acceptMatch,
+  rejectMatch,
+  getRejectedAmount,
+} from "@/actions/MatchesActions";
 import toast from "react-hot-toast";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import { useSession } from "next-auth/react";
@@ -25,10 +30,11 @@ const MatchesPage = () => {
   const { pyramids, selectedPyramidId, setSelectedPyramidId } =
     usePyramidStore();
 
+  /*
   const fetchRejectedAmount = useCallback(async () => {
     if (userTeamId === null || userTeamId === undefined) return;
 
-    const amount = await getRejectedAmount(userTeamId);
+    const amount = await getRejectedAmount(userTeamId, );
     if (amount === null || amount === undefined)
       throw new Error(
         "Error al conseguir cantidad de partidas rechazadas"
@@ -40,7 +46,7 @@ const MatchesPage = () => {
 
     setRejectedAmount(amount);
   }, [userTeamId]);
-
+*/
   const filteredPendingMatches = useMemo(() => {
     if (!selectedPyramidId) return pendingMatches;
     return pendingMatches.filter((m) => m.pyramidId === selectedPyramidId);
@@ -62,14 +68,17 @@ const MatchesPage = () => {
       setMatchHistory(matchHistory);
       if ("error"! in utid) return;
       setUserTeamId(utid.teamId);
-      await fetchRejectedAmount();
+      //await fetchRejectedAmount();
     } catch (error) {
       console.error("Error fetching matches:", error);
       toast.error("Error al cargar los combates");
     } finally {
       setLoading(false);
     }
-  }, [fetchRejectedAmount, user?.id]);
+  }, [
+    //fetchRejectedAmount,
+    user?.id,
+  ]);
 
   // Single useEffect for initial data fetching
   useEffect(() => {
@@ -104,7 +113,7 @@ const MatchesPage = () => {
       setActionLoading(matchId);
       await fetchMatches().then(() => setActionLoading(null));
     },
-    [actionLoading, fetchMatches, user?.id]
+    [actionLoading, fetchMatches, user?.id],
   );
 
   const handleRejectMatch = async (matchId: number) => {
@@ -154,14 +163,12 @@ const MatchesPage = () => {
         {/* Pyramid filter */}
         <div className="max-w-6xl mb-6 flex justify-end">
           <div className="max-w-sm flex flex-wrap items-center justify-end gap-3">
-            <label className="text-white text-sm">
-              Filtrar por pirámide:
-            </label>
+            <label className="text-white text-sm">Filtrar por pirámide:</label>
             <select
               value={selectedPyramidId ?? ""}
               onChange={(e) =>
                 setSelectedPyramidId(
-                  e.target.value === "" ? null : Number(e.target.value)
+                  e.target.value === "" ? null : Number(e.target.value),
                 )
               }
               className="flex-1 bg-indor-black border border-indor-brown text-white w-fit rounded-lg px-3 py-2 text-sm"
@@ -207,7 +214,6 @@ const MatchesPage = () => {
             <span>Historial</span>
           </button>
         </div>
-        
 
         {/* Content */}
         <AnimatePresence mode="wait">
