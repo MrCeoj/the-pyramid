@@ -225,6 +225,7 @@ type User = {
 type HistoryMatchCardData = {
   match: MatchWithDetails;
   handleCancelMatch: (matchId: number) => Promise<void>;
+  handleStartScoring: (matchId: number) => Promise<void>;
   userTeamId: number;
   formatDate: (date: Date) => string;
 };

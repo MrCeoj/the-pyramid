@@ -1,141 +1,49 @@
 "use client";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { History, Inbox, Target } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  getUserMatches,
-  acceptMatch,
-  rejectMatch,
-  getRejectedAmount,
-} from "@/actions/MatchesActions";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { History, Inbox, Target, CheckCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import UserDropdownMenu from "@/components/ui/UserDropdownMenu";
 import { useSession } from "next-auth/react";
 import PendingMatchCard from "./PendingMatchCard";
 import HistoryMatchCard from "./HistoryMatchCard";
-import { getUserTeamId } from "@/actions/IndexActions";
 import { usePyramidStore } from "@/stores/usePyramidsStore";
 import { formatDate } from "@/lib/utils";
+import { useUsersMatchesStore } from "@/stores/useUsersMatchStore";
 
 const MatchesPage = () => {
+  const {
+    loading,
+    actionLoading,
+    userTeamId,
+    fetchMatches,
+    accept,
+    reject,
+    cancel,
+    score,
+    filtered,
+    rejectedAmount,
+  } = useUsersMatchesStore();
+
   const { data } = useSession();
-  const user = data?.user;
-  const [pendingMatches, setPendingMatches] = useState<MatchWithDetails[]>([]);
-  const [matchHistory, setMatchHistory] = useState<MatchWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
-  const [userTeamId, setUserTeamId] = useState<number | null>();
-  const [rejectedAmount, setRejectedAmount] = useState<number>(0);
+  const userId = data?.user?.id;
+
   const { pyramids, selectedPyramidId, setSelectedPyramidId } =
     usePyramidStore();
 
-  /*
-  const fetchRejectedAmount = useCallback(async () => {
-    if (userTeamId === null || userTeamId === undefined) return;
-
-    const amount = await getRejectedAmount(userTeamId, );
-    if (amount === null || amount === undefined)
-      throw new Error(
-        "Error al conseguir cantidad de partidas rechazadas"
-      );
-    if (typeof amount !== "number")
-      throw new Error(
-        "Error al conseguir cantidad de partidas rechazadas"
-      );
-
-    setRejectedAmount(amount);
-  }, [userTeamId]);
-*/
-  const filteredPendingMatches = useMemo(() => {
-    if (!selectedPyramidId) return pendingMatches;
-    return pendingMatches.filter((m) => m.pyramidId === selectedPyramidId);
-  }, [pendingMatches, selectedPyramidId]);
-
-  const filteredMatchHistory = useMemo(() => {
-    if (!selectedPyramidId) return matchHistory;
-    return matchHistory.filter((m) => m.pyramidId === selectedPyramidId);
-  }, [matchHistory, selectedPyramidId]);
-
-  const fetchMatches = useCallback(async () => {
-    if (!user?.id) return;
-
-    setLoading(true);
-    try {
-      const { pendingMatches, matchHistory } = await getUserMatches(user.id);
-      const utid = await getUserTeamId(user.id);
-      setPendingMatches(pendingMatches);
-      setMatchHistory(matchHistory);
-      if ("error"! in utid) return;
-      setUserTeamId(utid.teamId);
-      //await fetchRejectedAmount();
-    } catch (error) {
-      console.error("Error fetching matches:", error);
-      toast.error("Error al cargar los combates");
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    //fetchRejectedAmount,
-    user?.id,
-  ]);
-
-  // Single useEffect for initial data fetching
-  useEffect(() => {
-    if (user?.id) {
-      fetchMatches();
-    }
-  }, [user?.id, fetchMatches]);
-
-  const handleAcceptMatch = async (matchId: number) => {
-    if (actionLoading || !user?.id) return; // Prevent multiple calls
-
-    setActionLoading(matchId);
-    try {
-      const result = await acceptMatch(matchId, user.id);
-      if (result.success) {
-        toast.success(result.message);
-        await fetchMatches(); // Refresh data
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error) {
-      if (error instanceof Error) toast.error("Error al aceptar el desafío");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleCancelMatch = useCallback(
-    async (matchId: number) => {
-      if (actionLoading || !user?.id) return;
-
-      setActionLoading(matchId);
-      await fetchMatches().then(() => setActionLoading(null));
-    },
-    [actionLoading, fetchMatches, user?.id],
+    const [activeTab, setActiveTab] = useState<"active" | "pending" | "history">(
+    "pending",
   );
 
-  const handleRejectMatch = async (matchId: number) => {
-    if (actionLoading || !user?.id) return;
+  useEffect(() => {
+    if (userId) fetchMatches(userId);
+  }, [userId, fetchMatches]);
 
-    setActionLoading(matchId);
-    try {
-      const result = await rejectMatch(matchId, user.id);
-      if (result.success) {
-        toast.success(result.message);
-        await fetchMatches();
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error) {
-      if (error instanceof Error) toast.error("Error al rechazar el desafío");
-    } finally {
-      setActionLoading(null);
-    }
-  };
+  const activeMatches = filtered.active(selectedPyramidId);
+  const pendingMatches = filtered.pending(selectedPyramidId);
+  const historyMatches = filtered.history(selectedPyramidId);
 
-  if (loading && !pendingMatches.length && !matchHistory.length) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-indor-black/80 flex items-center justify-center">
         <div className="text-white text-center">
@@ -184,19 +92,37 @@ const MatchesPage = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-indor-black border-2 max-w-dvw min-w-[80%] self-center border-black rounded-xl mb-8">
+        <div className="flex bg-indor-black border-2 max-w-dvw min-w-[80%] self-center border-black rounded-xl mb-8 text-xs sm:text-sm md:text-base">
+          <button
+            onClick={() => setActiveTab("active")}
+            className={`flex-1 flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-3 rounded-lg transition-all duration-200 ${
+              activeTab === "active"
+                ? "bg-indor-orange text-white shadow-lg"
+                : "text-white hover:bg-indor-brown"
+            }`}
+          >
+            <CheckCircle className="hidden sm:block" size={18} />
+            <CheckCircle className="block sm:hidden" size={14} />
+            <span>Activas</span>
+            {activeMatches.length > 0 && (
+              <span className="bg-red-500 text-white text-xs px-1 py-0.5 sm:px-2 sm:py-0.5 rounded-full">
+                {activeMatches.length}
+              </span>
+            )}
+          </button>
           <button
             onClick={() => setActiveTab("pending")}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-3 rounded-lg transition-all duration-200 ${
               activeTab === "pending"
                 ? "bg-indor-orange text-white shadow-lg"
                 : "text-white hover:bg-indor-brown"
             }`}
           >
-            <Inbox size={18} />
+            <Inbox className="hidden sm:block" size={18} />
+            <Inbox className="block sm:hidden" size={14} />
             <span>Pendientes</span>
             {pendingMatches.length > 0 && (
-              <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+              <span className="bg-red-500 text-white text-xs px-1 py-0.5 sm:px-2 sm:py-0.5 rounded-full">
                 {pendingMatches.length}
               </span>
             )}
@@ -204,20 +130,66 @@ const MatchesPage = () => {
 
           <button
             onClick={() => setActiveTab("history")}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-3 rounded-lg transition-all duration-200 ${
               activeTab === "history"
                 ? "bg-indor-orange text-white shadow-lg"
                 : "text-white hover:bg-indor-brown"
             }`}
           >
-            <History size={18} />
+            <History className="hidden sm:block" size={18} />
+            <History className="block sm:hidden" size={14} />
             <span>Historial</span>
           </button>
         </div>
 
         {/* Content */}
         <AnimatePresence mode="wait">
-          {activeTab === "pending" ? (
+          {activeTab === "active" && (
+            <motion.div
+              key="active"
+              initial={{ opacity: 1, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-4 flex flex-col items-center"
+            >
+              {activeMatches.length > 0 ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 0 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4 w-full flex flex-col lg:flex-row flex-wrap justify-center gap-5 sm:w-full"
+                >
+                  {activeMatches.map((match) => (
+                    <HistoryMatchCard
+                      key={match.id}
+                      handleCancelMatch={() => cancel(match.id, userId!)}
+                      handleStartScoring={() => score(match.id, userId!)}
+                      userTeamId={userTeamId!}
+                      match={match}
+                      formatDate={formatDate}
+                    />
+                  ))}
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-center py-12"
+                >
+                  <History className="text-white mx-auto mb-4" size={48} />
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    No tienes historial de retas
+                  </h3>
+                  <p className="text-white">
+                    Tus retas anteriores aparecerán aquí
+                  </p>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+          {activeTab === "pending" && (
             <motion.div
               key="pending"
               initial={{ opacity: 0, x: -20 }}
@@ -226,14 +198,14 @@ const MatchesPage = () => {
               transition={{ duration: 0.2 }}
               className="space-y-6 flex flex-col"
             >
-              {filteredPendingMatches.length > 0 ? (
-                filteredPendingMatches.map((match) => (
+              {pendingMatches.length > 0 ? (
+                pendingMatches.map((match) => (
                   <PendingMatchCard
                     key={match.id}
                     match={match}
                     userTeamId={userTeamId!}
-                    handleAcceptMatch={handleAcceptMatch}
-                    handleRejectMatch={handleRejectMatch}
+                    handleAcceptMatch={() => accept(match.id, userId!)}
+                    handleRejectMatch={() => reject(match.id, userId!)}
                     formatDate={formatDate}
                     actionLoading={actionLoading!}
                     rejectedAmount={rejectedAmount}
@@ -251,7 +223,8 @@ const MatchesPage = () => {
                 </div>
               )}
             </motion.div>
-          ) : (
+          )}
+          {activeTab === "history" && (
             <motion.div
               key="history"
               initial={{ opacity: 1, x: 20 }}
@@ -260,17 +233,18 @@ const MatchesPage = () => {
               transition={{ duration: 0.2 }}
               className="space-y-4 flex flex-col items-center"
             >
-              {filteredMatchHistory.length > 0 ? (
+              {historyMatches.length > 0 ? (
                 <motion.div
                   initial={{ opacity: 0, y: 0 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                   className="space-y-4 w-full flex flex-col lg:flex-row flex-wrap justify-center gap-5 sm:w-full"
                 >
-                  {filteredMatchHistory.map((match) => (
+                  {historyMatches.map((match) => (
                     <HistoryMatchCard
                       key={match.id}
-                      handleCancelMatch={handleCancelMatch}
+                      handleCancelMatch={() => cancel(match.id, userId!)}
+                      handleStartScoring={() => score(match.id, userId!)}
                       userTeamId={userTeamId!}
                       match={match}
                       formatDate={formatDate}

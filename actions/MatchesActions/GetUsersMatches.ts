@@ -8,6 +8,7 @@ import {
 } from "@/actions/MatchesActions/TeamService";
 
 export async function getUserMatches(userId: string): Promise<{
+  activeMatches: MatchWithDetails[];
   pendingMatches: MatchWithDetails[];
   matchHistory: MatchWithDetails[];
 }> {
@@ -16,7 +17,7 @@ export async function getUserMatches(userId: string): Promise<{
     const userTeamIds = await getUserTeamIds(userId);
 
     if (userTeamIds.length === 0) {
-      return { pendingMatches: [], matchHistory: [] };
+      return { activeMatches: [], pendingMatches: [], matchHistory: [] };
     }
 
     // Get all matches where user's teams are involved
@@ -102,9 +103,9 @@ export async function getUserMatches(userId: string): Promise<{
         (p) => p.teamId === defenderTeam.id,
       );
 
-      const matchPosition = positionMap.get(m.id);
-
-      const isFinalized = !["pending", "accepted"].includes(m.status);
+      const isFinalized = !["pending", "accepted", "scoring"].includes(
+        m.status,
+      );
       const snapshot = isFinalized ? positionMap.get(m.id) : null;
 
       const challengerPos = isFinalized
@@ -155,13 +156,17 @@ export async function getUserMatches(userId: string): Promise<{
       (m) => m.status === "pending" && userTeamIds.includes(m.defenderTeam.id),
     );
 
-    const matchHistory = matchesWithDetails.filter(
-      (m) => !pendingMatches.includes(m),
+    const activeMatches = matchesWithDetails.filter(
+      (m) => m.status === "accepted" || m.status === "scoring",
     );
 
-    return { pendingMatches, matchHistory };
+    const matchHistory = matchesWithDetails.filter(
+      (m) => !pendingMatches.includes(m) && !activeMatches.includes(m),
+    );
+
+    return { activeMatches, pendingMatches, matchHistory };
   } catch (error) {
     console.error("Error fetching user matches:", error);
-    return { pendingMatches: [], matchHistory: [] };
+    return { activeMatches: [], pendingMatches: [], matchHistory: [] };
   }
 }

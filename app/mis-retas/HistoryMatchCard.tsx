@@ -9,11 +9,13 @@ import {
   X,
   XCircle,
   Ban,
+  Award,
 } from "lucide-react";
 
 const HistoryMatchCard = ({
   match,
   handleCancelMatch,
+  handleStartScoring,
   formatDate,
   userTeamId,
 }: HistoryMatchCardData) => {
@@ -288,17 +290,32 @@ const HistoryMatchCard = ({
       )}
 
       {/* Action Buttons */}
-      {(match.status === "accepted" || match.status === "pending") && (
+      {(match.status === "accepted" ||
+        match.status === "pending" ||
+        match.status === "scoring") && (
         <div className="flex justify-end gap-3">
+          {/* Score match */}
+          {match.status !== "pending" && (
+            <button
+              onClick={() => handleStartScoring(match.id)}
+              className="max-h-16 text-blue-400 hover:text-blue-300 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 hover:border-blue-500/50 group p-2 md:p-3 text-[0.6rem] sm:text-sm lg:text-base rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-1"
+              title="Añadir puntaje"
+            >
+              <Award className="" size={16} />
+              <span>Añadir puntaje</span>
+            </button>
+          )}
           {/* Cancel button */}
-          <button
-            onClick={() => handleCancelMatch(match.id)}
-            className="max-h-16 text-red-400 hover:text-red-300 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 hover:border-red-500/50 group p-4 text-xs sm:text-sm lg:text-base rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2"
-            title="Cancelar reta"
-          >
-            <X className="" size={16} />
-            <span>Cancelar Reta</span>
-          </button>
+          {match.status !== "scoring" && (
+            <button
+              onClick={() => handleCancelMatch(match.id)}
+              className="max-h-16 text-red-400 hover:text-red-300 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 hover:border-red-500/50 group p-2 md:p-3 text-[0.6rem] sm:text-sm lg:text-base rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-1"
+              title="Cancelar reta"
+            >
+              <X className="" size={16} />
+              <span>Cancelar Reta</span>
+            </button>
+          )}
         </div>
       )}
     </div>
