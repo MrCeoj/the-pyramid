@@ -1,0 +1,1 @@
+ALTER TABLE "match_scores" ADD COLUMN "sets_played" integer DEFAULT 3 NOT NULL;

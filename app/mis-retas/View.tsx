@@ -10,6 +10,7 @@ import HistoryMatchCard from "./HistoryMatchCard";
 import { usePyramidStore } from "@/stores/usePyramidsStore";
 import { formatDate } from "@/lib/utils";
 import { useUsersMatchesStore } from "@/stores/useUsersMatchStore";
+import ScoringModal from "@/components/ui/ScoringModal";
 
 const MatchesPage = () => {
   const {
@@ -17,6 +18,9 @@ const MatchesPage = () => {
     actionLoading,
     userTeamId,
     fetchMatches,
+    scoringModal,
+    selectedScoringMatch,
+    toggleModal,
     accept,
     reject,
     cancel,
@@ -31,7 +35,7 @@ const MatchesPage = () => {
   const { pyramids, selectedPyramidId, setSelectedPyramidId } =
     usePyramidStore();
 
-    const [activeTab, setActiveTab] = useState<"active" | "pending" | "history">(
+  const [activeTab, setActiveTab] = useState<"active" | "pending" | "history">(
     "pending",
   );
 
@@ -81,7 +85,6 @@ const MatchesPage = () => {
               }
               className="flex-1 bg-indor-black border border-indor-brown text-white w-fit rounded-lg px-3 py-2 text-sm"
             >
-              <option value="">Todas</option>
               {pyramids.map((pyramid) => (
                 <option key={pyramid.id} value={pyramid.id}>
                   {pyramid.name}
@@ -164,7 +167,7 @@ const MatchesPage = () => {
                     <HistoryMatchCard
                       key={match.id}
                       handleCancelMatch={() => cancel(match.id, userId!)}
-                      handleStartScoring={() => score(match.id, userId!)}
+                      handleStartScoring={() => toggleModal(match.id)}
                       userTeamId={userTeamId!}
                       match={match}
                       formatDate={formatDate}
@@ -244,7 +247,7 @@ const MatchesPage = () => {
                     <HistoryMatchCard
                       key={match.id}
                       handleCancelMatch={() => cancel(match.id, userId!)}
-                      handleStartScoring={() => score(match.id, userId!)}
+                      handleStartScoring={() => toggleModal(match.id)}
                       userTeamId={userTeamId!}
                       match={match}
                       formatDate={formatDate}
@@ -271,6 +274,8 @@ const MatchesPage = () => {
           )}{" "}
         </AnimatePresence>
       </div>
+
+      <ScoringModal scoringMatch={selectedScoringMatch!} open={scoringModal}/>
     </div>
   );
 };

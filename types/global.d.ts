@@ -225,7 +225,7 @@ type User = {
 type HistoryMatchCardData = {
   match: MatchWithDetails;
   handleCancelMatch: (matchId: number) => Promise<void>;
-  handleStartScoring: (matchId: number) => Promise<void>;
+  handleStartScoring: (matchId: number) => void;
   userTeamId: number;
   formatDate: (date: Date) => string;
 };
@@ -371,6 +371,12 @@ type DateFilter = {
   day: string | null;
   from: string | null;
   to: string | null;
+};
+
+type Scores = {
+  defenderScore?: number[] | null;
+  attackerScore?: number[] | null;
+  setsPlayed: number;
 };
 
 type MatchStatusMap = Record<MatchStatus, string>;

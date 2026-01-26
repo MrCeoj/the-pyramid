@@ -292,15 +292,12 @@ export const matchScores = pgTable(
       .notNull()
       .references(() => team.id),
     scores: jsonb("scores").notNull(),
+    setsPlayed: integer("sets_played").notNull().default(3),
     submittedByTeamId: integer("submitted_by_team_id")
       .notNull()
       .references(() => team.id),
-    defenderTeamAgreed: boolean("defender_team_agreed")
-      .notNull()
-      .default(false),
-    attackerTeamAgreed: boolean("attacker_team_agreed")
-      .notNull()
-      .default(false),
+    defenderTeamAgreed: boolean("defender_team_agreed"),
+    attackerTeamAgreed: boolean("attacker_team_agreed"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
