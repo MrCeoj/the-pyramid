@@ -1,21 +1,16 @@
 "use client";
-
-import { useUsersMatchesStore } from "@/stores/useUsersMatchStore";
-import { X, ChevronRight, ChevronLeft, Plus, Minus } from "lucide-react";
+import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { useUsersMatchScoresStore } from "@/stores/useUsersMatchScoresStore";
+import { scoringSlides } from "@/components/ui/ScoringModalSlides";
 
-export default function ScoringModal({
-  scoringMatch,
-  open,
-}: {
-  scoringMatch: number;
-  open: boolean;
-}) {
-  const { toggleModal } = useUsersMatchesStore();
+export default function ScoringModal() {
+  const { closeScoring, scoringModal } = useUsersMatchScoresStore();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [numberOfSets, setNumberOfSets] = useState(3);
   const [direction, setDirection] = useState(0);
+  const ActiveSlide = scoringSlides[currentSlide];
 
   const handleNext = () => {
     setDirection(1);
@@ -41,13 +36,13 @@ export default function ScoringModal({
 
   return (
     <AnimatePresence>
-      {open && (
+      {scoringModal && (
         <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center bg-indor-black/60 backdrop-blur-lg"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={() => toggleModal()}
+          onClick={closeScoring}
         >
           <motion.div
             onClick={(e) => e.stopPropagation()}
@@ -56,11 +51,12 @@ export default function ScoringModal({
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="
-              relative w-[460px] overflow-hidden
+              relative max-w-[95dvw] w-[460px] overflow-hidden
               bg-slate-800/70 backdrop-blur-md
               border border-slate-700/50
               rounded-2xl p-8
               shadow-lg hover:shadow-xl
+              transition-all duration-75
             "
           >
             {/* subtle blue glow */}
@@ -76,7 +72,7 @@ export default function ScoringModal({
 
             {/* Close */}
             <button
-              onClick={() => toggleModal()}
+              onClick={closeScoring}
               className="
                 absolute top-4 right-4
                 p-2 rounded-lg
@@ -98,126 +94,7 @@ export default function ScoringModal({
                 transition={{ duration: 0.25 }}
                 className="flex flex-col items-center justify-center min-h-[260px]"
               >
-                {currentSlide === 0 && (
-                  <div className="flex flex-col items-center gap-8 w-full">
-                    {/* Header */}
-                    <div className="text-center">
-                      <h2 className="text-xl font-bold text-white">
-                        Cantidad de sets
-                      </h2>
-                      <p className="mt-2 text-sm text-slate-400">
-                        Ingresa cuántos sets se jugaron
-                      </p>
-                    </div>
-
-                    {/* Counter */}
-                    <div className="flex items-center gap-5">
-                      <button
-                        onClick={() =>
-                          numberOfSets > 2 && setNumberOfSets((v) => v - 1)
-                        }
-                        disabled={numberOfSets <= 2}
-                        className="
-                          p-3 rounded-xl
-                          bg-slate-700/30
-                          border border-slate-600/50
-                        text-slate-400 hover:text-white
-                          hover:border-blue-400/40
-                          disabled:opacity-40 disabled:cursor-not-allowed
-                          transition
-                        "
-                      >
-                        <Minus size={18} />
-                      </button>
-
-                      <div
-                        className="
-                          min-w-[96px] py-5 rounded-2xl text-center
-                          bg-slate-700/30
-                          border border-blue-500/30
-                        "
-                      >
-                        <span className="text-4xl font-bold text-blue-400">
-                          {numberOfSets}
-                        </span>
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          numberOfSets < 5 && setNumberOfSets((v) => v + 1)
-                        }
-                        disabled={numberOfSets >= 5}
-                        className="
-                          p-3 rounded-xl
-                          bg-slate-700/30
-                          border border-slate-600/50
-                          hover:border-blue-400/40
-                        text-slate-400 hover:text-white
-                          disabled:opacity-40 disabled:cursor-not-allowed
-                          transition
-                        "
-                      >
-                        <Plus size={18} />
-                      </button>
-                    </div>
-
-                    {/* CTA */}
-                    <button
-                      onClick={handleNext}
-                      className="
-                        mt-2
-                        flex items-center gap-2
-                        px-6 py-3 rounded-xl
-                        bg-blue-600/20 text-blue-400
-                        border border-blue-500/30
-                        hover:bg-blue-600/30 hover:border-blue-500/50
-                        transition
-                      "
-                    >
-                      Continuar
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-                )}
-
-                {currentSlide === 1 && (
-                  <div className="flex flex-col items-center gap-6">
-                    <h2 className="text-xl font-bold text-white">
-                      Próximo paso
-                    </h2>
-
-                    <div
-                      className="
-                        px-8 py-6 rounded-xl
-                        bg-slate-700/30
-                        border border-blue-500/30
-                        text-center
-                      "
-                    >
-                      <p className="text-sm text-slate-400">
-                        Sets seleccionados
-                      </p>
-                      <div className="mt-2 text-3xl font-bold text-blue-400">
-                        {numberOfSets}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={handlePrev}
-                      className="
-                        flex items-center gap-2
-                        px-5 py-2.5 rounded-xl
-                        bg-slate-700/30
-                        border border-slate-600/50
-                        hover:border-blue-400/40
-                        transition
-                      "
-                    >
-                      <ChevronLeft size={18} />
-                      Volver
-                    </button>
-                  </div>
-                )}
+                <ActiveSlide onNext={handleNext} onPrev={handlePrev} />
               </motion.div>
             </AnimatePresence>
           </motion.div>

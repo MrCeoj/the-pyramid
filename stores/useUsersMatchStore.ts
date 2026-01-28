@@ -5,7 +5,6 @@ import {
   rejectMatch,
   cancelMatch,
 } from "@/actions/MatchesActions";
-import { getMatchScore } from "@/actions/ScoreActions";
 import { getUserTeamId } from "@/actions/IndexActions";
 
 type UsersMatchesState = {
@@ -18,16 +17,11 @@ type UsersMatchesState = {
   userTeamId: number | null;
 
   rejectedAmount: number;
-  scoringModal: boolean;
-  selectedScoringMatch: number | null;
 
   fetchMatches: (userId: string) => Promise<void>;
-  fetchMatchScore: (matchId: number) => Promise<void>;
-  toggleModal: (matchId?: number) => void;
   accept: (matchId: number, userId: string) => Promise<void>;
   reject: (matchId: number, userId: string) => Promise<void>;
   cancel: (matchId: number, userId: string) => Promise<void>;
-  score: (matchId: number, userId: string) => Promise<void>;
 
   filtered: {
     pending: (pyramidId: number | null) => MatchWithDetails[];
@@ -46,8 +40,6 @@ export const useUsersMatchesStore = create<UsersMatchesState>((set, get) => ({
   userTeamId: null,
 
   rejectedAmount: 0,
-  scoringModal: false,
-  selectedScoringMatch: null,
 
   fetchMatches: async (userId) => {
     set({ loading: true });
@@ -66,14 +58,6 @@ export const useUsersMatchesStore = create<UsersMatchesState>((set, get) => ({
     } finally {
       set({ loading: false });
     }
-  },
-
-  fetchMatchScore: async (matchId)=>{},
-
-  toggleModal: (matchId?: number) => {
-    if (!!matchId) set({ selectedScoringMatch: matchId });
-    else set({ selectedScoringMatch: null });
-    set({ scoringModal: !get().scoringModal });
   },
 
   accept: async (matchId, userId) => {
@@ -104,15 +88,6 @@ export const useUsersMatchesStore = create<UsersMatchesState>((set, get) => ({
     try {
       await cancelMatch(matchId);
       await get().fetchMatches(userId);
-    } finally {
-      set({ actionLoading: null });
-    }
-  },
-
-  score: async (matchId, userId) => {
-    if (get().actionLoading) return;
-    set({ actionLoading: matchId });
-    try {
     } finally {
       set({ actionLoading: null });
     }

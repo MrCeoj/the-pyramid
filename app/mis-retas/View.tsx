@@ -18,15 +18,10 @@ const MatchesPage = () => {
     actionLoading,
     userTeamId,
     fetchMatches,
-    scoringModal,
-    selectedScoringMatch,
-    toggleModal,
     accept,
     reject,
     cancel,
-    score,
     filtered,
-    rejectedAmount,
   } = useUsersMatchesStore();
 
   const { data } = useSession();
@@ -167,7 +162,6 @@ const MatchesPage = () => {
                     <HistoryMatchCard
                       key={match.id}
                       handleCancelMatch={() => cancel(match.id, userId!)}
-                      handleStartScoring={() => toggleModal(match.id)}
                       userTeamId={userTeamId!}
                       match={match}
                       formatDate={formatDate}
@@ -211,7 +205,6 @@ const MatchesPage = () => {
                     handleRejectMatch={() => reject(match.id, userId!)}
                     formatDate={formatDate}
                     actionLoading={actionLoading!}
-                    rejectedAmount={rejectedAmount}
                   />
                 ))
               ) : (
@@ -247,7 +240,6 @@ const MatchesPage = () => {
                     <HistoryMatchCard
                       key={match.id}
                       handleCancelMatch={() => cancel(match.id, userId!)}
-                      handleStartScoring={() => toggleModal(match.id)}
                       userTeamId={userTeamId!}
                       match={match}
                       formatDate={formatDate}
@@ -275,7 +267,7 @@ const MatchesPage = () => {
         </AnimatePresence>
       </div>
 
-      <ScoringModal scoringMatch={selectedScoringMatch!} open={scoringModal}/>
+      <ScoringModal />
     </div>
   );
 };

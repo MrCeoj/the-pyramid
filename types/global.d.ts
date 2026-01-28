@@ -225,7 +225,6 @@ type User = {
 type HistoryMatchCardData = {
   match: MatchWithDetails;
   handleCancelMatch: (matchId: number) => Promise<void>;
-  handleStartScoring: (matchId: number) => void;
   userTeamId: number;
   formatDate: (date: Date) => string;
 };
@@ -240,7 +239,6 @@ type PendingMatchCardData = {
   actionLoading: number;
   handleAcceptMatch: (matchId: number) => Promise<void>;
   userTeamId: number;
-  rejectedAmount: number;
 };
 
 /**
@@ -380,3 +378,22 @@ type Scores = {
 };
 
 type MatchStatusMap = Record<MatchStatus, string>;
+
+type MatchScore = {
+  id: number;
+  matchId: number;
+  scores: Scores;
+  setsPlayed: number;
+  submittedByTeamId: number;
+  attackerTeamId: number;
+  defenderTeamId: number;
+  attackerTeamAgreed?: boolean | null;
+  defenderTeamAgreed?: boolean | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+interface ScoringSlideProps {
+  onNext: () => void;
+  onPrev: () => void;
+}

@@ -10,8 +10,8 @@ export default async function getMatchScore(matchId: number) {
       .select()
       .from(matchScores)
       .where(eq(matchScores.matchId, matchId))
-      .limit(1);
-    if (!matchScore) return [];
+      .limit(1) as MatchScore[];
+    if (!matchScore) return null;
     return matchScore;
-  } catch (error) {}
+  } catch (error) {return null}
 }

@@ -1,4 +1,5 @@
 "use client";
+import { useUsersMatchScoresStore } from "@/stores/useUsersMatchScoresStore";
 import {
   Trophy,
   Crown,
@@ -15,13 +16,13 @@ import {
 const HistoryMatchCard = ({
   match,
   handleCancelMatch,
-  handleStartScoring,
   formatDate,
   userTeamId,
 }: HistoryMatchCardData) => {
   const defenderWon = match.winnerTeam?.id === match.defenderTeam.id;
   const attackerWon = match.winnerTeam?.id === match.challengerTeam.id;
   const isWinner = match.winnerTeam?.id === userTeamId;
+  const { openScoring } = useUsersMatchScoresStore();
 
   type VisualStatus = MatchStatus | "played_won" | "played_lost";
 
@@ -297,7 +298,7 @@ const HistoryMatchCard = ({
           {/* Score match */}
           {match.status !== "pending" && (
             <button
-              onClick={()=>handleStartScoring(match.id)}
+              onClick={() => openScoring(match.id)}
               className="max-h-16 text-blue-400 hover:text-blue-300 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 hover:border-blue-500/50 group p-2 md:p-3 text-[0.6rem] sm:text-sm lg:text-base rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-1"
               title="Añadir puntaje"
             >

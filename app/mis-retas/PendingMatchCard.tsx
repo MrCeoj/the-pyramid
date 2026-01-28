@@ -1,4 +1,5 @@
 "use client";
+import { useUsersMatchesStore } from "@/stores/useUsersMatchStore";
 import {
   CheckCircle,
   XCircle,
@@ -17,9 +18,9 @@ const PendingMatchCard = ({
   actionLoading,
   handleAcceptMatch,
   userTeamId,
-  rejectedAmount,
 }: PendingMatchCardData) => {
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const {accept, reject, rejectedAmount} = useUsersMatchesStore()
 
   const userTeam =
     match.defenderTeam.id === userTeamId
